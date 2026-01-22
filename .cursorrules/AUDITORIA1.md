@@ -423,3 +423,24 @@ O sistema atingiu um nível de maturidade onde toda a infraestrutura de dados (S
 - `backend/services/sqliteStorageService.ts` (Persistência)
 - `frontend/src/components/forms/FuncoesForm.tsx` (UI de Edição)
 - `frontend/src/pages/Dashboard.tsx` (Lógica de Filtros e Agregação)
+
+---
+
+### 📅 Data: 22/01/2026 - Configuração de Repositório e Fluxo Git
+
+#### 1. Preparação para GitHub
+- [x] **Criação de .gitignore:** Configurado na raiz do projeto para ignorar `node_modules`, `backup`, `_MODULO_MANUS`, logs e arquivos temporários.
+- [x] **Exceção de .env:** Mantido arquivo `.env` na versão controlada conforme solicitação para repositório privado.
+- [x] **Inicialização:** Repositório Git local inicializado e vinculado ao remoto.
+
+#### 2. Repositório Remoto
+- [x] **Criação:** Criado repositório privado `uvgeralgestao-dc/P.E.O`.
+- [x] **Sincronização:** Enviado código fonte completo para o branch `master`.
+
+#### 3. Automação de Processo
+- [x] **Protocolo Git Sync:** Adicionado novo protocolo ao `rules.mdc` exigindo Auto-Commit ao final de cada tarefa.
+- [x] **Teste de Fluxo:** Validado fluxo de push automático após alteração de regras.
+
+#### 📂 Arquivos Modificados/Criados
+- `.gitignore`
+- `.cursorrules/rules.mdc`

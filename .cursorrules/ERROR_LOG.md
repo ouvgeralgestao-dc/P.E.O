@@ -293,3 +293,11 @@ const positionsWithY = setores.filter(s =>
 **Causa:** As estruturas de dados são independentes. Filtrar por "Gabinete" removia o organograma funcional visualmente, mas não tinha como saber quais cargos pertenciam ao Gabinete, pois a ligação não existia.
 **Solução:** Implementado campo `setor_ref` no banco de dados e lógica de "Cross-Filtering" no Frontend, onde o filtro de setor verifica tanto a estrutura (nomeSetor) quanto a função (setor_ref).
 **Aprendizado:** Para dashboards unificados, "Foreign Keys" lógicas (referências) são essenciais para permitir filtragem cruzada entre dimensões diferentes (Estrutura vs Função).
+
+---
+
+### 📅 22/01/2026 - Erro de CLI PowerShell (Git Init)
+- **Erro:** `CategoryInfo : ParserError` ao tentar executar comandos encadeados `git init && git add .` no PowerShell.
+- **Causa:** Sintaxe de encadeamento `&&` não suportada nativamente em algumas versões ou configurações de terminal PowerShell v1/v2 ou restrições de parser.
+- **Solução:** Execução sequencial dos comandos (`git init` <enter> `git add .` <enter>).
+- **Status:** ✅ Resolvido.

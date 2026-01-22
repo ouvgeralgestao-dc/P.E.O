@@ -47,6 +47,7 @@
 - ✅ Integração total com **SQLite** e migração concluída com 37 órgãos ativos.
 
 ### 🧩 Cross-Filtering Estrutural-Funcional (Novo!)
-- ✅ **Ligação Setor-Cargo:** Implementado campo de referência (`setor_ref`) que permite vincular um cargo funcional a um setor estrutural específico.
-- ✅ **Filtros Inteligentes:** Selecionar um setor no Dashboard agora filtra automaticamente os cargos vinculados a ele.
-- ✅ **Refinamento de Gráficos:** Gráficos de "Setores por Órgão" agora respeitam filtros de Símbolo (ex: mostrar apenas setores com DAS-5), limpando a visualização de dados irrelevantes.
+
+### 🔄 Fluxo de Trabalho Git (Novo!)
+- ✅ **Repositório Conectado:** Projeto vinculado ao GitHub Privado (`ouvgeralgestao-dc/P.E.O`).
+- ✅ **Auto-Sync:** Protocolo de "Auto-Commit" ativado no `rules.mdc`. Toda tarefa finalizada é enviada automaticamente para a nuvem, garantindo backup e versionamento contínuo.
