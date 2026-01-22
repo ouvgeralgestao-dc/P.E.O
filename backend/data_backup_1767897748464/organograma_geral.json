@@ -1,0 +1,25 @@
+{
+  "tipo": "geral",
+  "estruturaFixa": {
+    "prefeito": {
+      "id": "prefeito-node",
+      "nome": "Prefeito",
+      "cor": "#FFD700",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "gabinete": {
+      "id": "gabinete-node",
+      "nome": "Gabinete do Prefeito",
+      "cor": "#C0C0C0",
+      "position": {
+        "x": 300,
+        "y": 50
+      }
+    }
+  },
+  "orgaos": [],
+  "updatedAt": "2026-01-08T14:46:33.989Z"
+}

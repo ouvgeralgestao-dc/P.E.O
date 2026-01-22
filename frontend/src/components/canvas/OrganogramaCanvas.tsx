@@ -1,0 +1,1019 @@
+/**
+ * Componente Principal de Visualização de Organogramas
+ * Usa ReactFlow para renderizar a hierarquia
+ * FUNCIONALIDADE: Permite arrastar nós e salvar posições customizadas
+ * REGRA: Assessorias conectam pela LATERAL, setores normais pelo TOPO
+ */
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import ReactFlow, {
+    Background,
+    Controls,
+    MiniMap,
+    useNodesState,
+    useEdgesState,
+    MarkerType,
+    Position,
+    useReactFlow,
+    ReactFlowProvider,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import SetorNode from './SetorNode';
+import CustomEdge from './CustomEdge';
+import { HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
+import { applyAutoLayout } from '../../utils/layoutHelpers';
+import './OrganogramaCanvas.css';
+
+const nodeTypes = {
+    setorNode: SetorNode,
+};
+
+const edgeTypes = {
+    customEdge: CustomEdge,
+};
+
+const OrganogramaCanvasInner = ({
+    organogramaData,
+    onSavePositions,
+    editable = true,
+    onDataChange
+}) => {
+    const [hasChanges, setHasChanges] = useState(false);
+    const { fitView } = useReactFlow();
+
+    // -- ESTADOS DE UI E EDIÇÃO --
+    const [activeEditorId, setActiveEditorId] = useState(null);
+
+    // -- ESTADOS DO REACT FLOW --
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+    // Callback para abrir/fechar editor de um nó
+    const onEditClick = useCallback((nodeId) => {
+        console.log('🎨 [onEditClick] Chamado com nodeId:', nodeId, '| editable:', editable, '| activeEditorId atual:', activeEditorId);
+        if (!editable) {
+            console.log('🚫 [OrganogramaCanvas] Edição desativada (Modo Visualização)');
+            return;
+        }
+        setActiveEditorId(prev => {
+            const newValue = prev === nodeId ? null : nodeId;
+            console.log('🎨 [onEditClick] setActiveEditorId: prev=', prev, ' -> next=', newValue);
+            return newValue;
+        });
+    }, [editable]);
+
+    // Callback para mudar estilo (estável)
+    const onStyleChange = useCallback((nodeId, newStyle) => {
+        setNodes((nds) => {
+            const targetNode = nds.find(n => n.id === nodeId);
+            // Se o nó alvo estiver selecionado, atualizamos todos os selecionados
+            const isBatchUpdate = targetNode?.selected;
+
+            return nds.map((node) => {
+                const shouldUpdate = (node.id === nodeId) || (isBatchUpdate && node.selected);
+
+                if (shouldUpdate) {
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            style: {
+                                ...(node.data.style || {}),
+                                ...newStyle
+                            }
+                        }
+                    };
+                }
+                return node;
+            });
+        });
+
+        // Salvar automaticamente após alteração de cor
+        if (onSavePositions) {
+            window.__needsAutoSave = true;
+        }
+    }, [onSavePositions, setNodes]);
+
+    // -- PROCESSAMENTO DE DADOS (useMemo) --
+    // Injeta os callbacks estáveis nos nós durante o carregamento inicial
+
+
+    // Converter dados do organograma para formato ReactFlow
+    const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
+        if (!organogramaData) {
+            return { nodes: [], edges: [] };
+        }
+
+        const nodes = [];
+        const edges = [];
+        const setorMap = new Map(); // Para identificar assessorias
+
+        // Função para achatar estrutura hierárquica (setores com children)
+        // Usa Set para evitar duplicatas
+        const flattenSetores = (setoresHierarquicos) => {
+            const result = [];
+            const processedIds = new Set();
+
+            const processSetor = (setor) => {
+                // Evitar duplicatas
+                if (processedIds.has(setor.id)) return;
+                processedIds.add(setor.id);
+
+                const { children, ...setorSemChildren } = setor;
+                result.push(setorSemChildren);
+
+                // Processar children recursivamente
+                if (children && children.length > 0) {
+                    children.forEach(child => processSetor(child));
+                }
+            };
+
+            setoresHierarquicos.forEach(setor => processSetor(setor));
+            return result;
+        };
+
+        // Processar organograma estrutural
+        if (organogramaData.organogramaEstrutural) {
+            let setoresOriginal = organogramaData.organogramaEstrutural.setores || [];
+
+            // Achatar estrutura hierárquica para lista plana
+            let setores = flattenSetores(setoresOriginal);
+
+            // Se NÃO tiver posições salvas (ou seja, primeira carga), aplica layout
+            // Caso contrário, respeita o que veio do banco (se vier via props já processado)
+            // OBS: A função applyAutoLayout atual calcula posições do zero.
+            // MELHORADO: Verificar se as posições formam um layout hierárquico válido
+            // (não apenas se são != 0, mas se há variação em Y indicando níveis diferentes)
+            // CORREÇÃO: Check explícito para isNaN, pois typeof NaN é 'number'
+            // CORREÇÃO CRÍTICA (18/01/2026): Validação Rígida de Layout
+            // Se QUALQUER nó tiver coordenada NaN, o layout inteiro é considerado inválido.
+            // Isso previne que o ReactFlow trave ao tentar renderizar coordenadas inválidas.
+            const hasInvalidNodes = setores.some(s =>
+                !s.position ||
+                typeof s.position.x !== 'number' || isNaN(s.position.x) ||
+                typeof s.position.y !== 'number' || isNaN(s.position.y)
+            );
+
+            // Verificação secundária: Mesmo que todos sejam números, eles formam uma árvore visual?
+            const positionsWithY = setores.filter(s => !isNaN(s.position?.y));
+            const uniqueYValues = new Set(positionsWithY.map(s => Math.round((s.position?.y || 0) / 50)));
+            const hasHierarchy = positionsWithY.length > 2 && uniqueYValues.size > 1;
+
+            console.log(`[OrganogramaCanvas] Validação de Layout: InvalidNodes=${hasInvalidNodes}, UniqueY=${uniqueYValues.size}, HasHierarchy=${hasHierarchy}`);
+
+            if (hasInvalidNodes || !hasHierarchy) {
+                console.warn('[OrganogramaCanvas] 🚨 LAYOUT CORROMPIDO OU INCOMPLETO DETECTADO! 🚨');
+                console.warn('Motivo:', hasInvalidNodes ? 'Nós com coordenadas NaN/Inválidas' : 'Layout plano/sem hierarquia');
+
+                // Forçar recálculo total do layout
+                console.log('[OrganogramaCanvas] Aplicando Auto-Layout de Emergência...');
+                setores = applyAutoLayout(setores);
+
+                // Marcar para salvar imediatamente e corrigir o banco de dados
+                setores.forEach(s => s._wasAutoLayouted = true);
+            } else {
+                console.log('[OrganogramaCanvas] Layout validado com sucesso. Mantendo posições originais.');
+            }
+
+            // Primeiro, mapear todos os setores
+            setores.forEach((setor) => {
+                setorMap.set(setor.id, setor);
+            });
+
+            setores.forEach((setor) => {
+                // Preservar estilo customizado se existir no objeto setor
+                // Prioridade: style (novo) > customStyle (legado)
+                const savedStyle = setor.style || setor.customStyle || {};
+
+                // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual)
+                // Normalizar hierarquia para número
+                const hirarqNum = typeof setor.hierarquia === 'string' ? parseFloat(setor.hierarquia) : (setor.hierarquia || 0);
+                const isAssessoriaNode = setor.isAssessoria ||
+                    hirarqNum === 0 ||
+                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('assessoria')) ||
+                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('gabinete')) ||
+                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('consultoria')) ||
+                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('assessor')) ||
+                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('gabinete')) ||
+                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('consultoria')) ||
+                    (setor.nomeCargo && setor.nomeCargo.toLowerCase().includes('assessor'));
+
+                if ((setor.nomeSetor || '').toLowerCase().includes('gabinete') ||
+                    (setor.nomeSetor || '').toLowerCase().includes('consultoria')) {
+                    console.log(`[DEBUG STRUC] Setor: ${setor.nomeSetor}`, {
+                        id: setor.id,
+                        isAssessoriaProp: setor.isAssessoria,
+                        hirarqNum,
+                        x: setor.position?.x,
+                        parentId: setor.parentId,
+                        RESULT_isAssessoriaNode: isAssessoriaNode
+                    });
+                }
+
+                // Helper para detectar lado (Left/Right)
+                const parentPos = setorMap.get(setor.parentId)?.position || { x: 0 };
+                const isLeftAssessoria = setor._side === 'left' ||
+                    (setor.position && setor.position.x < parentPos.x && isAssessoriaNode);
+
+                // Lógica de Conexão Vertical para Assessorias de Nível Profundo (>=3)
+                const parent = setorMap.get(setor.parentId);
+                const parentLevel = parent ? parseInt(parent.hierarquia || 0) : 0;
+
+                // CORREÇÃO (18/01/2026): Detectar se o PAI é uma assessoria.
+                // Se o pai for assessoria, este nó (mesmo sendo assessoria) deve se comportar como filho vertical.
+                const isParentAssessoria = parent && (
+                    parent.isAssessoria ||
+                    parent.data?.isAssessoria || // Se parent vier do nó ReactFlow
+                    parseFloat(parent.hierarquia) === 0 ||
+                    (parent.nomeSetor || '').toLowerCase().includes('consultoria') ||
+                    (parent.nomeSetor || '').toLowerCase().includes('gabinete')
+                );
+
+                // Se for assessoria, mas o pai é nível 3+ OU o pai já é uma assessoria -> Vertical
+                const isVerticalAssessoria = isAssessoriaNode && (parentLevel >= 3 || isParentAssessoria);
+
+                // Definir Posição dos Handles
+                let sourcePos, targetPos;
+                if (isVerticalAssessoria) {
+                    // Vertical: Recebe por cima, sai por baixo
+                    sourcePos = Position.Bottom;
+                    targetPos = Position.Top;
+                } else if (isLeftAssessoria) {
+                    sourcePos = Position.Left;
+                    targetPos = Position.Right;
+                } else if (isAssessoriaNode) {
+                    sourcePos = Position.Right;
+                    targetPos = Position.Left;
+                } else {
+                    sourcePos = Position.Bottom;
+                    targetPos = Position.Top;
+                }
+
+                nodes.push({
+                    id: setor.id,
+                    type: 'setorNode',
+                    // Sanitização: Fallback para 0,0 se vier NaN para não quebrar ReactFlow
+                    position: {
+                        x: (setor.position && !isNaN(setor.position.x)) ? setor.position.x : 0,
+                        y: (setor.position && !isNaN(setor.position.y)) ? setor.position.y : 0
+                    },
+                    data: {
+                        id: setor.id, // ID para identificar o nó ao aplicar estilos
+                        nomeSetor: setor.nomeSetor,
+                        tipoSetor: setor.tipoSetor,
+                        hierarquia: isAssessoriaNode ? 0 : (setor.hierarquia || 0), // Forçar hierarquia 0 para assessorias visuais
+                        isAssessoria: isAssessoriaNode,
+                        cargos: setor.cargos,
+                        style: savedStyle, // Usar 'style' para compatibilidade backend
+                        customStyle: savedStyle, // Manter fallback
+                        onStyleChange: onStyleChange, // Passar callback estável
+                        onEditClick: onEditClick, // Passar callback estável
+                        handleY: (() => {
+                            // Calcular altura dinâmica para centralizar o handle (Height / 2)
+                            const h = isAssessoriaNode ? 0 : parseInt(setor.hierarquia || 0);
+                            const isPrefeito = setor.tipoSetor === 'Prefeito' || setor.id === 'prefeito';
+
+                            if (h === 1 || isPrefeito) return 55; // 110/2
+                            if (h === 2) return 50; // 100/2
+                            if (h === 3) return 45; // 90/2
+                            return 40; // 80/2 (Nível 4+ e Assessorias)
+                        })(),
+                        _wasAutoLayouted: setor._wasAutoLayouted, // Flag para disparar auto-save
+                        parentId: setor.parentId
+
+                    },
+                    // Definir handles (pontos de conexão) baseado no tipo e lado
+                    sourcePosition: sourcePos,
+                    targetPosition: targetPos,
+                    isAssessoria: isAssessoriaNode,
+                    _isLeft: isLeftAssessoria,
+                    _isNested: setor._isNested // Passar flag de nested
+                });
+
+                // Criar edge se tiver pai
+                if (setor.parentId) {
+                    // Detecção robusta para definir estilo da edge
+                    const isAssessoriaEdge = isAssessoriaNode; // Simplificado pois já calculamos isAssessoriaNode antes
+                    const isNestedEdge = setor._isNested; // Nova flag
+
+                    // Lógica de Handles baseada no lado
+                    let sourceHandle, targetHandle;
+                    let edgeType = 'smoothstep'; // Default
+
+                    if (isVerticalAssessoria) {
+                        sourceHandle = 'bottom';
+                        targetHandle = 'top';
+                        edgeType = 'smoothstep';
+                        /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> VERTICAL ASSESSORIA`); */
+                    } else if (isNestedEdge) {
+                        // FILHOS DE ASSESSORIA: Sempre vertical (L shape)
+                        sourceHandle = 'bottom';
+                        targetHandle = 'top';
+                        edgeType = 'smoothstep';
+                        /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> NESTED`); */
+                    } else if (isLeftAssessoria) {
+                        // ASSESSORIA DA ESQUERDA CONECTANDO AO PAI CENTRAL: Lateral
+                        sourceHandle = 'left-source';
+                        targetHandle = 'right-target';
+                        edgeType = 'straight';
+                        /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> LEFT ASSESSORIA`); */
+                    } else if (isAssessoriaEdge) {
+                        // ASSESSORIA DA DIREITA CONECTANDO AO PAI CENTRAL: Lateral
+                        sourceHandle = 'right';
+                        targetHandle = 'left';
+                        edgeType = 'straight';
+                        /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> RIGHT ASSESSORIA`); */
+                    } else {
+                        sourceHandle = 'bottom';
+                        targetHandle = 'top';
+                        edgeType = 'smoothstep';
+                        if (isAssessoriaNode) {
+                            console.warn(`[EDGE DECISION WARNING] ${setor.nomeSetor} é Assessoria mas caiu no Default Vertical!`, {
+                                isVerticalAssessoria,
+                                isNestedEdge,
+                                isLeftAssessoria,
+                                isAssessoriaEdge
+                            });
+                        }
+                    }
+
+                    edges.push({
+                        id: `e-${setor.parentId}-${setor.id}`,
+                        source: setor.parentId,
+                        target: setor.id,
+                        type: edgeType,
+                        sourceHandle: sourceHandle,
+                        targetHandle: targetHandle,
+                        pathOptions: { borderRadius: 0 }, // Linhas ortogonais quadradas
+                        markerEnd: {
+                            type: MarkerType.ArrowClosed,
+                            color: '#9e9e9e',
+                        },
+                        style: { stroke: '#9e9e9e', strokeWidth: 2 }
+                    });
+                }
+            });
+        }
+
+        const flattenCargos = (cargosHierarquicos) => {
+            const result = [];
+            const processedIds = new Set();
+
+            const flattenCargo = (cargo) => {
+                if (!cargo || !cargo.id || processedIds.has(cargo.id)) return;
+                processedIds.add(cargo.id);
+
+                const { children, ...cargoSemChildren } = cargo;
+                result.push(cargoSemChildren);
+
+                if (children && children.length > 0) {
+                    children.forEach(child => flattenCargo(child));
+                }
+            };
+
+            cargosHierarquicos.forEach(cargo => flattenCargo(cargo));
+            return result;
+        };
+
+        // Processar organogramas de funções
+        if (organogramaData.organogramasFuncoes && organogramaData.organogramasFuncoes.length > 0) {
+            organogramaData.organogramasFuncoes.forEach((orgFunc) => {
+                let cargos = flattenCargos(orgFunc.cargos || []);
+
+                // MELHORADO: Verificar se as posições formam um layout hierárquico válido
+                // (não apenas se são != 0, mas se há variação em Y indicando níveis diferentes)
+                const positionsWithY = cargos.filter(c => c.position && typeof c.position.y === 'number');
+                const uniqueYValues = new Set(positionsWithY.map(c => Math.round(c.position.y / 50))); // Agrupar por faixas de 50px
+                const hasValidHierarchicalLayout = positionsWithY.length > 1 && uniqueYValues.size > 1;
+
+                console.log(`[OrganogramaCanvas] Funcional: ${positionsWithY.length} nós com posição, ${uniqueYValues.size} níveis Y únicos, válido=${hasValidHierarchicalLayout}`);
+
+                if (!hasValidHierarchicalLayout) {
+                    console.log('[OrganogramaCanvas] Funcional: Layout inválido detectado. Aplicando auto-layout.');
+                    cargos = applyAutoLayout(cargos);
+                    // Flag para persistir se houver auto-layout
+                    cargos.forEach(c => c._wasAutoLayouted = true);
+                }
+
+                // Mapa de Cargos para busca de Pai
+                const cargoMap = new Map();
+                cargos.forEach(c => cargoMap.set(c.id, c));
+
+                cargos.forEach(cargo => {
+                    // Preservar estilo customizado se existir
+                    const savedStyle = cargo.style || cargo.customStyle || {};
+
+                    // Normalizar hierarquia para número (suporta "0", 0, "0.0")
+                    const hirarqNum = typeof cargo.hierarquia === 'string' ? parseFloat(cargo.hierarquia) : (cargo.hierarquia || 0);
+                    // Detectar assessoria: flag isAssessoria, hierarquia 0, ou palavras-chave
+                    const nameLower = (cargo.nomeCargo || '').toLowerCase();
+                    const typeLower = (cargo.tipoSetor || '').toLowerCase();
+
+                    const isAssessoriaNode = cargo.isAssessoria || hirarqNum === 0 ||
+                        nameLower.includes('assessor') ||
+                        nameLower.includes('gabinete') ||
+                        nameLower.includes('consultoria') ||
+                        typeLower.includes('assessoria') ||
+                        typeLower.includes('gabinete');
+
+                    if (nameLower.includes('gabinete') || nameLower.includes('consultoria')) {
+                        console.log(`[DEBUG EDGE] Cargo: ${cargo.nomeCargo}`, {
+                            isAssessoria: cargo.isAssessoria,
+                            hirarqNum,
+                            nameLower,
+                            typeLower,
+                            RESULT_isAssessoriaNode: isAssessoriaNode
+                        });
+                    }
+
+                    // Lógica Vertical para Cargos Assessorias Profundos
+                    const parent = cargoMap.get(cargo.parentId);
+                    const parentLevel = parent ? parseFloat(parent.hierarquia || parent.nivel || 0) : 0;
+                    // Se for assessoria, mas o pai é nível 3+ (ex: Subsecretaria), comporta-se como vertical
+                    const isVerticalAssessoria = isAssessoriaNode && parentLevel >= 3;
+
+                    // Determinar lado baseado na posição X relativa ao pai (persistida no banco) OU _side do auto-layout
+                    const parentX = parent?.position?.x || 0;
+                    const cargoX = cargo.position?.x || 0;
+                    // CORREÇÃO: Priorizar _side se existir, pois é a decisão fresca do layout
+                    const isLeftAssessoria = cargo._side === 'left' || (isAssessoriaNode && cargoX < parentX);
+                    const isRightAssessoria = isAssessoriaNode && !isLeftAssessoria; // Se é assessoria e não é left, é right
+
+                    let sourcePos, targetPos;
+                    if (isVerticalAssessoria) {
+                        sourcePos = Position.Bottom;
+                        targetPos = Position.Top;
+                    } else if (isLeftAssessoria) {
+                        sourcePos = Position.Left;
+                        targetPos = Position.Right;
+                    } else if (isAssessoriaNode) {
+                        sourcePos = Position.Right;
+                        targetPos = Position.Left;
+                    } else {
+                        sourcePos = Position.Bottom;
+                        targetPos = Position.Top;
+                    }
+
+                    nodes.push({
+                        id: cargo.id,
+                        type: 'setorNode',
+                        // Sanitização: Se NaN escapar, fallback para 0,0 para não quebrar renderer
+                        position: {
+                            x: (cargo.position && !isNaN(cargo.position.x)) ? cargo.position.x : 0,
+                            y: (cargo.position && !isNaN(cargo.position.y)) ? cargo.position.y : 0
+                        },
+                        data: {
+                            id: cargo.id, // ID para identificar o nó ao aplicar estilos
+                            nomeCargo: cargo.nomeCargo,
+                            ocupante: cargo.ocupante,
+                            hierarquia: isAssessoriaNode ? 0 : (cargo.hierarquia || cargo.nivel || 0),
+                            nivel: isAssessoriaNode ? 0 : (cargo.nivel || cargo.hierarquia || 0),
+                            tipoSetor: cargo.tipoSetor, // Preservar se vier do backend
+                            isAssessoria: isAssessoriaNode,
+                            nomeSetorRef: cargo.nome_setor_ref, // Novo campo de referência cruzada
+                            simbolos: cargo.simbolos,
+                            simbolo: cargo.simbolo, // Preservar para cargos agrupados
+                            quantidade: cargo.quantidade,
+                            style: savedStyle,
+                            customStyle: savedStyle,
+                            onStyleChange: onStyleChange, // Passar callback estável
+                            onEditClick: onEditClick, // Passar callback estável
+                            _wasAutoLayouted: cargo._wasAutoLayouted,
+                            handleY: (() => {
+                                // CORREÇÃO: Calcular altura dinâmica para centralizar o handle (Height / 2)
+                                // Sincronizado com a lógica de Reset Layout para evitar linhas diagonais
+                                const h_calc = isAssessoriaNode ? 0 : parseInt(cargo.hierarquia || cargo.nivel || 0);
+                                const isPrefeito = cargo.tipoSetor === 'Prefeito' || cargo.id === 'prefeito' || (cargo.nomeCargo && cargo.nomeCargo.toLowerCase().includes('prefeito'));
+
+                                if (h_calc === 1 || isPrefeito) return 55; // 110/2
+                                if (h_calc === 2) return 50; // 100/2
+                                if (h_calc === 3) return 45; // 90/2
+                                return 40; // 80/2 (Nível 4+ e Assessorias)
+                            })(),
+                            parentId: cargo.parentId
+                        },
+                        // Sincronizar Positions com Handles do SetorNode
+                        sourcePosition: sourcePos,
+                        targetPosition: targetPos,
+                        // Adicionar flag isAssessoria na raiz do nó para fácil acesso no Canvas
+                        isAssessoria: isAssessoriaNode,
+                        _isLeft: isLeftAssessoria,
+                        _isNested: cargo._isNested // Passar flag de nested
+                    });
+
+                    // Criar edge se tiver pai
+                    if (cargo.parentId) {
+                        // Lógica de Handles baseada no lado
+                        let sourceHandle, targetHandle;
+                        let edgeType;
+
+                        if (isVerticalAssessoria) {
+                            sourceHandle = 'bottom';
+                            targetHandle = 'top';
+                            edgeType = 'smoothstep';
+                        } else if (cargo._isNested) {
+                            // FILHOS DE ASSESSORIA: Sempre vertical (L shape)
+                            sourceHandle = 'bottom';
+                            targetHandle = 'top';
+                            edgeType = 'smoothstep';
+                        } else if (isLeftAssessoria) {
+                            sourceHandle = 'left-source';
+                            targetHandle = 'right-target';
+                            edgeType = 'straight';
+                        } else if (isAssessoriaNode) {
+                            sourceHandle = 'right';
+                            targetHandle = 'left';
+                            edgeType = 'straight';
+                        } else {
+                            sourceHandle = 'bottom';
+                            targetHandle = 'top';
+                            edgeType = 'smoothstep';
+                        }
+
+                        edges.push({
+                            id: `e-${cargo.parentId}-${cargo.id}`,
+                            source: cargo.parentId,
+                            target: cargo.id,
+                            type: edgeType,
+                            sourceHandle: sourceHandle,
+                            targetHandle: targetHandle,
+                            pathOptions: { borderRadius: 0 }, // Garantir linhas quadradas
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#9e9e9e', // Cor neutra para combinar com preview
+                            },
+                            style: { stroke: '#9e9e9e', strokeWidth: 2 }
+                        });
+                    }
+                });
+            });
+        }
+
+        // Remover edges duplicadas pelo ID
+        const uniqueEdges = edges.filter((edge, index, self) =>
+            index === self.findIndex(e => e.id === edge.id)
+        );
+
+        return { nodes, edges: uniqueEdges };
+    }, [organogramaData, onStyleChange, onEditClick]);
+
+    // -- INICIALIZAÇÃO DE ESTADO --
+    useEffect(() => {
+        if (initialNodes.length > 0) {
+            setNodes(initialNodes);
+            setEdges(initialEdges);
+        }
+    }, [initialNodes, initialEdges]);
+
+    // Efeito para injetar callbacks e estado de edição nos nós reativamente
+    // IMPORTANTE: Incluímos nodes.length para garantir que rode após os nós serem carregados
+    useEffect(() => {
+        console.log('🔄 [useEffect] Injetando callbacks. activeEditorId =', activeEditorId, '| nodes.length =', nodes.length);
+        if (nodes.length === 0) {
+            console.log('   -> Pulando injeção: nenhum nó carregado ainda');
+            return;
+        }
+        setNodes(nds => nds.map(n => {
+            const isEditing = n.id === activeEditorId;
+            // Só atualiza se houver mudança real (performance)
+            if (n.data.isEditing !== isEditing || n.data.onEditClick !== onEditClick || n.data.onStyleChange !== onStyleChange) {
+                console.log(`   -> Atualizando nó ${n.id}: isEditing=${isEditing}`);
+                return {
+                    ...n,
+                    data: {
+                        ...n.data,
+                        isEditing,
+                        onEditClick,
+                        onStyleChange
+                    }
+                };
+            }
+            return n;
+        }));
+    }, [activeEditorId, onEditClick, onStyleChange, nodes.length]);
+
+    // Função para salvar automaticamente (Definida antes dos hooks para evitar ReferenceError)
+    const autoSave = useCallback(() => {
+        if (!onSavePositions) return;
+
+        const updatedData = nodes.map(node => {
+            const baseData = {
+                id: node.id,
+                position: node.position,
+                style: node.data.style || node.data.customStyle,
+                hierarquia: node.data.hierarquia,
+                isAssessoria: node.data.isAssessoria,
+                parentId: node.data.parentId
+            };
+
+            // Se for nó de setor (estrutural)
+            if (node.data.nomeSetor) {
+                return {
+                    ...baseData,
+                    nomeSetor: node.data.nomeSetor,
+                    tipoSetor: node.data.tipoSetor,
+                    cargos: node.data.cargos || []
+                };
+            }
+
+            // Se for nó de cargo (funcional)
+            return {
+                ...baseData,
+                nomeCargo: node.data.nomeCargo,
+                ocupante: node.data.ocupante,
+                simbolos: node.data.simbolos,
+                simbolo: node.data.simbolo, // Enviar de volta para o backend
+                quantidade: node.data.quantidade
+            };
+        });
+
+        console.log('[AutoSave] Salvando automaticamente:', updatedData.length, 'nós');
+        onSavePositions(updatedData);
+    }, [nodes, onSavePositions]);
+
+
+    // NOVO: Forçar auto-save após layout inicial ser aplicado para garantir persistência
+    // Este efeito garante que posições calculadas pelo auto-layout sejam salvas no primeiro carregamento
+    const hasTriggeredInitialSaveRef = React.useRef(false);
+    React.useEffect(() => {
+        // Verificar se algum nó foi auto-layouted e ainda não persistimos
+        const hasAutoLayoutedNodes = initialNodes.some(n => n.data?._wasAutoLayouted);
+
+        if (hasAutoLayoutedNodes && !hasTriggeredInitialSaveRef.current && onSavePositions) {
+            hasTriggeredInitialSaveRef.current = true;
+            console.log('[OrganogramaCanvas] Layout inicial detectado. Forçando auto-save em 500ms...');
+
+            // Delay para garantir que o estado React Flow esteja completamente sincronizado
+            setTimeout(() => {
+                console.log('[OrganogramaCanvas] Executando auto-save do layout inicial');
+                window.__needsAutoSave = true;
+            }, 500);
+        }
+    }, [initialNodes, onSavePositions]);
+
+    // Notificar pai sobre mudanças nos dados (para impressão/exportação)
+    React.useEffect(() => {
+        if (onDataChange) {
+            onDataChange({ nodes, edges });
+        }
+    }, [nodes, edges, onDataChange]);
+
+    // Monitorar flag de auto-save para salvar cores automaticamente
+    React.useEffect(() => {
+        // Se houver algum nó que foi auto-layouted e ainda não foi persistido
+        const hasUnsavedLayout = nodes.some(n => n.data._wasAutoLayouted);
+
+        if ((window.__needsAutoSave || hasUnsavedLayout) && onSavePositions) {
+            console.log('[OrganogramaCanvas] Iniciando auto-save (Layout ou Cores)');
+            window.__needsAutoSave = false;
+            autoSave();
+
+            // Limpar a flag _wasAutoLayouted dos nós para evitar loop
+            if (hasUnsavedLayout) {
+                setNodes(nds => nds.map(n => ({
+                    ...n,
+                    data: { ...n.data, _wasAutoLayouted: false }
+                })));
+            }
+        }
+    }, [nodes, onSavePositions, autoSave, setNodes]);
+
+
+    // Detectar mudanças de posição ao arrastar nós - SALVAR AUTOMATICAMENTE
+    const handleNodeDragStop = useCallback((event, node, nodes) => {
+        // Se houver multi-seleção e arrasto em grupo, 'nodes' conterá todos os arrastados?
+        // O ReactFlow 11 suporta multi-drag nativamente.
+        // O 'node' é o nó que parou de ser arrastado.
+        // Podemos simplesmente chamar o autoSave que varre TODOS os nodes do state 'nodes'.
+        setTimeout(() => autoSave(), 100);
+    }, [autoSave]);
+
+    // Resetar para layout automático (recalculado)
+    const handleResetLayout = useCallback(() => {
+        let itemsToLayout = [];
+
+        // 1. Identificar dados e resetar posições/estilos
+        if (organogramaData?.organogramaEstrutural) {
+            const flattenHelper = (items, result = []) => {
+                items.forEach(item => {
+                    const { children, ...rest } = item;
+                    result.push({ ...rest, position: { x: 0, y: 0 }, style: {}, customStyle: {} });
+                    if (children && children.length) flattenHelper(children, result);
+                });
+                return result;
+            };
+            itemsToLayout = flattenHelper(organogramaData.organogramaEstrutural.setores || []);
+        } else if (organogramaData?.organogramasFuncoes && organogramaData.organogramasFuncoes.length > 0) {
+            const flattenHelper = (items, result = []) => {
+                items.forEach(item => {
+                    const { children, ...rest } = item;
+                    result.push({ ...rest, position: { x: 0, y: 0 }, style: {}, customStyle: {} });
+                    if (children && children.length) flattenHelper(children, result);
+                });
+                return result;
+            };
+
+            // Extrair todos os cargos de todos os organogramas funcionais (Recursivamente)
+            itemsToLayout = organogramaData.organogramasFuncoes.flatMap(org =>
+                flattenHelper(org.cargos || [])
+            );
+        }
+
+        if (itemsToLayout.length === 0) return;
+
+        // 2. Remover duplicatas
+        const uniqueItems = [];
+        const seen = new Set();
+        itemsToLayout.forEach(item => {
+            if (!seen.has(item.id)) {
+                seen.add(item.id);
+                uniqueItems.push(item);
+            }
+        });
+
+        // 3. Aplicar Auto Layout
+        const itemsLayouted = applyAutoLayout(uniqueItems);
+
+        // Mapa para Reset Layout
+        const itemMap = new Map();
+        itemsLayouted.forEach(item => itemMap.set(item.id, item));
+
+        // 4. Converter para Nodes do React Flow (idêntico ao mapeamento inicial)
+        const newNodes = itemsLayouted.map(item => {
+            // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual) - Reset Layout
+            const isAssessoriaNode = item.isAssessoria ||
+                (item.tipoSetor && item.tipoSetor.toLowerCase().includes('assessoria')) ||
+                (item.tipoSetor && item.tipoSetor.toLowerCase().includes('gabinete')) ||
+                (item.nomeSetor && item.nomeSetor.toLowerCase().includes('assessor')) ||
+                (item.nomeCargo && item.nomeCargo.toLowerCase().includes('assessor'));
+
+            // Helper para detectar lado (Left/Right) - Baseado no _side que vem do layoutHelpers
+            const isLeftAssessoria = item._side === 'left' ||
+                (item.nomeSetor || '').toLowerCase().includes('consultoria') ||
+                (item.nomeCargo || '').toLowerCase().includes('consultoria') ||
+                (item.tipoSetor || '').toLowerCase().includes('consultoria');
+
+            // Lógica de Conexão Vertical para Assessorias de Nível Profundo (Reset Layout)
+            const parent = itemMap.get(item.parentId);
+            const parentLevel = parent ? parseInt(parent.hierarquia || parent.nivel || 0) : 0;
+            const isVerticalAssessoria = isAssessoriaNode && parentLevel >= 3;
+
+            let sourcePos, targetPos;
+            if (isVerticalAssessoria) {
+                sourcePos = Position.Bottom;
+                targetPos = Position.Top;
+            } else if (isLeftAssessoria) {
+                sourcePos = Position.Left;
+                targetPos = Position.Right;
+            } else if (isAssessoriaNode) {
+                sourcePos = Position.Right;
+                targetPos = Position.Left;
+            } else {
+                sourcePos = Position.Bottom;
+                targetPos = Position.Top;
+            }
+
+            return {
+                id: item.id,
+                type: 'setorNode',
+                position: item.position || { x: 0, y: 0 },
+                data: {
+                    id: item.id,
+                    nomeSetor: item.nomeSetor,
+                    tipoSetor: item.tipoSetor,
+                    nomeCargo: item.nomeCargo,
+                    ocupante: item.ocupante,
+                    simbolos: item.simbolos,
+                    simbolo: item.simbolo, // Para funcional agrupado
+                    quantidade: item.quantidade,
+                    hierarquia: isAssessoriaNode ? 0 : (item.hierarquia || 0),
+                    isAssessoria: isAssessoriaNode,
+                    cargos: item.cargos,
+                    style: {},
+                    customStyle: {},
+                    onStyleChange: onStyleChange,
+                    handleY: (() => {
+                        // Calcular altura dinâmica para centralizar o handle (Height / 2)
+                        const h = isAssessoriaNode ? 0 : parseInt(item.hierarquia || 0);
+                        const isPrefeito = item.tipoSetor === 'Prefeito' || item.id === 'prefeito' || (item.nomeCargo && item.nomeCargo.toLowerCase().includes('prefeito'));
+
+                        if (h === 1 || isPrefeito) return 55; // 110/2
+                        if (h === 2) return 50; // 100/2
+                        if (h === 3) return 45; // 90/2
+                        return 40; // 80/2 (Nível 4+ e Assessorias)
+                    })(),
+                    parentId: item.parentId
+                },
+                sourcePosition: sourcePos,
+                targetPosition: targetPos,
+                isAssessoria: isAssessoriaNode,
+                _isLeft: isLeftAssessoria,
+                _isNested: item._isNested // Passar flag de nested
+            }
+        });
+
+        // 5. Atualizar Estado
+        setNodes(newNodes);
+        // IMPORTANTE: Precisamos Recriar as Edges no Reset, pois os Handles mudaram!
+        // Antes estávamos mantendo initialEdges. Isso estava errado para mudanças de tipo.
+        // Vamos recriar edges baseado nos itemsLayouted
+        const newEdges = [];
+        itemsLayouted.forEach(item => {
+            if (item.parentId) {
+                // Copiar lógica de Edge - Detecção robusta de assessoria
+                const hirarqNum = typeof item.hierarquia === 'string' ? parseFloat(item.hierarquia) : (item.hierarquia || 0);
+                const isAssessoriaNode = item.isAssessoria || hirarqNum === 0 ||
+                    (item.nomeSetor || '').toLowerCase().includes('assessoria') ||
+                    (item.tipoSetor || '').toLowerCase().includes('assessoria') ||
+                    (item.nomeCargo || '').toLowerCase().includes('assessor'); // Funcional
+
+                // Determinar lado baseado na posição X (persistida) ou _side (do layout)
+                const parent = itemMap.get(item.parentId);
+                const parentX = parent?.position?.x || 0;
+                const itemX = item.position?.x || 0;
+                const isLeftAssessoria = (isAssessoriaNode && itemX < parentX) || item._side === 'left';
+                const isRightAssessoria = isAssessoriaNode && itemX > parentX;
+
+                const parentLevel = parent ? parseFloat(parent.hierarquia || parent.nivel || 0) : 0;
+                const isVerticalAssessoria = isAssessoriaNode && parentLevel >= 3;
+
+                let sourceHandle, targetHandle, edgeType;
+
+                if (isVerticalAssessoria) {
+                    sourceHandle = 'bottom';
+                    targetHandle = 'top';
+                    edgeType = 'smoothstep';
+                } else if (item._isNested) {
+                    // FILHOS DE ASSESSORIA: Sempre vertical (L shape)
+                    sourceHandle = 'bottom';
+                    targetHandle = 'top';
+                    edgeType = 'smoothstep';
+                } else if (isLeftAssessoria) {
+                    sourceHandle = 'left-source';
+                    targetHandle = 'right-target';
+                    edgeType = 'straight';
+                } else if (isRightAssessoria || isAssessoriaNode) {
+                    // Assessoria à direita (ou assessoria genérica)
+                    sourceHandle = 'right';
+                    targetHandle = 'left';
+                    edgeType = 'straight';
+                } else {
+                    sourceHandle = 'bottom';
+                    targetHandle = 'top';
+                    edgeType = 'smoothstep';
+                }
+
+                newEdges.push({
+                    id: `e-${item.parentId}-${item.id}`,
+                    source: item.parentId,
+                    target: item.id,
+                    type: edgeType,
+                    sourceHandle: sourceHandle,
+                    targetHandle: targetHandle,
+                    pathOptions: { borderRadius: 0 },
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#9e9e9e' },
+                    style: { stroke: '#9e9e9e', strokeWidth: 2 }
+                });
+            }
+        });
+
+        setEdges(newEdges);
+        // 5.1 Centralizar viewport nos novos nós
+        setTimeout(() => {
+            fitView({ padding: 0.2, duration: 300 });
+        }, 50);
+
+        // 6. Salvar layout limpo
+        setTimeout(() => {
+            if (onSavePositions) {
+                const resetDataItems = newNodes.map(node => {
+                    const base = {
+                        id: node.id,
+                        position: node.position,
+                        style: {},
+                        hierarquia: node.data.hierarquia,
+                        isAssessoria: node.data.isAssessoria,
+                        parentId: node.data.parentId // CRÍTICO: Preservar hierarquia no reset
+                    };
+                    if (node.data.nomeSetor) {
+                        return {
+                            ...base,
+                            nomeSetor: node.data.nomeSetor,
+                            tipoSetor: node.data.tipoSetor,
+                            cargos: node.data.cargos || []
+                        };
+                    }
+                    return {
+                        ...base,
+                        nomeCargo: node.data.nomeCargo,
+                        ocupante: node.data.ocupante,
+                        simbolos: node.data.simbolos || [],
+                        simbolo: node.data.simbolo,
+                        quantidade: node.data.quantidade
+                    };
+                });
+                console.log('[Reset] Salvando layout padrão recalculado');
+                onSavePositions(resetDataItems);
+            }
+        }, 150);
+
+    }, [organogramaData, onSavePositions, onStyleChange, initialEdges, setNodes, setEdges]);
+
+    // Função para cores do MiniMap baseado na hierarquia
+    const nodeColor = useCallback((node) => {
+        const hierarquia = node.data.hierarquia;
+        return HIERARCHY_COLORS[hierarquia] || '#e2e8f0';
+    }, []);
+
+    // Click no pane (não faz mais nada especial)
+    // Click no pane (fundo): Fecha qualquer editor aberto
+    const handlePaneClick = useCallback(() => {
+        setActiveEditorId(null);
+    }, []);
+
+    const selectionKeyCode = 'Shift';
+
+    return (
+        <div className="organograma-canvas">
+            {/* Botões fixos permanentes - sempre visíveis quando editável */}
+            {editable && (
+                <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    zIndex: 1000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    gap: '6px'
+                }}>
+                    <button
+                        onClick={handleResetLayout}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#f1f5f9',
+                            color: '#64748b',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        🔄 Resetar Layout
+                    </button>
+                    {/* Caixa de Instrução Discreta */}
+                    <div className="reset-instruction-box">
+                        <span className="info-icon">💡</span>
+                        <p>Segure "Shift + Clique e Arraste" para mover vários nós.</p>
+                    </div>
+                </div>
+            )}
+
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeDragStop={handleNodeDragStop}
+                onPaneClick={handlePaneClick}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                nodesDraggable={editable}
+                nodesConnectable={false}
+                elementsSelectable={editable}
+                fitView
+                attributionPosition="bottom-left"
+                minZoom={0.1}
+                maxZoom={2}
+                selectionOnDrag={true}
+                selectionKeyCode={selectionKeyCode}
+                multiSelectionKeyCode={selectionKeyCode}
+                panOnDrag={true} // Permitir arrastar com botão esquerdo (Shift alterna para seleção)
+                panOnScroll={true}
+            >
+                <Background color="#aaa" gap={16} />
+                <Controls />
+                <MiniMap
+                    nodeColor={nodeColor}
+                    nodeStrokeWidth={3}
+                    zoomable
+                    pannable
+                />
+            </ReactFlow>
+        </div>
+    );
+};
+
+// Wrapper com Provider para permitir uso de useReactFlow
+const OrganogramaCanvas = (props) => (
+    <ReactFlowProvider>
+        <OrganogramaCanvasInner {...props} />
+    </ReactFlowProvider>
+);
+
+export default OrganogramaCanvas;

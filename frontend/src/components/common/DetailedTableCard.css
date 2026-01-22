@@ -1,0 +1,180 @@
+.detailed-table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.detailed-table-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.detailed-table-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.detailed-table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.detailed-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.detailed-table thead {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    z-index: 10;
+}
+
+.detailed-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detailed-table thead th.detailed-table-qty {
+    text-align: center;
+    width: 80px;
+}
+
+.detailed-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.detailed-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.detailed-table tbody tr.first-row {
+    border-top: 2px solid #e5e7eb;
+}
+
+.detailed-table tbody tr.first-row:first-child {
+    border-top: none;
+}
+
+.detailed-table td {
+    padding: 12px 16px;
+    vertical-align: top;
+}
+
+.orgao-cell {
+    background-color: #f8fafc;
+    border-right: 2px solid #e5e7eb;
+    font-weight: 500;
+    color: #1e293b;
+    width: 38%;
+    min-width: 180px;
+}
+
+.orgao-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+.orgao-total {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.item-cell {
+    color: #475569;
+    line-height: 1.5;
+}
+
+.item-cell.empty-cell {
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+}
+
+.qty-cell {
+    text-align: center;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+}
+
+.detailed-table-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+.detailed-table-empty p {
+    margin: 0;
+}
+
+/* Scrollbar customizada */
+.detailed-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.detailed-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.detailed-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.detailed-table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .detailed-table {
+        font-size: 13px;
+    }
+
+    .detailed-table thead th {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .detailed-table td {
+        padding: 10px 12px;
+    }
+
+    .orgao-name {
+        font-size: 13px;
+    }
+
+    .orgao-total {
+        font-size: 11px;
+    }
+}

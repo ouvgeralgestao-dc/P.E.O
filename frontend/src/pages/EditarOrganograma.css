@@ -1,0 +1,146 @@
+/* Estilos da Página de Edição de Organograma */
+
+.editar-organograma {
+    min-height: calc(100vh - 80px);
+    padding: 32px 0 80px 0;
+    /* Padding inferior para não colar no footer */
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.editar-organograma .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.editar-organograma .page-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.editar-organograma .page-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.5px;
+}
+
+/* Botão Voltar Premium */
+.editar-organograma .page-header button {
+    background: white;
+    color: #1e3a8a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.editar-organograma .page-header button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    background: #f8fafc;
+}
+
+.editar-organograma .page-header button:active {
+    transform: translateY(0);
+}
+
+.editar-organograma .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    color: white;
+}
+
+.editar-organograma .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.editar-organograma .error-message {
+    color: #e53e3e;
+    font-size: 16px;
+    margin-bottom: 24px;
+}
+
+/* Split Layout - Form + Preview */
+.editar-organograma .container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 40px;
+    /* Padding lateral generoso */
+}
+
+.editar-organograma .split-layout {
+    display: grid;
+    grid-template-columns: 1fr 42%;
+    /* Layout balanceado */
+    gap: 40px;
+    /* Gap grande para separar visualmente */
+    align-items: start;
+}
+
+.editar-organograma .form-panel {
+    min-width: 0;
+}
+
+.editar-organograma .preview-panel {
+    min-width: 0;
+    height: 650px;
+    max-height: calc(100vh - 280px);
+    min-height: 500px;
+    position: sticky;
+    top: 100px;
+    z-index: 101;
+}
+
+/* Responsividade ajustada */
+@media (max-width: 1440px) {
+    .editar-organograma .container {
+        padding: 0 32px;
+    }
+
+    .editar-organograma .split-layout {
+        grid-template-columns: 55% 45%;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .editar-organograma .container {
+        padding: 0 24px;
+    }
+
+    .editar-organograma .split-layout {
+        grid-template-columns: 1fr;
+        /* Stack vertical em telas médias/pequenas */
+        gap: 32px;
+    }
+
+    .editar-organograma .preview-panel {
+        position: static;
+        height: 600px;
+        width: 100%;
+    }
+}

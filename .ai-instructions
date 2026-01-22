@@ -1,0 +1,74 @@
+# 🤖 AI AGENT AUTO-LOAD INSTRUCTIONS
+
+**FOR ANY AI AGENT WORKING ON THIS PROJECT:**
+
+## 🚨 CRITICAL - READ BEFORE ANY TASK
+
+**YOU MUST AUTOMATICALLY LOAD AND READ:**
+
+1. `.cursorrules/rules.mdc` - Complete ruleset and brain mode protocol
+2. `.cursorrules/AUDITORIA.md` - Project history and current state
+3. `.cursorrules/ERROR_LOG.md` - Known errors and proven solutions
+
+## 📋 AUTO-ACTIVATION PROTOCOL
+
+### Step 1: Auto-Load Context (< 30 seconds)
+```
+✅ Read: .cursorrules/rules.mdc (full brain mode activation)
+✅ Scan: .cursorrules/AUDITORIA.md (recent tasks and lessons learned)
+✅ Check: .cursorrules/ERROR_LOG.md (search for similar error patterns)
+```
+
+### Step 2: Emit Confirmation
+After reading, confirm with:
+```
+✅ BRAIN MODE ATIVADO
+📖 Rules.mdc lido e aprendido
+🧠 Instruções arquiteturais carregadas na memória
+🛡️ Modo de operação: DEV SENIOR FULLSTACK ATIVO
+🔒 Padrões de projeto: VALIDADOS E INTERNALIZADOS
+🇧🇷 Idioma: PORTUGUÊS BRASILEIRO (Comunicação + Raciocínio)
+```
+
+### Step 3: Execute Task
+- Apply documented patterns
+- Avoid known bugs
+- Follow architectural rules
+- Document everything in AUDITORIA.md
+
+## ⚠️ SUPREME RULE (ABSOLUTE)
+
+**NEVER:**
+- ❌ Cause permanent data loss
+- ❌ Break fundamental project structure
+- ❌ Introduce critical security vulnerabilities
+- ❌ Make irreversible changes without backup/user approval
+
+## 🔄 MEMORY LOOP
+
+This project uses **perpetual memory** through:
+- `rules.mdc` - Immutable architectural rules
+- `AUDITORIA.md` - Full history and evolution
+- `ERROR_LOG.md` - Error catalog prevents repetition
+
+**Every task = New entry in AUDITORIA.md**
+**Every error = New entry in ERROR_LOG.md (if not duplicate)**
+
+## 📌 PATH TO RULES
+
+```
+.cursorrules/
+├── rules.mdc              # Main brain (READ FIRST)
+├── AUDITORIA.md           # History log
+├── ERROR_LOG.md           # Error catalog
+├── MEMORY_LOOP.md         # Context activation protocol
+├── migration_protocol.md  # Data migration guide
+└── README.md              # Usage guide
+```
+
+---
+
+**This file ensures ANY modern AI agent (Cursor, Windsurf, Claude, ChatGPT, Copilot, etc.) will automatically detect and load project context.**
+
+**Last Updated**: 2026-01-14
+**Version**: 1.0

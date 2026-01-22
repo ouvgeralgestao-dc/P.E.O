@@ -1,0 +1,41 @@
+
+import express from 'express';
+import cors from 'cors';
+import organogramasRoutes from './routes/organogramas.js';
+import orgaosRoutes from './routes/orgaos.js';
+import setoresRoutes from './routes/setores.js';
+import prefixosRoutes from './routes/prefixos.js';
+import errorHandler from './middleware/errorHandler.js';
+
+const app = express();
+const PORT = 6001; // Porta fixa - Backend conforme regra rules.mdc
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Rotas
+app.use('/api/organogramas', organogramasRoutes);
+app.use('/api/orgaos', orgaosRoutes);
+app.use('/api/setores', setoresRoutes);
+app.use('/api/prefixos', prefixosRoutes);
+
+// Rota de teste
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Servidor Organogramas PMDC rodando (TypeScript)',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Middleware de tratamento de erros (deve ser o último)
+app.use(errorHandler);
+
+// Iniciar servidor
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`💾 Armazenamento: SQLite (Migrado + TypeScript 2.0)`);
+});

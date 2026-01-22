@@ -1,0 +1,298 @@
+[
+    {
+        "id": "prefeito-municipal",
+        "nome": "Prefeito Municipal",
+        "categoria": "PODER_EXECUTIVO",
+        "ordem": 1,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "vice-prefeito-municipal",
+        "nome": "Vice-Prefeito Municipal",
+        "categoria": "PODER_EXECUTIVO",
+        "ordem": 2,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-governo",
+        "nome": "Secretaria de Governo",
+        "categoria": "SECRETARIA",
+        "ordem": 3,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "gabinete-prefeito",
+        "nome": "Gabinete do Prefeito",
+        "categoria": "PODER_EXECUTIVO",
+        "ordem": 4,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "subprefeitura-1-distrito",
+        "nome": "Subprefeitura do 1º Distrito",
+        "categoria": "SUBPREFEITURA",
+        "ordem": 5,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "subprefeitura-2-distrito",
+        "nome": "Subprefeitura do 2º Distrito",
+        "categoria": "SUBPREFEITURA",
+        "ordem": 6,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "subprefeitura-3-distrito",
+        "nome": "Subprefeitura do 3º Distrito",
+        "categoria": "SUBPREFEITURA",
+        "ordem": 7,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "subprefeitura-4-distrito",
+        "nome": "Subprefeitura do 4º Distrito",
+        "categoria": "SUBPREFEITURA",
+        "ordem": 8,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-articulacao-institucional",
+        "nome": "Secretaria Municipal de Articulação Institucional",
+        "categoria": "SECRETARIA",
+        "ordem": 9,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "procuradoria-geral",
+        "nome": "Procuradoria Geral do Município",
+        "categoria": "SECRETARIA",
+        "ordem": 10,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-comunicacao-social",
+        "nome": "Secretaria Municipal de Comunicação Social",
+        "categoria": "SECRETARIA",
+        "ordem": 11,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-controle-interno",
+        "nome": "Secretaria Municipal de Controle Interno",
+        "categoria": "SECRETARIA",
+        "ordem": 12,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-urbanismo-habitacao",
+        "nome": "Secretaria Municipal de Urbanismo e Habitação",
+        "categoria": "SECRETARIA",
+        "ordem": 13,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-administracao-orcamento-planejamento",
+        "nome": "Secretaria Municipal de Administração, Orçamento e Planejamento",
+        "categoria": "SECRETARIA",
+        "ordem": 14,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-fazenda",
+        "nome": "Secretaria Municipal de Fazenda",
+        "categoria": "SECRETARIA",
+        "ordem": 15,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-defesa-civil",
+        "nome": "Secretaria Municipal de Defesa Civil",
+        "categoria": "SECRETARIA",
+        "ordem": 16,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-transportes-servicos-publicos",
+        "nome": "Secretaria Municipal de Transportes e Serviços Públicos",
+        "categoria": "SECRETARIA",
+        "ordem": 17,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-obras-agricultura",
+        "nome": "Secretaria Municipal de Obras e Agricultura",
+        "categoria": "SECRETARIA",
+        "ordem": 18,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-meio-ambiente",
+        "nome": "Secretaria Municipal de Meio Ambiente",
+        "categoria": "SECRETARIA",
+        "ordem": 19,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-educacao",
+        "nome": "Secretaria Municipal de Educação",
+        "categoria": "SECRETARIA",
+        "ordem": 20,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-saude",
+        "nome": "Secretaria Municipal de Saúde",
+        "categoria": "SECRETARIA",
+        "ordem": 21,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-cultura-turismo",
+        "nome": "Secretaria Municipal de Cultura e Turismo",
+        "categoria": "SECRETARIA",
+        "ordem": 22,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-assistencia-social-direitos-humanos",
+        "nome": "Secretaria Municipal de Assistência Social e Direitos Humanos",
+        "categoria": "SECRETARIA",
+        "ordem": 23,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-seguranca-publica",
+        "nome": "Secretaria Municipal de Segurança Pública",
+        "categoria": "SECRETARIA",
+        "ordem": 24,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-esportes-lazer",
+        "nome": "Secretaria Municipal de Esportes e Lazer",
+        "categoria": "SECRETARIA",
+        "ordem": 25,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-ciencia-tecnologia",
+        "nome": "Secretaria Municipal de Ciência e Tecnologia",
+        "categoria": "SECRETARIA",
+        "ordem": 26,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-gestao-inclusao-mulher",
+        "nome": "Secretaria Municipal de Gestão, Inclusão e Mulher",
+        "categoria": "SECRETARIA",
+        "ordem": 27,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-trabalho-renda",
+        "nome": "Secretaria Municipal de Trabalho e Renda",
+        "categoria": "SECRETARIA",
+        "ordem": 28,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-desenvolvimento-economico",
+        "nome": "Secretaria Municipal de Desenvolvimento Econômico",
+        "categoria": "SECRETARIA",
+        "ordem": 29,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-transportes",
+        "nome": "Secretaria Municipal de Transportes",
+        "categoria": "SECRETARIA",
+        "ordem": 30,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sec-protecao-animal",
+        "nome": "Secretaria Municipal de Proteção Animal",
+        "categoria": "SECRETARIA",
+        "ordem": 31,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "sistema-ouvidoria",
+        "nome": "Sistema de Ouvidoria",
+        "categoria": "SECRETARIA",
+        "ordem": 32,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "ipmdc",
+        "nome": "IPMDC - Instituto de Previdência dos Servidores Públicos",
+        "categoria": "AUTARQUIA",
+        "ordem": 33,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "fundec",
+        "nome": "FUNDEC - Fundação de Apoio à Escola Técnica, Ciência, Tecnologia, Esporte, Lazer, Cultura e Políticas Sociais",
+        "categoria": "AUTARQUIA",
+        "ordem": 34,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "funlar",
+        "nome": "FUNLAR - Fundação Lar Escola Francisco de Paula",
+        "categoria": "AUTARQUIA",
+        "ordem": 35,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "caxias-serv",
+        "nome": "CAXIAS SERV - Empresa Municipal Prestadora de Serviços Gerais",
+        "categoria": "AUTARQUIA",
+        "ordem": 36,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    },
+    {
+        "id": "conselho-contribuintes",
+        "nome": "CONSELHO DE CONTRIBUINTES",
+        "categoria": "CONSELHO",
+        "ordem": 37,
+        "createdAt": "2026-01-08T12:00:00.000Z",
+        "updatedAt": "2026-01-08T12:00:00.000Z"
+    }
+]

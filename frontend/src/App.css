@@ -1,0 +1,57 @@
+/* ========================================
+   APP - Layout Global com Sidebar
+   ======================================== */
+
+.app {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+/* Layout Principal (ao lado da Sidebar) */
+.app-layout {
+    margin-left: var(--sidebar-width, 80px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Conteúdo Principal */
+.main-content {
+    flex: 1;
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    /* 80px = altura aproximada do footer */
+}
+
+/* Layout de Impressão (sem Sidebar/Footer) */
+.print-layout {
+    margin-left: 0;
+    flex: 1;
+}
+
+.print-content {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+}

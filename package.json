@@ -1,0 +1,16 @@
+{
+  "name": "criador_organograma_2",
+  "version": "1.0.0",
+  "description": "Sistema profissional para criação, visualização e exportação de organogramas da Prefeitura Municipal de Duque de Caxias.",
+  "main": "start-server.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx start-server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "geral": {
+    "positions": [
+      {
+        "id": "prefeito",
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "gabinete",
+        "position": {
+          "x": 351.97116637717494,
+          "y": 5.913499131524759
+        }
+      },
+      {
+        "id": "subprefeitura-1",
+        "position": {
+          "x": -495,
+          "y": 200
+        }
+      },
+      {
+        "id": "subprefeitura-2",
+        "position": {
+          "x": -165,
+          "y": 200
+        }
+      },
+      {
+        "id": "subprefeitura-3",
+        "position": {
+          "x": 165,
+          "y": 200
+        }
+      },
+      {
+        "id": "subprefeitura-4",
+        "position": {
+          "x": 495,
+          "y": 200
+        }
+      },
+      {
+        "id": "secgoverno-c57ab91c-3bb3-4d14-821b-63b01936c174",
+        "position": {
+          "x": 0,
+          "y": 400
+        }
+      }
+    ],
+    "updatedAt": "2026-01-08T17:26:07.605Z"
+  },
+  "secretaria_municipal_de_articulacao_institucional": {
+    "positions": [
+      {
+        "id": "4e3e3867-39e7-47d3-8eec-5954844202c0",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "customStyle": {
+          "backgroundColor": "#9a3737"
+        }
+      },
+      {
+        "id": "b3ea680c-595b-4300-93b5-a88700ca4c2f",
+        "position": {
+          "x": -140,
+          "y": 180
+        },
+        "customStyle": {}
+      },
+      {
+        "id": "de4d92ae-74ed-4331-b60a-2f100ac07315",
+        "position": {
+          "x": -140,
+          "y": 360
+        },
+        "customStyle": {}
+      },
+      {
+        "id": "e99629c7-b4d9-44c2-8dbc-c99a3c8a8a3d",
+        "position": {
+          "x": 190,
+          "y": 180
+        },
+        "customStyle": {}
+      },
+      {
+        "id": "08cf0015-14d9-4f41-97cf-523f1a68d5fc",
+        "position": {
+          "x": 190,
+          "y": 360
+        },
+        "customStyle": {}
+      }
+    ],
+    "updatedAt": "2026-01-09T04:04:10.001Z"
+  },
+  "secretaria_municipal_de_governo": {
+    "positions": [
+      {
+        "id": "848bb86b-023e-4620-aea8-2fc3dd050d0e",
+        "position": {
+          "x": 0,
+          "y": 720
+        },
+        "customStyle": {
+          "backgroundColor": "#4b8cb4"
+        }
+      }
+    ],
+    "updatedAt": "2026-01-09T04:37:01.981Z"
+  }
+}

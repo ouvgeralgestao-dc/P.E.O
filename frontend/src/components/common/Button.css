@@ -1,0 +1,173 @@
+/**
+ * Componente Button - Redesign com Design System
+ * Mantém todas as variantes e funcionalidades existentes
+ */
+
+.btn {
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+
+    /* Espaçamento */
+    padding: var(--spacing-3) var(--spacing-6);
+
+    /* Tipografia */
+    font-family: var(--font-family-primary);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-normal);
+
+    /* Bordas */
+    border: none;
+    border-radius: var(--border-radius-md);
+
+    /* Transição */
+    transition: var(--transition-all);
+    cursor: pointer;
+
+    /* Acessibilidade */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:focus-visible {
+    outline: 3px solid var(--color-primary-500);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15),
+        0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ========================================
+   VARIANTES
+   ======================================== */
+
+/* Primary - Azul Marinho */
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary-700) 0%, var(--color-primary-500) 100%);
+    color: var(--color-text-inverse);
+    box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-primary-800) 0%, var(--color-primary-600) 100%);
+    box-shadow: var(--shadow-primary);
+}
+
+/* Secondary - Cinza */
+.btn-secondary {
+    background: var(--color-gray-100);
+    color: var(--color-text-primary);
+    border: var(--border-width-thin) solid var(--border-color-medium);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--color-gray-200);
+    border-color: var(--border-color-dark);
+}
+
+/* Success - Verde */
+.btn-success {
+    background: linear-gradient(135deg, var(--color-success-600) 0%, var(--color-success-400) 100%);
+    color: var(--color-text-inverse);
+    box-shadow: var(--shadow-success);
+}
+
+.btn-success:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-success-700) 0%, var(--color-success-500) 100%);
+}
+
+/* Danger - Vermelho */
+.btn-danger {
+    background: linear-gradient(135deg, var(--color-danger-600) 0%, var(--color-danger-500) 100%);
+    color: var(--color-text-inverse);
+    box-shadow: var(--shadow-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-danger-700) 0%, var(--color-danger-600) 100%);
+}
+
+/* Outline - Borda */
+.btn-outline {
+    background: transparent;
+    border: var(--border-width-medium) solid var(--color-primary-600);
+    color: var(--color-primary-600);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: var(--color-primary-600);
+    color: var(--color-text-inverse);
+}
+
+/* Ghost - Transparente */
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text-primary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: var(--color-gray-100);
+}
+
+/* ========================================
+   TAMANHOS
+   ======================================== */
+
+.btn-sm {
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+    padding: var(--spacing-4) var(--spacing-8);
+    font-size: var(--font-size-lg);
+}
+
+/* ========================================
+   MODIFICADORES
+   ======================================== */
+
+.btn-full-width {
+    width: 100%;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.25em;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 767px) {
+    .btn {
+        padding: var(--spacing-3) var(--spacing-5);
+        font-size: var(--font-size-sm);
+    }
+
+    .btn-lg {
+        padding: var(--spacing-3) var(--spacing-6);
+        font-size: var(--font-size-base);
+    }
+}

@@ -1,0 +1,120 @@
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(30, 58, 138, 0.9);
+    /* Azul profundo com transparência */
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.success-content {
+    background: white;
+    padding: 60px 80px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transform: scale(0.9);
+    animation: contentPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.check-icon-wrapper {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 24px;
+}
+
+.success-message {
+    color: #1e3a8a;
+    font-size: 32px;
+    font-weight: 800;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+/* Checkmark Animation */
+/* Checkmark Animation */
+.checkmark {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #fff;
+    /* Checkmark branca */
+    stroke-miterlimit: 10;
+    margin: 0 auto;
+    box-shadow: inset 0px 0px 0px #4bb543;
+    /* Inicia verde e faz o efeito de pulso */
+    animation: scale .3s ease-in-out .9s both;
+    background-color: #4bb543;
+    /* Fundo VERDE desde o início */
+}
+
+.checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 2;
+    stroke-miterlimit: 10;
+    stroke: #4bb543;
+    /* Borda verde se funde com bg */
+    fill: none;
+    /* Círculo já aparece preenchido pelo background do container .checkmark */
+    display: none;
+    /* Removemos a animação de borda pois o fundo já é verde */
+}
+
+.checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke: #fff;
+    /* Checkmark Branca */
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+    /* Atraso menor para aparecer logo */
+}
+
+@keyframes stroke {
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes scale {
+
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes contentPop {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

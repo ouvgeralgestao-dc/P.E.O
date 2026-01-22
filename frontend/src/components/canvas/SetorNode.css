@@ -1,0 +1,234 @@
+/* Estilos do Nó Customizado - Tamanhos FIXOS conforme spec do Google Gemini */
+
+.setor-node {
+    /* Tamanhos agora são dinâmicos via inline-style (Meta 11) */
+    height: auto;
+    /* Permite crescer se tiver badges */
+    padding: 12px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    /* Sombra mais leve */
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Centralizar verticalmente */
+    text-align: center;
+    /* Centralizar horizontalmente */
+    box-sizing: border-box;
+    /* Garantir que width inclua padding */
+}
+
+/* ==========================================================================
+   VARIAÇÕES DE ESTILO (NESTED ASSESSORIA)
+   ========================================================================== */
+.setor-node.nested-assessoria {
+    width: 200px !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    gap: 8px;
+    /* Resetar estilos verticais do padrão */
+}
+
+.setor-node.nested-assessoria .node-header {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    flex: 0 0 auto;
+    width: 5px;
+    /* Apenas a barra de cor */
+    border-radius: 4px;
+}
+
+.setor-node.nested-assessoria .node-content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    flex: 1;
+    text-align: left;
+}
+
+.setor-node.nested-assessoria .node-title {
+    font-size: 13px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+    white-space: normal;
+}
+
+.setor-node.nested-assessoria .node-subtitle {
+    font-size: 11px;
+}
+
+/* Esconder elementos desnecessários no modo flat */
+.setor-node.nested-assessoria .node-badges,
+.setor-node.nested-assessoria .avatar-container {
+    display: none;
+}
+
+/* Hover effect */
+.setor-node:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.node-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.node-tipo {
+    display: none;
+    /* Ocultar tipo para ficar igual à imagem de referência (limpo) */
+}
+
+.node-nome {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: inherit;
+    line-height: 1.2;
+    width: 100%;
+    /* Limitar texto a 2 linhas se necessário */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    /* Compatibilidade padrão */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.node-ocupante {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    font-style: italic;
+    color: inherit;
+    margin-top: 2px;
+    opacity: 0.95;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.node-hierarquia {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.node-cargos,
+.node-simbolos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+    /* Pequeno espaço após o nome */
+}
+
+.cargo-badge,
+.simbolo-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.5);
+    /* Fundo semi-transparente para combinar com qualquer cor */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Handles (pontos de conexão) - Invisíveis para manter consistência visual com ReactFlow lines */
+.node-handle {
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    border: none;
+}
+
+/* Botão de Edição - Base */
+.node-edit-button {
+    position: absolute;
+    top: -45px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 38px;
+    height: 38px;
+    background: white;
+    border: 3px solid #667eea;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    /* Z-index extremamente alto para sobrepor qualquer overlay */
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Mostrar botão ao passar o mouse no nó */
+.setor-node:hover .node-edit-button {
+    opacity: 1;
+}
+
+/* Mostrar botão quando o nó está selecionado */
+.setor-node.selected .node-edit-button {
+    opacity: 1;
+}
+
+/* Efeito hover no próprio botão */
+.node-edit-button:hover {
+    background: white;
+    transform: scale(1.15);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Efeito active (clicando) */
+.node-edit-button:active {
+    transform: scale(1.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Setor de Referência (Cross-Filtering) */
+.node-setor-ref {
+    font-size: 11px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    margin-bottom: 2px;
+    width: fit-content;
+    max-width: 95%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

@@ -1,0 +1,195 @@
+/**
+ * Design Tokens - Variáveis CSS Globais
+ * Baseado em: design-tokens.md
+ * Implementação: FASE B do Redesign
+ */
+
+:root {
+    /* ========================================
+     CORES PRIMÁRIAS (Azul Marinho)
+     ======================================== */
+    --color-primary-900: #0f172a;
+    --color-primary-800: #1e293b;
+    --color-primary-700: #1e3a8a;
+    --color-primary-600: #2563eb;
+    --color-primary-500: #3b82f6;
+    --color-primary-400: #60a5fa;
+    --color-primary-300: #93c5fd;
+    --color-primary-200: #bfdbfe;
+    --color-primary-100: #dbeafe;
+
+    /* ========================================
+     CORES SECUNDÁRIAS (Verde - Sucesso)
+     ======================================== */
+    --color-success-700: #047857;
+    --color-success-600: #059669;
+    --color-success-500: #10b981;
+    --color-success-400: #34d399;
+    --color-success-100: #d1fae5;
+
+    /* ========================================
+     CORES DE ALERTA
+     ======================================== */
+    --color-warning-700: #b45309;
+    --color-warning-600: #d97706;
+    --color-warning-500: #f59e0b;
+    --color-warning-100: #fef3c7;
+
+    --color-danger-700: #b91c1c;
+    --color-danger-600: #dc2626;
+    --color-danger-500: #ef4444;
+    --color-danger-100: #fee2e2;
+
+    --color-info-500: #06b6d4;
+    --color-info-100: #cffafe;
+
+    /* ========================================
+     CORES NEUTRAS (Cinza)
+     ======================================== */
+    --color-gray-900: #111827;
+    --color-gray-800: #1f2937;
+    --color-gray-700: #374151;
+    --color-gray-600: #4b5563;
+    --color-gray-500: #6b7280;
+    --color-gray-400: #9ca3af;
+    --color-gray-300: #d1d5db;
+    --color-gray-200: #e5e7eb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-50: #f9fafb;
+
+    /* ========================================
+     CORES DE FUNDO
+     ======================================== */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f9fafb;
+    --color-bg-tertiary: #f3f4f6;
+    --color-bg-dark: #1e3a8a;
+
+    /* ========================================
+     CORES DE TEXTO
+     ======================================== */
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    --color-text-tertiary: #9ca3af;
+    --color-text-inverse: #ffffff;
+    --color-text-link: #2563eb;
+
+    /* ========================================
+     TIPOGRAFIA
+     ======================================== */
+    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    --font-family-mono: 'Fira Code', 'Courier New', monospace;
+
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+    --line-height-loose: 2;
+
+    /* ========================================
+     ESPAÇAMENTOS (Sistema 8px)
+     ======================================== */
+    --spacing-0: 0;
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-5: 1.25rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+    --spacing-20: 5rem;
+    --spacing-24: 6rem;
+
+    /* ========================================
+     LARGURAS DE CONTAINER
+     ======================================== */
+    --container-sm: 640px;
+    --container-md: 768px;
+    --container-lg: 1024px;
+    --container-xl: 1280px;
+    --container-2xl: 1600px;
+
+    /* ========================================
+     BORDAS
+     ======================================== */
+    --border-radius-none: 0;
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-xl: 1rem;
+    --border-radius-2xl: 1.5rem;
+    --border-radius-full: 9999px;
+
+    --border-width-thin: 1px;
+    --border-width-medium: 2px;
+    --border-width-thick: 4px;
+
+    --border-color-light: #e5e7eb;
+    --border-color-medium: #d1d5db;
+    --border-color-dark: #9ca3af;
+
+    /* ========================================
+     SOMBRAS
+     ======================================== */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+    --shadow-primary: 0 4px 14px 0 rgba(37, 99, 235, 0.2);
+    --shadow-success: 0 4px 14px 0 rgba(16, 185, 129, 0.2);
+    --shadow-danger: 0 4px 14px 0 rgba(239, 68, 68, 0.2);
+
+    /* ========================================
+     TRANSIÇÕES E ANIMAÇÕES
+     ======================================== */
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-slower: 700ms;
+
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --transition-all: all var(--duration-normal) var(--ease-in-out);
+    --transition-colors: color var(--duration-normal) var(--ease-in-out),
+        background-color var(--duration-normal) var(--ease-in-out),
+        border-color var(--duration-normal) var(--ease-in-out);
+    --transition-transform: transform var(--duration-normal) var(--ease-out);
+    --transition-opacity: opacity var(--duration-normal) var(--ease-in-out);
+
+    /* ========================================
+     Z-INDEX SCALE
+     ======================================== */
+    --z-index-dropdown: 1000;
+    --z-index-sticky: 1020;
+    --z-index-fixed: 1030;
+    --z-index-modal-backdrop: 1040;
+    --z-index-modal: 1050;
+    --z-index-popover: 1060;
+    --z-index-tooltip: 1070;
+}

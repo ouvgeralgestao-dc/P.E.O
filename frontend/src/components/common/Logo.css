@@ -1,0 +1,126 @@
+.logo-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    position: relative;
+}
+
+.logo {
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    background: transparent !important;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* Texto P.E.O sobreposto na logo */
+.logo-text {
+    position: absolute;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    pointer-events: none;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo-text-white {
+    color: white;
+}
+
+.logo-text-blue {
+    color: #1e40af;
+}
+
+/* Tamanhos do texto P.E.O */
+.logo-text-small {
+    font-size: 10px;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo-text-medium {
+    font-size: 13px;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo-text-large {
+    font-size: 24px;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.logo-text-xlarge {
+    font-size: 30px;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Variante branca - para fundos escuros/azuis (header) */
+.logo-white {
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+    opacity: 1;
+}
+
+/* Variante azul - para fundos claros/brancos (conteúdo) */
+.logo-blue {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+    opacity: 1;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* Tamanhos específicos */
+.logo-small {
+    width: 48px;
+    height: 48px;
+}
+
+.logo-medium {
+    width: 64px;
+    height: 64px;
+}
+
+.logo-large {
+    width: 128px;
+    height: 128px;
+}
+
+.logo-xlarge {
+    width: 160px;
+    height: 160px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .logo-large {
+        width: 96px;
+        height: 96px;
+    }
+
+    .logo-xlarge {
+        width: 120px;
+        height: 120px;
+    }
+
+    .logo-text-large {
+        font-size: 18px;
+        bottom: 10px;
+    }
+
+    .logo-text-xlarge {
+        font-size: 22px;
+        bottom: 12px;
+    }
+}

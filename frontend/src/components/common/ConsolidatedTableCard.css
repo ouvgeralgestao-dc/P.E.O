@@ -1,0 +1,230 @@
+.consolidated-table-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    grid-column: 1 / -1;
+    /* Ocupar toda a largura do grid */
+}
+
+.consolidated-table-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.consolidated-table-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.consolidated-table-container {
+    max-height: 600px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.consolidated-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.consolidated-table thead {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    z-index: 10;
+}
+
+.consolidated-table thead th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.consolidated-table thead th.col-orgao {
+    width: 30%;
+}
+
+.consolidated-table thead th.col-prefixo {
+    width: 25%;
+}
+
+.consolidated-table thead th.col-simbolos {
+    width: 45%;
+}
+
+.consolidated-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.consolidated-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.consolidated-table tbody tr.first-row {
+    border-top: 2px solid #e5e7eb;
+}
+
+.consolidated-table tbody tr.first-row:first-child {
+    border-top: none;
+}
+
+.consolidated-table td {
+    padding: 14px 16px;
+    vertical-align: top;
+}
+
+.orgao-cell {
+    background-color: #f8fafc;
+    border-right: 2px solid #e5e7eb;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.orgao-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.orgao-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.stat-badge.cargos {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.stat-badge.simbolos {
+    background-color: #fce7f3;
+    color: #9f1239;
+}
+
+.prefixo-cell {
+    color: #475569;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.prefixo-cell.empty-cell {
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+}
+
+.simbolos-cell {
+    padding: 10px 16px;
+}
+
+.simbolos-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.simbolo-badge {
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.simbolo-badge strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.consolidated-table-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+.consolidated-table-empty p {
+    margin: 0;
+}
+
+/* Scrollbar customizada */
+.consolidated-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.consolidated-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.consolidated-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.consolidated-table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .consolidated-table {
+        font-size: 13px;
+    }
+
+    .consolidated-table thead th {
+        padding: 12px 14px;
+        font-size: 12px;
+    }
+
+    .consolidated-table td {
+        padding: 12px 14px;
+    }
+
+    .orgao-name {
+        font-size: 14px;
+    }
+
+    .stat-badge {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    .simbolo-badge {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+}

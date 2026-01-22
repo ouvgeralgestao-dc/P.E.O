@@ -1,0 +1,10 @@
+{
+  "id": "secretaria_municipal_de_articulacao_institucional",
+  "nome": "Secretaria Municipal de Articulação Institucional",
+  "auth": {
+    "salt": "28dd926ed68f7f961f3986b9d8a9bb56",
+    "hash": "7a45abdd8fa8b086bf88a71f13d4e1b2ee70535f7d9ab45186910d970e93bc95992e8b9060b45cbc432d25ca4a1cc9d7048d5e7f1b7071be36ff457835263f5c"
+  },
+  "updatedAt": "2026-01-09T17:04:29.106Z",
+  "createdAt": "2026-01-09T02:03:20.368Z"
+}

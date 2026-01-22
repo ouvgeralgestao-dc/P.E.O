@@ -1,0 +1,30 @@
+{
+    "name": "organograma-pmdc-frontend",
+    "version": "1.0.0",
+    "description": "Frontend para Gerador de Organogramas PMDC",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "axios": "^1.6.2",
+        "file-saver": "^2.0.5",
+        "html2canvas": "^1.4.1",
+        "jspdf": "^4.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.20.0",
+        "reactflow": "^11.11.4",
+        "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "@types/node": "^25.0.8",
+        "@types/react": "^18.3.27",
+        "@types/react-dom": "^18.3.7",
+        "@vitejs/plugin-react": "^4.2.1",
+        "typescript": "^5.9.3",
+        "vite": "^5.0.8"
+    }
+}

@@ -1,0 +1,71 @@
+/* TabelaQuantidades - Estilos Simplificados */
+.tabela-quantidades-container {
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.tabela-simples {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabela-simples thead th {
+    text-align: left;
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tabela-simples tbody td {
+    padding: 8px 4px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+}
+
+.tabela-simples tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.font-bold {
+    font-weight: 600;
+}
+
+.cargo-nome-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot-indicator {
+    width: 6px;
+    height: 6px;
+    background-color: #3b82f6;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tabela-simples tr:hover .dot-indicator {
+    background-color: #6366f1;
+}
+
+/* Custom Scrollbar */
+.tabela-quantidades-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tabela-quantidades-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tabela-quantidades-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 3px;
+}

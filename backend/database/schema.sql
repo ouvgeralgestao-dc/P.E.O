@@ -1,0 +1,99 @@
+-- TABELA 01: ÓRGÃOS (Entidade Principal)
+CREATE TABLE IF NOT EXISTS orgaos (
+    id TEXT PRIMARY KEY,           -- Slug único (ex: 'secretaria_de_governo')
+    nome TEXT NOT NULL,
+    categoria TEXT DEFAULT 'OUTROS', -- Secretaria, Subprefeitura, etc
+    ordem INTEGER DEFAULT 999,      -- Ordem de exibição
+    auth_hash TEXT,                -- Hash da senha (se houver)
+    auth_salt TEXT,                -- Salt da senha
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- TABELA 02: ORGANOGRAMAS_ESTRUTURAIS (1:1 com Órgãos)
+CREATE TABLE IF NOT EXISTS organogramas_estruturais (
+    orgao_id TEXT PRIMARY KEY REFERENCES orgaos(id) ON DELETE CASCADE,
+    tamanho_folha TEXT DEFAULT 'A4',
+    updated_at DATETIME
+);
+
+-- TABELA 03: SETORES (Nós da árvore estrutural)
+CREATE TABLE IF NOT EXISTS setores (
+    id TEXT PRIMARY KEY,           -- UUID
+    orgao_id TEXT REFERENCES orgaos(id) ON DELETE CASCADE,
+    nome TEXT NOT NULL,
+    tipo TEXT,                     -- Secretaria, Diretoria, etc.
+    hierarquia TEXT,               -- "1", "1.1", "2"
+    parent_id TEXT REFERENCES setores(id) ON DELETE CASCADE, -- Auto-referência para árvore
+    is_assessoria BOOLEAN DEFAULT 0,
+    ordem INTEGER,                 -- Para manter ordem visual
+    style_json TEXT,               -- Configurações visuais {color, background...}
+    position_json TEXT,            -- Coordenadas {x, y}
+    cargos_json TEXT               -- Array simples de cargos [{tipo: 'DAS-1', qtd: 1}]
+);
+
+-- INSERIR ÍNDICE PARA BUSCA RÁPIDA DE SETORES POR ÓRGÃO
+CREATE INDEX IF NOT EXISTS idx_setores_orgao ON setores(orgao_id);
+
+-- TABELA 04: DIAGRAMAS_FUNCIONAIS (1:N com Órgãos - permite histórico)
+CREATE TABLE IF NOT EXISTS diagramas_funcionais (
+    id TEXT PRIMARY KEY,
+    orgao_id TEXT REFERENCES orgaos(id) ON DELETE CASCADE,
+    nome TEXT,                     -- Opcional (ex: 'Versão 2026')
+    tamanho_folha TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME
+);
+
+-- TABELA 05: CARGOS_FUNCIONAIS (Nós da árvore funcional)
+CREATE TABLE IF NOT EXISTS cargos_funcionais (
+    id TEXT PRIMARY KEY,
+    diagrama_id TEXT REFERENCES diagramas_funcionais(id) ON DELETE CASCADE,
+    nome_cargo TEXT NOT NULL,
+    ocupante TEXT,                 -- Nome da pessoa
+    hierarquia TEXT,
+    parent_id TEXT,                -- ID do cargo pai (neste mesmo diagrama)
+    is_assessoria BOOLEAN DEFAULT 0,
+    style_json TEXT,
+    position_json TEXT,
+    simbolos_json TEXT,            -- Array [{tipo: 'DAS-S', qtd: 1}]
+    setor_ref TEXT                 -- Referência ao setor estrutural (ID do setor)
+);
+
+-- INSERIR ÍNDICE PARA BUSCA RÁPIDA DE CARGOS POR DIAGRAMA
+CREATE INDEX IF NOT EXISTS idx_cargos_diagrama ON cargos_funcionais(diagrama_id);
+
+-- TABELA 06: ORGANOGRAMAS_GERAIS (Estrutura consolidada Prefeito/Gabinete/Subprefeituras/Secretarias)
+CREATE TABLE IF NOT EXISTS organogramas_gerais (
+    tipo TEXT PRIMARY KEY,          -- 'estrutural' ou 'funcional'
+    data_json TEXT NOT NULL,        -- JSON blob com estrutura completa
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- TABELA 07: OCUPANTES_GERAIS (Mapeamento cargo_id -> nome do ocupante)
+CREATE TABLE IF NOT EXISTS ocupantes_gerais (
+    cargo_id TEXT PRIMARY KEY,
+    nome_ocupante TEXT NOT NULL
+);
+
+-- TABELA 08: LAYOUT_PERSONALIZADO (Posições customizadas por nó)
+CREATE TABLE IF NOT EXISTS layout_personalizado (
+    orgao_id TEXT NOT NULL,          -- 'geral' ou orgao_id específico
+    node_id TEXT NOT NULL,           -- ID do nó (setor ou cargo)
+    x REAL NOT NULL,                 -- Coordenada X
+    y REAL NOT NULL,                 -- Coordenada Y
+    custom_style_json TEXT,          -- Estilos customizados {backgroundColor, etc}
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (orgao_id, node_id)
+);
+
+-- TABELA 09: TIPOS_SETOR (Dicionário de nomes de setor por hierarquia)
+CREATE TABLE IF NOT EXISTS tipos_setor (
+    id TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    hierarquias TEXT NOT NULL,      -- Lista separada por vírgula (ex: "4,5,6,7,8,9,10")
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tipos_setor_nome ON tipos_setor(nome);

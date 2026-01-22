@@ -1,0 +1,10 @@
+{
+  "id": "secretaria_municipal_de_controle_interno",
+  "nome": "Secretaria Municipal de Controle Interno",
+  "auth": {
+    "salt": "005886a8495b285f6d4e626aba21989b",
+    "hash": "946084ff954c29bb981c45b1cdf3507d0ad2c264f2da5ce9357edfed0fdd925f30e9c81bc40387924a096b507e450e6d081dd6ec05b2356f6c294898e3b44cf0"
+  },
+  "updatedAt": "2026-01-09T17:02:13.498Z",
+  "createdAt": "2026-01-09T00:57:10.764Z"
+}

@@ -1,0 +1,481 @@
+{
+  "orgao": "Prefeitura Municipal de Duque de Caxias",
+  "tipo": "geral",
+  "dataGeracao": "2026-01-09T19:27:48.672Z",
+  "setores": [
+    {
+      "tipoSetor": "Secretaria",
+      "nomeSetor": "Secretaria de Governo",
+      "hierarquia": "1",
+      "isAssessoria": false,
+      "parentId": null,
+      "cargos": [
+        {
+          "tipo": "DAS-S",
+          "quantidade": 1
+        }
+      ],
+      "id": "c57ab91c-3bb3-4d14-821b-63b01936c174",
+      "children": [],
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {}
+    },
+    {
+      "tipoSetor": "Secretaria",
+      "nomeSetor": "Secretaria de Comunicação Social, Relações Públicas, Trabalho, Emprego e Renda",
+      "hierarquia": "1",
+      "isAssessoria": false,
+      "parentId": null,
+      "cargos": [
+        {
+          "tipo": "DAS-S",
+          "quantidade": 1
+        }
+      ],
+      "id": "0eff04d7-611a-4568-b26f-8dc7f28d0565",
+      "children": [
+        {
+          "tipoSetor": "Subsecretaria",
+          "nomeSetor": "Subsecretaria de Ouvidoria Geral do Município",
+          "hierarquia": "3",
+          "isAssessoria": false,
+          "parentId": "0eff04d7-611a-4568-b26f-8dc7f28d0565",
+          "cargos": [
+            {
+              "tipo": "DAS-8",
+              "quantidade": 1
+            }
+          ],
+          "id": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+          "children": [
+            {
+              "tipoSetor": "Diretoria",
+              "nomeSetor": "Diretoria de Ouvidoria Geral",
+              "hierarquia": "4",
+              "isAssessoria": false,
+              "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+              "cargos": [
+                {
+                  "tipo": "DAS-7",
+                  "quantidade": 1
+                },
+                {
+                  "tipo": "DAS-6",
+                  "quantidade": 4
+                }
+              ],
+              "id": "87252a97-708e-4c87-b2fb-fc9fe9e47d02",
+              "children": [],
+              "position": {
+                "x": -140,
+                "y": 360
+              }
+            },
+            {
+              "tipoSetor": "Diretoria",
+              "nomeSetor": "Diretoria de Análise de Dados",
+              "hierarquia": "4",
+              "isAssessoria": false,
+              "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+              "cargos": [
+                {
+                  "tipo": "DAS-7",
+                  "quantidade": 1
+                }
+              ],
+              "id": "fda42047-1532-4fed-a7ce-49ca0fa3a5f7",
+              "children": [],
+              "position": {
+                "x": 190,
+                "y": 360
+              }
+            }
+          ],
+          "position": {
+            "x": 0,
+            "y": 180
+          }
+        }
+      ],
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "tipoSetor": "Subsecretaria",
+      "nomeSetor": "Subsecretaria de Ouvidoria Geral do Município",
+      "hierarquia": "3",
+      "isAssessoria": false,
+      "parentId": "0eff04d7-611a-4568-b26f-8dc7f28d0565",
+      "cargos": [
+        {
+          "tipo": "DAS-8",
+          "quantidade": 1
+        }
+      ],
+      "id": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+      "children": [
+        {
+          "tipoSetor": "Diretoria",
+          "nomeSetor": "Diretoria de Ouvidoria Geral",
+          "hierarquia": "4",
+          "isAssessoria": false,
+          "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+          "cargos": [
+            {
+              "tipo": "DAS-7",
+              "quantidade": 1
+            },
+            {
+              "tipo": "DAS-6",
+              "quantidade": 4
+            }
+          ],
+          "id": "87252a97-708e-4c87-b2fb-fc9fe9e47d02",
+          "children": [],
+          "position": {
+            "x": -140,
+            "y": 360
+          }
+        },
+        {
+          "tipoSetor": "Diretoria",
+          "nomeSetor": "Diretoria de Análise de Dados",
+          "hierarquia": "4",
+          "isAssessoria": false,
+          "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+          "cargos": [
+            {
+              "tipo": "DAS-7",
+              "quantidade": 1
+            }
+          ],
+          "id": "fda42047-1532-4fed-a7ce-49ca0fa3a5f7",
+          "children": [],
+          "position": {
+            "x": 190,
+            "y": 360
+          }
+        }
+      ],
+      "position": {
+        "x": 0,
+        "y": 180
+      }
+    },
+    {
+      "tipoSetor": "Diretoria",
+      "nomeSetor": "Diretoria de Ouvidoria Geral",
+      "hierarquia": "4",
+      "isAssessoria": false,
+      "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+      "cargos": [
+        {
+          "tipo": "DAS-7",
+          "quantidade": 1
+        },
+        {
+          "tipo": "DAS-6",
+          "quantidade": 4
+        }
+      ],
+      "id": "87252a97-708e-4c87-b2fb-fc9fe9e47d02",
+      "children": [],
+      "position": {
+        "x": -140,
+        "y": 360
+      }
+    },
+    {
+      "tipoSetor": "Diretoria",
+      "nomeSetor": "Diretoria de Análise de Dados",
+      "hierarquia": "4",
+      "isAssessoria": false,
+      "parentId": "506c32e0-2af0-4c10-ac02-12ba3e0e218f",
+      "cargos": [
+        {
+          "tipo": "DAS-7",
+          "quantidade": 1
+        }
+      ],
+      "id": "fda42047-1532-4fed-a7ce-49ca0fa3a5f7",
+      "children": [],
+      "position": {
+        "x": 190,
+        "y": 360
+      }
+    },
+    {
+      "tipoSetor": "Secretaria",
+      "nomeSetor": "Secretaria de Controle Interno",
+      "hierarquia": "1",
+      "isAssessoria": false,
+      "parentId": null,
+      "cargos": [
+        {
+          "tipo": "DAS-S",
+          "quantidade": 1
+        }
+      ],
+      "id": "77419718-07de-4750-958b-1c62718e3520",
+      "children": [
+        {
+          "tipoSetor": "Superintendência",
+          "nomeSetor": "Superintendência de Auditoria Interna",
+          "hierarquia": "2",
+          "isAssessoria": false,
+          "parentId": "77419718-07de-4750-958b-1c62718e3520",
+          "cargos": [
+            {
+              "tipo": "DAS-9",
+              "quantidade": 1
+            }
+          ],
+          "id": "38ba990b-8949-421c-b37d-34f1cfa53846",
+          "children": [
+            {
+              "tipoSetor": "Subsecretaria",
+              "nomeSetor": "Subsecretaria de Auditoria de Contas",
+              "hierarquia": "3",
+              "isAssessoria": false,
+              "parentId": "38ba990b-8949-421c-b37d-34f1cfa53846",
+              "cargos": [
+                {
+                  "tipo": "DAS-8",
+                  "quantidade": 1
+                }
+              ],
+              "id": "0f2ec079-5275-4ac5-92f2-fe78403ef786",
+              "children": [
+                {
+                  "tipoSetor": "Diretoria",
+                  "nomeSetor": "Diretoria de Auditoria de Contas",
+                  "hierarquia": "4",
+                  "isAssessoria": false,
+                  "parentId": "0f2ec079-5275-4ac5-92f2-fe78403ef786",
+                  "cargos": [
+                    {
+                      "tipo": "DAS-7",
+                      "quantidade": 1
+                    },
+                    {
+                      "tipo": "DAS-6",
+                      "quantidade": 3
+                    },
+                    {
+                      "tipo": "DAS-5",
+                      "quantidade": 3
+                    }
+                  ],
+                  "id": "4b164d57-317f-4d9a-a497-7b9ad59d9420",
+                  "children": [],
+                  "position": {
+                    "x": -150,
+                    "y": 570
+                  },
+                  "style": {}
+                }
+              ],
+              "position": {
+                "x": -150,
+                "y": 380
+              },
+              "style": {}
+            },
+            {
+              "tipoSetor": "Subsecretaria",
+              "nomeSetor": "Subsecretaria de Transparência",
+              "hierarquia": "3",
+              "isAssessoria": false,
+              "parentId": "38ba990b-8949-421c-b37d-34f1cfa53846",
+              "cargos": [
+                {
+                  "tipo": "DAS-8",
+                  "quantidade": 1
+                }
+              ],
+              "id": "024e40bb-823f-4c1d-8b7b-5215a2b37e12",
+              "children": [
+                {
+                  "tipoSetor": "Diretoria",
+                  "nomeSetor": "Diretoria de Transparência",
+                  "hierarquia": "4",
+                  "isAssessoria": false,
+                  "parentId": "024e40bb-823f-4c1d-8b7b-5215a2b37e12",
+                  "cargos": [
+                    {
+                      "tipo": "DAS-7",
+                      "quantidade": 1
+                    },
+                    {
+                      "tipo": "DAS-6",
+                      "quantidade": 3
+                    },
+                    {
+                      "tipo": "DAS-5",
+                      "quantidade": 2
+                    }
+                  ],
+                  "id": "2f3f0817-08ea-4daa-9fb7-adfddb64f977",
+                  "children": [],
+                  "position": {
+                    "x": 150,
+                    "y": 570
+                  },
+                  "style": {}
+                }
+              ],
+              "position": {
+                "x": 150,
+                "y": 380
+              },
+              "style": {}
+            }
+          ],
+          "position": {
+            "x": 0,
+            "y": 190
+          },
+          "style": {}
+        }
+      ],
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {}
+    },
+    {
+      "tipoSetor": "Secretaria",
+      "nomeSetor": "Secretaria de Articulação Institucional",
+      "hierarquia": "1",
+      "isAssessoria": false,
+      "parentId": null,
+      "cargos": [
+        {
+          "tipo": "DAS-S",
+          "quantidade": 1
+        }
+      ],
+      "id": "4e3e3867-39e7-47d3-8eec-5954844202c0",
+      "children": [
+        {
+          "tipoSetor": "Subsecretaria",
+          "nomeSetor": "Subsecretaria de Licitação",
+          "hierarquia": "3",
+          "isAssessoria": false,
+          "parentId": "4e3e3867-39e7-47d3-8eec-5954844202c0",
+          "cargos": [
+            {
+              "tipo": "DAS-8",
+              "quantidade": 1
+            }
+          ],
+          "id": "b3ea680c-595b-4300-93b5-a88700ca4c2f",
+          "children": [
+            {
+              "tipoSetor": "Diretoria",
+              "nomeSetor": "Diretoria de Licitação",
+              "hierarquia": "4",
+              "isAssessoria": false,
+              "parentId": "b3ea680c-595b-4300-93b5-a88700ca4c2f",
+              "cargos": [
+                {
+                  "tipo": "DAS-7",
+                  "quantidade": 1
+                },
+                {
+                  "tipo": "DAS-6",
+                  "quantidade": 2
+                },
+                {
+                  "tipo": "DAS-5",
+                  "quantidade": 3
+                }
+              ],
+              "id": "de4d92ae-74ed-4331-b60a-2f100ac07315",
+              "children": [],
+              "position": {
+                "x": -150,
+                "y": 380
+              },
+              "style": {}
+            }
+          ],
+          "position": {
+            "x": -150,
+            "y": 190
+          },
+          "style": {}
+        },
+        {
+          "tipoSetor": "Subsecretaria",
+          "nomeSetor": "Subsecretaria de Contratos",
+          "hierarquia": "3",
+          "isAssessoria": false,
+          "parentId": "4e3e3867-39e7-47d3-8eec-5954844202c0",
+          "cargos": [
+            {
+              "tipo": "DAS-8",
+              "quantidade": 1
+            }
+          ],
+          "id": "e99629c7-b4d9-44c2-8dbc-c99a3c8a8a3d",
+          "children": [
+            {
+              "tipoSetor": "Diretoria",
+              "nomeSetor": "Diretoria de Contratos",
+              "hierarquia": "4",
+              "isAssessoria": false,
+              "parentId": "e99629c7-b4d9-44c2-8dbc-c99a3c8a8a3d",
+              "cargos": [
+                {
+                  "tipo": "DAS-7",
+                  "quantidade": 1
+                },
+                {
+                  "tipo": "DAS-6",
+                  "quantidade": 2
+                },
+                {
+                  "tipo": "DAS-5",
+                  "quantidade": 3
+                }
+              ],
+              "id": "08cf0015-14d9-4f41-97cf-523f1a68d5fc",
+              "children": [],
+              "position": {
+                "x": 150,
+                "y": 380
+              },
+              "style": {}
+            }
+          ],
+          "position": {
+            "x": 150,
+            "y": 190
+          },
+          "style": {}
+        }
+      ],
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {}
+    }
+  ],
+  "estatisticas": {
+    "cargos": [
+      {
+        "nome": "Analista de Licitação",
+        "quantidade": 5
+      }
+    ],
+    "totalCargos": 5
+  }
+}
