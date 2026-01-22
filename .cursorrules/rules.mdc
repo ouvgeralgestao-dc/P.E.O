@@ -1072,4 +1072,21 @@ button:focus-visible, input:focus-visible {
 
 ---
 
+---
+
+## 🔄 PROTOCOLO GIT SYNC (AUTO-COMMIT)
+
+**REGRA DE PRESERVAÇÃO CONTÍNUA:**
+
+Sempre que concluir uma tarefa lógica (Feature, Fix, Refactor) ou um conjunto de alterações estáveis, o agente DEVE realizar o commit e push das alterações para o repositório remoto.
+
+**Fluxo Obrigatório:**
+1.  **Stage:** `git add .`
+2.  **Commit:** `git commit -m "Tipo: Descrição concisa do que foi feito"` (Ex: `feat: Adiciona filtro de setor`, `fix: Corrige erro de login`)
+3.  **Push:** `git push`
+
+**GATILHO:** Ao final de todo `task_boundary` de sucesso, antes de entregar a tarefa ao usuário ou quando solicitado explicitamente.
+
+---
+
 **FIM DO RULESET**
