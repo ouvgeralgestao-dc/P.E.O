@@ -1,6 +1,7 @@
 import { dbAsync } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import * as layoutService from './layoutService.js';
+import { getNodeDimensions } from './layoutService.js';
 
 // ==========================================
 // TODAS AS OPERAÇÕES USAM SQLite - ZERO JSON
@@ -852,9 +853,10 @@ export const updateOrganogramaGeral = async () => {
                 nivelHierarquico: 1,
                 ordem: 1,
                 parentId: 'prefeito',
-                isAssessoria: true, // Marcador para linha pontilhada
+                isAssessoria: true,
                 dataCriacao: new Date().toISOString(),
-                position: { x: 351.97116637717494, y: 5.913499131524759 }, // Direita do Prefeito
+                // Alinhamento Y=0 para garantir linha reta horizontal com o Prefeito
+                position: { x: 350, y: 0 },
                 style: {
                     backgroundColor: '#C0C0C0', // Prata Fosco
                     border: '1px solid #A9A9A9',
@@ -867,10 +869,12 @@ export const updateOrganogramaGeral = async () => {
                 nomeSetor: 'Subprefeitura do 1º Distrito',
                 tipoSetor: 'Subprefeitura',
                 nivelHierarquico: 1,
+                hierarquia: 0.5, // Adicionado para forçar lógica de conexão vertical no frontend
                 ordem: 2,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: -495, y: 200 }, // Esquerda extrema
+                // Aumentado Y para 250 para forçar detecção vertical clara
+                position: { x: -495, y: 250 }, // Esquerda extrema
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)', // Prata Reluzente
                     border: '1px solid #808080',
@@ -884,10 +888,11 @@ export const updateOrganogramaGeral = async () => {
                 nomeSetor: 'Subprefeitura do 2º Distrito',
                 tipoSetor: 'Subprefeitura',
                 nivelHierarquico: 1,
+                hierarquia: 0.5,
                 ordem: 3,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: -165, y: 200 }, // Centro-esquerda
+                position: { x: -165, y: 250 }, // Centro-esquerda
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -901,10 +906,11 @@ export const updateOrganogramaGeral = async () => {
                 nomeSetor: 'Subprefeitura do 3º Distrito',
                 tipoSetor: 'Subprefeitura',
                 nivelHierarquico: 1,
+                hierarquia: 0.5,
                 ordem: 4,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: 165, y: 200 }, // Centro-direita
+                position: { x: 165, y: 250 }, // Centro-direita
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -918,10 +924,11 @@ export const updateOrganogramaGeral = async () => {
                 nomeSetor: 'Subprefeitura do 4º Distrito',
                 tipoSetor: 'Subprefeitura',
                 nivelHierarquico: 1,
+                hierarquia: 0.5,
                 ordem: 5,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: 495, y: 200 }, // Direita extrema
+                position: { x: 495, y: 250 }, // Direita extrema
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -935,8 +942,8 @@ export const updateOrganogramaGeral = async () => {
         geral.setores.push(...nosFixos);
 
         // 4. Agregar TODOS os setores de todos os órgãos (hierarquia completa de forma PLANA)
-        let nextOrgaoX = -400; // Posição X inicial para primeira secretaria
-        const orgaoSpacing = 600; // Espaçamento horizontal entre estruturas
+        let currentCursorX = -600; // Posição X inicial (mais à esquerda)
+        const GAP = 250; // Espaçamento entre organogramas
         const orgaoY = 400; // Y fixo abaixo das subprefeituras
 
         for (const orgao of orgaos) {
@@ -946,12 +953,32 @@ export const updateOrganogramaGeral = async () => {
                 const setorRaiz = setoresTree.find(s => !s.parentId);
 
                 if (setorRaiz) {
-                    // Calcular offset com base na posição do raiz
-                    const raizPosX = (setorRaiz.position && setorRaiz.position.x) || 0;
-                    const raizPosY = (setorRaiz.position && setorRaiz.position.y) || 0;
+                    // Calcular limites (Bounding Box) deste órgão para determinar largura
+                    let minX = Infinity;
+                    let maxX = -Infinity;
 
-                    const offsetX = nextOrgaoX - raizPosX;
-                    const offsetY = orgaoY - raizPosY;
+                    const traverseAndMeasure = (node) => {
+                        const posX = (node.position && node.position.x) || 0;
+                        const { w } = getNodeDimensions(node);
+
+                        if (posX < minX) minX = posX;
+                        if (posX + w > maxX) maxX = posX + w;
+
+                        if (node.children && node.children.length > 0) {
+                            node.children.forEach(traverseAndMeasure);
+                        }
+                    };
+
+                    // Medir a árvore inteira partindo da raiz
+                    traverseAndMeasure(setorRaiz);
+
+                    // Se por algum motivo inválido, usar fallback
+                    if (minX === Infinity) { minX = 0; maxX = 300; }
+
+                    // Calcular offset necessário para encaixar logo após o cursor atual
+                    // Queremos que o 'minX' deste órgão comece em 'currentCursorX'
+                    const offsetX = currentCursorX - minX;
+                    const offsetY = orgaoY - ((setorRaiz.position && setorRaiz.position.y) || 0);
 
                     // Função recursiva para processar a árvore e achatar em uma lista
                     const processNode = (node) => {
@@ -959,7 +986,7 @@ export const updateOrganogramaGeral = async () => {
                         const newNode = { ...node };
                         delete newNode.children; // Remover referência circular/ninho para lista plana
 
-                        // Aplicar Offset se tiver posição, senão assume (0,0) + Offset
+                        // Aplicar Offset calculado dinamicamente
                         const originalX = (node.position && node.position.x) || 0;
                         const originalY = (node.position && node.position.y) || 0;
 
@@ -974,15 +1001,16 @@ export const updateOrganogramaGeral = async () => {
                         if (node.id === setorRaiz.id) {
                             newNode.parentId = 'prefeito';
                         }
-                        // Se não for raiz, mantém parentId original (que já deve estar correto no objeto)
+                        // Se não for raiz, mantém parentId original
 
-                        // Styling fallback
-                        if (!newNode.style || Object.keys(newNode.style).length === 0) {
-                            newNode.style = {
-                                backgroundColor: '#2f1d29',
-                                borderColor: 'transparent',
-                                color: '#ffffff'
-                            };
+                        // Styling fallback - SÓ APLICA SE NÃO TIVER ESTILO PRÓPRIO
+                        // Preservar cores originais do órgão (Rules of Preservation)
+                        const hasStyle = newNode.style && Object.keys(newNode.style).length > 0;
+                        const hasCustomStyle = newNode.customStyle && Object.keys(newNode.customStyle).length > 0;
+
+                        if (!hasStyle && !hasCustomStyle) {
+                            // Deixar vazio para que o Frontend aplique a cor padrão da hierarquia (HIERARCHY_COLORS)
+                            newNode.style = {};
                         }
 
                         // Adicionar à lista geral plana
@@ -997,7 +1025,9 @@ export const updateOrganogramaGeral = async () => {
                     // Iniciar processamento pela raiz
                     processNode(setorRaiz);
 
-                    nextOrgaoX += orgaoSpacing; // Próximo órgão mais à direita
+                    // Atualizar cursor para o próximo (Fim deste órgão + GAP)
+                    // A largura ocupada foi (maxX - minX). A nova posição final é (maxX + offsetX).
+                    currentCursorX = (maxX + offsetX) + GAP;
                 }
             }
         }
@@ -1031,7 +1061,7 @@ export const updateOrganogramaGeral = async () => {
             geral.setores.forEach(setor => {
                 const custom = posMap.get(setor.id);
                 if (custom) {
-                    setor.position = custom.position;
+                    setor.position = (custom as any).position;
                     // Preservar estilo se houver, EXCETO para nós fixos (Padrão e Funcional)
                     const fixedIds = [
                         'prefeito', 'gabinete', 'subprefeitura-1', 'subprefeitura-2', 'subprefeitura-3', 'subprefeitura-4',
@@ -1039,9 +1069,9 @@ export const updateOrganogramaGeral = async () => {
                     ];
                     const isFixed = fixedIds.includes(setor.id);
 
-                    if (!isFixed && custom.customStyle && Object.keys(custom.customStyle).length > 0) {
-                        setor.customStyle = custom.customStyle;
-                        setor.style = custom.customStyle; // ReactFlow usa style
+                    if (!isFixed && (custom as any).customStyle && Object.keys((custom as any).customStyle).length > 0) {
+                        setor.customStyle = (custom as any).customStyle;
+                        setor.style = (custom as any).customStyle; // ReactFlow usa style
                     }
                 }
             });
@@ -1108,7 +1138,8 @@ export const updateOrganogramaGeralFuncional = async () => {
                 ordem: 2,
                 parentId: 'prefeito-cargo',
                 isAssessoria: true, // Marcador para linha pontilhada
-                position: { x: 351.97116637717494, y: 5.913499131524759 }, // Direita do Prefeito
+                // Alinhamento Y=0 para garantir linha reta horizontal
+                position: { x: 350, y: 0 },
                 style: {
                     backgroundColor: '#C0C0C0', // Prata Fosco
                     border: '1px solid #A9A9A9',
@@ -1126,7 +1157,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 3,
                 parentId: 'prefeito-cargo',
-                position: { x: -495, y: 200 }, // Esquerda extrema
+                position: { x: -495, y: 250 }, // Esquerda extrema
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)', // Prata Reluzente
                     border: '1px solid #808080',
@@ -1145,7 +1176,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 4,
                 parentId: 'prefeito-cargo',
-                position: { x: -165, y: 200 }, // Centro-esquerda
+                position: { x: -165, y: 250 }, // Centro-esquerda
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1164,7 +1195,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 5,
                 parentId: 'prefeito-cargo',
-                position: { x: 165, y: 200 }, // Centro-direita
+                position: { x: 165, y: 250 }, // Centro-direita
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1183,7 +1214,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 6,
                 parentId: 'prefeito-cargo',
-                position: { x: 495, y: 200 }, // Direita extrema
+                position: { x: 495, y: 250 }, // Direita extrema
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1197,8 +1228,8 @@ export const updateOrganogramaGeralFuncional = async () => {
         geral.cargos.push(...cargosFixos);
 
         // 4. Agregar TODOS os cargos de todos os órgãos (hierarquia completa)
-        let nextCargoX = -400; // Posição X inicial para primeiro secretário
-        const cargoSpacing = 400; // Espaçamento horizontal entre secretários
+        let currentCursorX = -600; // Posição X inicial
+        const GAP = 300; // Espaçamento horizontal entre árvores de cargos
         const cargoY = 400; // Y fixo abaixo dos subprefeitos
 
         for (const orgao of orgaos) {
@@ -1209,47 +1240,128 @@ export const updateOrganogramaGeralFuncional = async () => {
 
                 if (diagrama && diagrama.cargos) {
                     // Identificar o cargo raiz (nível 1 ou sem parentId)
+                    // No array flat reconstruído, roots estão no topo da hierarquia
                     const cargoRaiz = diagrama.cargos.find(c => c.nivel === 1 || !c.parentId);
 
                     if (cargoRaiz) {
-                        // Calcular offset necessário para posicionar raiz em (nextCargoX, cargoY)
-                        const offsetX = nextCargoX - (cargoRaiz.position?.x || 0);
+                        // Calcular Bounding Box da árvore de cargos
+                        let minX = Infinity;
+                        let maxX = -Infinity;
+
+                        // Como 'diagrama.cargos' já é uma árvore reconstruída (tem children), podemos percorrer
+                        const traverseAndMeasure = (node) => {
+                            const posX = (node.position && node.position.x) || 0;
+                            const { w } = getNodeDimensions(node);
+
+                            if (posX < minX) minX = posX;
+                            if (posX + w > maxX) maxX = posX + w;
+
+                            if (node.children) node.children.forEach(traverseAndMeasure);
+                        };
+
+                        // Se diagrama.cargos for lista plana (depende da implementação do getOrganogramaFuncoes), 
+                        // precisamos garantir que estamos percorrendo tudo. 
+                        // getOrganogramaFuncoes retorna { cargos: tree } (reconstructTreeFuncional)
+                        // Então diagrama.cargos é um array de raízes.
+                        diagrama.cargos.forEach(traverseAndMeasure);
+
+                        if (minX === Infinity) { minX = 0; maxX = 300; }
+
+                        // Offset para posicionar 'minX' em 'currentCursorX'
+                        const offsetX = currentCursorX - minX;
                         const offsetY = cargoY - (cargoRaiz.position?.y || 0);
 
-                        // Aplicar offset a TODOS os cargos deste órgão
-                        diagrama.cargos.forEach(cargo => {
-                            cargo.orgaoOrigemId = orgao.id;
-                            cargo.orgaoOrigemNome = orgao.nome || orgao.orgao;
-
-                            // Ajustar posição com offset
+                        // Função para processar a árvore e adicionar à lista plana 'geral.cargos'
+                        const processCargoNode = (cargo) => {
+                            // Aplicar offset
                             if (cargo.position) {
                                 cargo.position = {
                                     x: cargo.position.x + offsetX,
                                     y: cargo.position.y + offsetY
                                 };
                             } else {
-                                // Se não tem posição, usar padrão relativo ao raiz
-                                cargo.position = { x: nextCargoX, y: cargoY };
+                                cargo.position = { x: currentCursorX, y: cargoY };
                             }
+
+                            cargo.orgaoOrigemId = orgao.id;
+                            cargo.orgaoOrigemNome = orgao.nome || orgao.orgao;
 
                             // Conectar APENAS o raiz ao Prefeito, outros mantêm parentId interno
                             if (cargo.id === cargoRaiz.id) {
                                 cargo.parentId = 'prefeito-cargo';
                             }
-                            // Filhos mantêm seus parentIds originais
 
                             // Preservar estilo ou aplicar padrão
-                            if (!cargo.style || Object.keys(cargo.style).length === 0) {
+                            const hasStyle = cargo.style && Object.keys(cargo.style).length > 0;
+                            if (!hasStyle) {
                                 cargo.style = {
                                     backgroundColor: '#2f1d29',
                                     borderColor: 'transparent',
                                     color: '#ffffff'
                                 };
                             }
-                        });
 
+                            // Adicionar (cópia sem children para evitar circularidade na serialização se necessário, 
+                            // mas aqui estamos construindo uma flat list para o frontend?)
+                            // O frontend espera flat list? 
+                            // O 'updateOrganogramaGeralFuncional' retorna { cargos: [] }
+                            // O 'getOrganogramaGeral' retorna { setores: [] } que são FLAT.
+                            // Mas 'reconstructTreeFuncional' devolve TREE.
+                            // Espera... 'getOrganogramaFuncoes' devolve TREE.
+                            // 'updateOrganogramaGeralFuncional' parece estar construindo uma lista PLANA em `geral.cargos`.
+                            // SIM, `geral.cargos.push(...diagrama.cargos)` na versão anterior estava empurrando a árvore toda?
+                            // NÃO, `diagrama.cargos` do `getOrganogramaFuncoes` é uma TREE (roots com children).
+                            // Se empurrarmos raízes com children, o frontend (OrganogramaCanvas) vai receber objects com children.
+                            // O Canvas tem `flattenCargos`? Sim, ele tem.
+                            // MAS para manipulação segura aqui e consistência, vamos achatar manualmente ou garantir que empurramos tudo.
+                            // A versão anterior fazia `geral.cargos.push(...diagrama.cargos)`. Se `diagrama.cargos` fossem apenas as raízes, 
+                            // perdíamos os filhos na lista plana principal?
+                            // O `OrganogramaCanvas` recosntrói ou usa flat?
+                            // `OrganogramaCanvas.tsx`: "const flattenCargos = (cargosHierarquicos) => ..." 
+                            // Ele aceita hierárquico e achata. OK.
+                            // ENTÃO, podemos empurrar os nós da árvore modificados.
+                            // Porém, precisamos garantir que TODOS os nós da árvore tiveram suas posições atualizadas.
+
+                            // Vamos percorrer e atualizar in-place, depois empurrar as raízes.
+
+                            // O `processCargoNode` aqui deve ser apenas um helper de travessia para update.
+                        };
+
+                        const updatePositionsRecursively = (node) => {
+                            if (node.position) {
+                                node.position = {
+                                    x: node.position.x + offsetX,
+                                    y: node.position.y + offsetY
+                                };
+                            } else {
+                                node.position = { x: currentCursorX, y: cargoY };
+                            }
+
+                            node.orgaoOrigemId = orgao.id;
+                            node.orgaoOrigemNome = orgao.nome || orgao.orgao;
+
+                            if (node.id === cargoRaiz.id) {
+                                node.parentId = 'prefeito-cargo';
+                            }
+
+                            // Style preservation
+                            const hasStyle = node.style && Object.keys(node.style).length > 0;
+                            if (!hasStyle) {
+                                // Deixar vazio para que o Frontend aplique a cor padrão da hierarquia
+                                node.style = {};
+                            }
+
+                            if (node.children) node.children.forEach(updatePositionsRecursively);
+                        };
+
+                        // Atualizar árvore inteira
+                        diagrama.cargos.forEach(updatePositionsRecursively);
+
+                        // Adicionar raízes atualizadas (que contêm toda a árvore nos children) à lista geral
                         geral.cargos.push(...diagrama.cargos);
-                        nextCargoX += cargoSpacing; // Próximo órgão mais à direita
+
+                        // Atualizar cursor
+                        currentCursorX = (maxX + offsetX) + GAP;
                     }
                 }
             }
@@ -1268,7 +1380,7 @@ export const updateOrganogramaGeralFuncional = async () => {
             geral.cargos.forEach(cargo => {
                 const custom = posMap.get(cargo.id);
                 if (custom) {
-                    cargo.position = custom.position;
+                    cargo.position = (custom as any).position;
                     // Preservar estilo se houver, EXCETO para nós fixos (Padrão e Funcional)
                     const fixedIds = [
                         'prefeito', 'gabinete', 'subprefeitura-1', 'subprefeitura-2', 'subprefeitura-3', 'subprefeitura-4',
@@ -1276,9 +1388,9 @@ export const updateOrganogramaGeralFuncional = async () => {
                     ];
                     const isFixed = fixedIds.includes(cargo.id);
 
-                    if (!isFixed && custom.customStyle && Object.keys(custom.customStyle).length > 0) {
-                        cargo.customStyle = custom.customStyle;
-                        cargo.style = custom.customStyle;
+                    if (!isFixed && (custom as any).customStyle && Object.keys((custom as any).customStyle).length > 0) {
+                        cargo.customStyle = (custom as any).customStyle;
+                        cargo.style = (custom as any).customStyle;
                     }
                 }
             });
@@ -1492,7 +1604,7 @@ export const addPrefixo = async (nome) => {
             'INSERT INTO prefixos_cargos (nome, ordem) VALUES (?, (SELECT COALESCE(MAX(ordem), 0) + 1 FROM prefixos_cargos))',
             [nome]
         );
-        return { id: result.lastID, nome };
+        return { id: (result as any).lastID, nome };
     } catch (error) {
         console.error('Erro ao adicionar prefixo:', error);
         throw error;

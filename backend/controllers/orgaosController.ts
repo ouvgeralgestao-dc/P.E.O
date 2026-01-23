@@ -8,7 +8,7 @@ export const getAllOrgaos = async (req, res, next) => {
         const orgaos = await storageService.listOrgaos();
 
         // Mapear campos para compatibilidade
-        const mapped = orgaos.map(o => ({
+        let mapped = orgaos.map(o => ({
             id: o.id,
             nome: o.orgao,
             categoria: o.categoria || 'OUTROS',
@@ -17,10 +17,26 @@ export const getAllOrgaos = async (req, res, next) => {
             updatedAt: new Date().toISOString()
         }));
 
+        // Aplicar filtro por setor para usuários comuns
+        const isFiltered = req.user && req.user.tipo !== 'admin';
+        
+        if (isFiltered) {
+            const userSector = req.user.setor.toUpperCase();
+            
+            // Filtrar órgãos que pertencem ao setor do usuário
+            mapped = mapped.filter(orgao => {
+                const orgaoCategoria = orgao.categoria.toUpperCase();
+                return orgaoCategoria === userSector || 
+                       orgaoCategoria.includes(userSector) ||
+                       userSector.includes(orgaoCategoria);
+            });
+        }
+
         res.json({
             success: true,
             data: mapped,
-            count: mapped.length
+            count: mapped.length,
+            filtered: isFiltered
         });
     } catch (error) {
         next(error);

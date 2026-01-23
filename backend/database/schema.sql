@@ -97,3 +97,21 @@ CREATE TABLE IF NOT EXISTS tipos_setor (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tipos_setor_nome ON tipos_setor(nome);
+
+-- TABELA 10: USUÁRIOS (Gestão de Acesso)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    matricula TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    senha TEXT NOT NULL,
+    setor TEXT,
+    cargo TEXT,
+    tipo TEXT NOT NULL DEFAULT 'user' CHECK (tipo IN ('admin', 'user')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula);
+CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+CREATE INDEX IF NOT EXISTS idx_usuarios_tipo ON usuarios(tipo);

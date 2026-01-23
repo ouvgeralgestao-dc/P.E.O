@@ -20,6 +20,26 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Dados incompletos' });
         }
 
+        // Verificar se usuário comum pode criar organograma para este setor
+        if (req.user && req.user.tipo !== 'admin') {
+            const userSector = req.user.setor.toUpperCase();
+            
+            // Verificar se o órgão pertence ao setor do usuário
+            const orgaoData = await storageService.getOrgaoMetadata(nomeOrgao);
+            if (orgaoData) {
+                const orgaoCategoria = (orgaoData as any).categoria ? (orgaoData as any).categoria.toUpperCase() : '';
+                
+                if (orgaoCategoria !== userSector && 
+                    !orgaoCategoria.includes(userSector) && 
+                    !userSector.includes(orgaoCategoria)) {
+                    return res.status(403).json({ 
+                        success: false, 
+                        message: 'Acesso negado. Você só pode criar organogramas para órgãos do seu setor.' 
+                    });
+                }
+            }
+        }
+
         const existingId = await storageService.getOrgaoIdByName(nomeOrgao);
         const orgaoId = existingId || fileSystem.normalizeOrgaoId(nomeOrgao);
         if (existingId) {
@@ -104,6 +124,21 @@ export const getOrganogramaByName = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Órgão não encontrado' });
         }
 
+        // Verificar se usuário comum tem acesso a este órgão
+        if (req.user && req.user.tipo !== 'admin') {
+            const userSector = req.user.setor.toUpperCase();
+            const orgaoCategoria = (metadata as any).categoria ? (metadata as any).categoria.toUpperCase() : '';
+            
+            if (orgaoCategoria !== userSector && 
+                !orgaoCategoria.includes(userSector) && 
+                !userSector.includes(orgaoCategoria)) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'Acesso negado. Você só pode visualizar órgãos do seu próprio setor.' 
+                });
+            }
+        }
+
         // Carregar organogramas funcionais também
         let organogramasFuncoes = [];
         try {
@@ -132,7 +167,8 @@ export const getOrganogramaByName = async (req, res, next) => {
                     setores: estrutura
                 } : null,
                 organogramasFuncoes: organogramasFuncoes
-            }
+            },
+            filtered: req.user && req.user.tipo !== 'admin'
         });
     } catch (error) {
         next(error);
@@ -213,8 +249,22 @@ export async function getAllOrganogramas(req, res, next) {
     try {
         const listaBasica = await storageService.listOrgaos();
 
+        // Aplicar filtro por setor para usuários comuns
+        let listaFiltrada = listaBasica;
+        const isFiltered = req.user && req.user.tipo !== 'admin';
+        
+        if (isFiltered) {
+            const userSector = req.user.setor.toUpperCase();
+            listaFiltrada = listaBasica.filter(orgao => {
+                const orgaoCategoria = orgao.categoria ? orgao.categoria.toUpperCase() : '';
+                return orgaoCategoria === userSector || 
+                       orgaoCategoria.includes(userSector) ||
+                       userSector.includes(orgaoCategoria);
+            });
+        }
+
         // Enriquecer com dados estruturais e funcionais para o Dashboard
-        const listaCompleta = await Promise.all(listaBasica.map(async (orgao) => {
+        const listaCompleta = await Promise.all(listaFiltrada.map(async (orgao) => {
             // 1. Estrutural
             const nodes = await storageService.getOrgaoEstrutural(orgao.id);
             const organogramaEstrutural = (nodes && nodes.length > 0)
@@ -254,7 +304,11 @@ export async function getAllOrganogramas(req, res, next) {
         });
 
         // Retornar ARRAY direto filtrado
-        res.json({ success: true, data: organogramasFiltrados });
+        res.json({ 
+            success: true, 
+            data: organogramasFiltrados,
+            filtered: isFiltered
+        });
     } catch (e) { next(e); }
 }
 
@@ -272,18 +326,40 @@ export const getOrganogramaGeral = async (req, res, next) => {
             });
         }
 
+        // Aplicar filtro por setor para usuários comuns
+        let filteredSetores = data.setores;
+        if (req.user && req.user.tipo !== 'admin') {
+            const userSector = req.user.setor.toUpperCase();
+            filteredSetores = data.setores.filter(setor => {
+                try {
+                    if (!setor || !setor.nome) return false;
+                    const setorUpper = String(setor.nome).toUpperCase();
+                    return setorUpper === userSector || 
+                           setorUpper.includes(userSector) ||
+                           userSector.includes(setorUpper);
+                } catch (error) {
+                    console.warn('Erro ao filtrar setor:', error);
+                    return false;
+                }
+            });
+        }
+
         // Envelopar no formato esperado pelo OrganogramaCanvas.jsx
         // Canvas espera: { organogramaEstrutural: { setores: [...] } }
         const wrappedData = {
             orgao: data.orgao || 'Prefeitura Municipal de Duque de Caxias',
             organogramaEstrutural: {
-                setores: data.setores || [],
+                setores: filteredSetores || [],
                 tamanhoFolha: 'A3'
             },
             estatisticas: data.estatisticas || {}
         };
 
-        res.json({ success: true, data: wrappedData });
+        res.json({ 
+            success: true, 
+            data: wrappedData,
+            filtered: req.user && req.user.tipo !== 'admin'
+        });
     } catch (e) { next(e); }
 };
 
@@ -351,15 +427,29 @@ export const getOrganogramaGeralFuncional = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Não foi possível gerar o organograma funcional.' });
         }
 
+        // Aplicar filtro por setor para usuários comuns
+        let filteredCargos = data.cargos || [];
+        if (req.user && req.user.tipo !== 'admin') {
+            const userSector = req.user.setor.toUpperCase();
+            filteredCargos = data.cargos.filter(cargo => {
+                if (!cargo) return false;
+                const cargoSector = cargo.setor ? cargo.setor.toUpperCase() : '';
+                return cargoSector === userSector || 
+                       cargoSector.includes(userSector) ||
+                       userSector.includes(cargoSector);
+            });
+        }
+
         res.json({
             success: true,
             data: {
                 organogramaFuncional: {
-                    cargos: data.cargos || [],
+                    cargos: filteredCargos,
                     tamanhoFolha: 'A3'
                 },
                 occupants: data.occupants || {}
-            }
+            },
+            filtered: req.user && req.user.tipo !== 'admin'
         });
     } catch (e) { next(e); }
 };

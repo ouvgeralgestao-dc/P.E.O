@@ -16,7 +16,7 @@ const SPACING = {
 
 // Helper para dimensões (Sincronizado com Frontend)
 // Helper para dimensões (Sincronizado com Frontend)
-function getNodeDimensions(item) {
+export function getNodeDimensions(item) {
     let h = 0;
     if (item.hierarquia !== undefined) h = parseInt(item.hierarquia);
     else if (item.nivel !== undefined) h = parseInt(item.nivel);

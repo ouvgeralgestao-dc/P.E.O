@@ -3,6 +3,7 @@ import { client } from '../src/db/index.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,8 @@ function runMigrations() {
         { table: 'orgaos', column: 'categoria', type: 'TEXT', default: "'OUTROS'" },
         { table: 'orgaos', column: 'ordem', type: 'INTEGER', default: '999' },
         // 2026-01-21: Adicionar setor_ref para correlacionar cargos funcionais com setores estruturais
-        { table: 'cargos_funcionais', column: 'setor_ref', type: 'TEXT', default: 'NULL' }
+        { table: 'cargos_funcionais', column: 'setor_ref', type: 'TEXT', default: 'NULL' },
+        // 2026-01-23: Tabela usuarios já é criada via schema.sql, mas verificamos colunas aqui se necessário
     ];
 
     for (const m of migrations) {
@@ -107,10 +109,48 @@ function seedFromJson() {
     }
 }
 
+// Função para criar usuário admin padrão
+function seedUsuarios() {
+    try {
+        // Verificar se tabela usuarios está vazia
+        const count = client.prepare('SELECT COUNT(*) as total FROM usuarios').get() as { total: number };
+
+        if (count.total > 0) {
+            console.log(`ℹ️ [Seed] Tabela usuarios já possui ${count.total} registros - pulando seed.`);
+            return;
+        }
+
+        // Criar hash de senha simples (em produção usar bcrypt)
+        const senhaAdmin = 'admin123';
+        const hash = crypto.createHash('sha256').update(senhaAdmin).digest('hex');
+
+        // Inserir usuário admin padrão
+        const insertStmt = client.prepare(`
+            INSERT INTO usuarios (matricula, email, senha, setor, cargo, tipo)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+
+        insertStmt.run(
+            '000001',
+            'admin@peo.gov.br',
+            hash,
+            'TI',
+            'Administrador',
+            'admin'
+        );
+
+        console.log('✅ [Seed] Usuário admin padrão criado com sucesso! Matrícula: 000001, Senha: admin123');
+
+    } catch (e) {
+        console.error('❌ [Seed] Erro ao criar usuário admin:', e);
+    }
+}
+
 // Executa init + migrations + seed na importação
 initDb();
 runMigrations();
 seedFromJson();
+seedUsuarios();
 
 // Wrapper Async para compatibilidade com código existente
 export const dbAsync = {

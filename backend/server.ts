@@ -1,11 +1,17 @@
 
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import organogramasRoutes from './routes/organogramas.js';
 import orgaosRoutes from './routes/orgaos.js';
 import setoresRoutes from './routes/setores.js';
 import prefixosRoutes from './routes/prefixos.js';
+import authRoutes from './routes/auth.js';
+import usuariosRoutes from './routes/usuarios.js';
 import errorHandler from './middleware/errorHandler.js';
+
+// Carregar variáveis de ambiente
+dotenv.config();
 
 const app = express();
 const PORT = 6001; // Porta fixa - Backend conforme regra rules.mdc
@@ -20,6 +26,8 @@ app.use('/api/organogramas', organogramasRoutes);
 app.use('/api/orgaos', orgaosRoutes);
 app.use('/api/setores', setoresRoutes);
 app.use('/api/prefixos', prefixosRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 
 // Rota de teste
 app.get('/api/health', (req, res) => {

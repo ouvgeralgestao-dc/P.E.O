@@ -3,7 +3,24 @@ import * as sqliteStorageService from '../services/sqliteStorageService.js';
 export const listSetores = async (req, res) => {
     try {
         const setores = await sqliteStorageService.listUniqueSetores();
-        res.json({ success: true, data: setores });
+        
+        // Aplicar filtro por setor para usuários comuns
+        let filteredSetores = setores;
+        if (req.user && req.user.tipo !== 'admin') {
+            const userSector = req.user.setor.toUpperCase();
+            filteredSetores = setores.filter(setor => {
+                const setorUpper = setor.toUpperCase();
+                return setorUpper === userSector || 
+                       setorUpper.includes(userSector) ||
+                       userSector.includes(setorUpper);
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            data: filteredSetores,
+            filtered: req.user && req.user.tipo !== 'admin'
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
