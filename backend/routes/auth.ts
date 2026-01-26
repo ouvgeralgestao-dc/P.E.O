@@ -6,13 +6,13 @@ import { client } from '../src/db/index.js';
 import crypto from 'crypto';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_aqui';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Rota de login
 router.post('/login', [
     body('matricula').notEmpty().withMessage('Matrícula é obrigatória'),
     body('senha').notEmpty().withMessage('Senha é obrigatória')
-], async (req, res) => {
+], async (req: any, res: any) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -38,7 +38,6 @@ router.post('/login', [
         // Verificar senha (compatível com hash SHA256 atual e bcrypt futuro)
         let senhaValida = false;
         
-        // Tentar comparar com SHA256 (método atual)
         const hashSha256 = crypto.createHash('sha256').update(senha).digest('hex');
         senhaValida = user.senha === hashSha256;
 

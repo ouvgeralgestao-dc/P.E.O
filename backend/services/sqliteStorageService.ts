@@ -29,7 +29,7 @@ export const listOrgaos = async () => {
     }
 };
 
-export const getOrgaoIdByName = async (termo) => {
+export const getOrgaoIdByName = async (termo: number) => {
     try {
         // 1. Tenta buscar por ID exato (UUID ou string)
         let row = await dbAsync.get('SELECT id FROM orgaos WHERE id = ?', [termo]);
@@ -52,7 +52,7 @@ export const getOrgaoIdByName = async (termo) => {
     }
 };
 
-export const getOrgaoMetadata = async (orgaoId) => {
+export const getOrgaoMetadata = async (orgaoId:number) => {
     try {
         const row = await dbAsync.get('SELECT * FROM orgaos WHERE id = ?', [orgaoId]);
         if (!row) return null;

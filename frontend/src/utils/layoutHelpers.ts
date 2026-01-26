@@ -11,20 +11,30 @@ const LAYOUT_CONSTANTS = {
 };
 
 // Obter dimensões baseadas na hierarquia (Meta 11)
-const getDynamicDimensions = (hierarquia, isAssessoria = false, isPrefeito = false) => {
+// TORNANDO GENÉRICO: Baseado apenas em Nível numérico (1, 2, 3...)
+const getDynamicDimensions = (hierarquia, isAssessoria = false, tipoSetor = '') => {
     // Normalizar hierarquia
     let h = parseInt(hierarquia);
-    if (isNaN(h)) h = 0; // Default para 0 se não for número
+    if (isNaN(h)) h = 0; // Default para 0
 
-    if (h === 1 || isPrefeito) return { w: 300, h: 110 };
+    // Nível 1 (Máximo): Prefeito, Secretário, Presidente, etc.
+    // Também considera tipoSetor 'Prefeito' explicitamente para garantir retrocompatibilidade
+    if (h === 1 || tipoSetor === 'Prefeito') return { w: 300, h: 110 };
+
+    // Nível 2: Subsecretário, Superintendente
     if (h === 2) return { w: 280, h: 100 };
+
+    // Nível 3: Diretor, Coordenador
     if (h === 3) return { w: 260, h: 90 };
-    return { w: 240, h: 80 }; // Nível 4+ e Assessorias
+
+    // Nível 4+ e Assessorias (h=0) -> Tamanho padrão compacto
+    return { w: 240, h: 80 };
 };
 
 const SPACING_CONFIG = {
-    horizontalSpacing: LAYOUT_CONSTANTS.NODE_WIDTH + LAYOUT_CONSTANTS.HORIZONTAL_GAP, // 300px passo
-    verticalSpacing: LAYOUT_CONSTANTS.NODE_HEIGHT + LAYOUT_CONSTANTS.VERTICAL_GAP,    // 190px passo
+    // Usar valores fixos padrão (maior largura/altura possível)
+    horizontalSpacing: 300 + LAYOUT_CONSTANTS.HORIZONTAL_GAP, // 340px passo
+    verticalSpacing: 110 + LAYOUT_CONSTANTS.VERTICAL_GAP,    // 210px passo
     assessoriaOffset: 650, // Aumentado para 650 (Mais espaço lateral)
 };
 
@@ -82,7 +92,7 @@ export const calculateHierarchicalLayout = (setores) => {
      * Largura = (N_filhos * 260) + ((N_filhos - 1) * 40)
      */
     const calcularLarguraSubarvore = (setor) => {
-        const { w } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.id?.includes('prefeito'));
+        const { w } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.tipoSetor);
 
         // Condicional: Assessorias só são laterais (fora da largura) se Pai for Nível < 3 (0, 1, 2)
         // Se Pai for >= 3 (Subsecretaria), Assessoria conta como filho vertical normal.
@@ -116,7 +126,7 @@ export const calculateHierarchicalLayout = (setores) => {
      */
     const posicionarNos = (setor, x_center_available, y) => {
         // Obter dimensões para converter Coodernada e alinhar Centros
-        const { w } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.id?.includes('prefeito'));
+        const { w } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.tipoSetor);
         // ReactFlow usa Top-Left como âncora. Para alinhar centros (X), subtraimos metade da largura.
         // Math.round para evitar sub-pixel rendering (linhas borradas)
         setor.position = { x: Math.round(x_center_available - (w / 2)), y: Math.round(y) };
@@ -182,14 +192,29 @@ export const calculateHierarchicalLayout = (setores) => {
         // A ordem original do array já vem ordenada pelo backend (ordem de inserção)
         // Ordenar por ID causava intermitência no posicionamento esquerda/direita
 
-        const { h: parentH } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.id?.includes('prefeito'));
+        // CORREÇÃO CRÍTICA: Calcular altura do PAI baseado na hierarquia REAL, não em isAssessoria
+        // O pai nunca deve ser considerado assessoria para este cálculo
+        const parentHierarchy = parseInt(setor.hierarquia) || 1; // Default para 1 se undefined
+        const { h: parentH } = getDynamicDimensions(parentHierarchy, false, setor.tipoSetor);
         const parentCenterY = parentH / 2;
 
-        const getAdvisorYOffset = (ass) => {
-            const { h: assH } = getDynamicDimensions(ass.hierarquia, true, false);
-            const assCenterY = assH / 2;
-            return parentCenterY - assCenterY;
-        };
+        // CORREÇÃO: Assessoria SEMPRE tem altura 80 (hierarquia 0)
+        const ASSESSORIA_HEIGHT = 80;
+        const ASSESSORIA_CENTER_Y = ASSESSORIA_HEIGHT / 2; // 40
+
+        // Para alinhar centros horizontalmente:
+        // Parent.Y + parentCenterY = Child.Y + childCenterY
+        // Child.Y = Parent.Y + (parentCenterY - childCenterY)
+        const yOffsetForAlignment = parentCenterY - ASSESSORIA_CENTER_Y;
+
+        console.log(`[LAYOUT FIX] Pai: ${setor.nomeSetor || setor.nomeCargo}`, {
+            parentHierarchy,
+            parentH,
+            parentCenterY,
+            assessoriaHeight: ASSESSORIA_HEIGHT,
+            assessoriaCenterY: ASSESSORIA_CENTER_Y,
+            yOffsetForAlignment
+        });
 
         assessorias.forEach((ass, i) => {
             // Regra: 1ª (i=0) Direita, 2ª (i=1) Esquerda, 3ª (i=2) Direita...
@@ -202,17 +227,22 @@ export const calculateHierarchicalLayout = (setores) => {
                 : x_center_available - xOffset;
 
             // Ajuste vertical para não sobrepor se houver muitas assessorias do mesmo lado
-            // Math.floor(i/2) agrupa pares (0,1 no nível 0; 2,3 no nível 1...)
             const levelIndex = Math.floor(i / 2);
-            const yOffset = getAdvisorYOffset(ass);
-            const assY = y + yOffset + (levelIndex * 150); // 150px de gap vertical entre grupos
+
+            // Y final = Y do pai + offset para alinhar centros + espaçamento entre grupos
+            const assY = y + yOffsetForAlignment + (levelIndex * 150);
 
             ass._side = side;
-
-            // Configurar Handles para garantir fluxo correto
-            // Se está na direita, recebe linha na esquerda. Se está na esquerda, recebe na direita.
             ass.targetPosition = isRight ? 'left' : 'right';
-            ass.sourcePosition = 'bottom'; // Sempre sai por baixo para os filhos
+            ass.sourcePosition = 'bottom';
+
+            console.log(`[LAYOUT FIX] Assessoria: ${ass.nomeSetor || ass.nomeCargo}`, {
+                parentY: y,
+                finalY: Math.round(assY),
+                parentHandleAbsoluteY: y + parentCenterY,
+                childHandleAbsoluteY: Math.round(assY) + ASSESSORIA_CENTER_Y,
+                shouldBeEqual: (y + parentCenterY) === (Math.round(assY) + ASSESSORIA_CENTER_Y)
+            });
 
             posicionarNos(ass, assX, Math.round(assY));
         });
@@ -225,7 +255,7 @@ export const calculateHierarchicalLayout = (setores) => {
             const direction = setor._side === 'left' ? -1 : 1;
 
             // Dimensões do Pai para calcular descida
-            const { h: parentH_forNested } = getDynamicDimensions(setor.hierarquia, true, false);
+            const { h: parentH_forNested } = getDynamicDimensions(setor.hierarquia, true, '');
 
             // Start Y: Abaixo do pai + GAP PADRONIZADO
             const FIXED_VERTICAL_GAP = 100; // Valor fixo para padronizar distância
@@ -277,7 +307,7 @@ export const calculateHierarchicalLayout = (setores) => {
             const larguraFilho = largurasSubordinados[index];
             const centroFilho = currentX + (larguraFilho / 2);
 
-            const { h: parentH } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.id?.includes('prefeito'));
+            const { h: parentH } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.tipoSetor);
 
             // Se for nível alto (onde tem assessorias laterais), empurrar filhos centrais MUITO para baixo.
             // Aumentado para 320 para limpar completamente a área dos filhos de assessoria.
@@ -312,11 +342,21 @@ export const calculateHierarchicalLayout = (setores) => {
         currentRootX = -(totalRootWidth / 2);
     }
 
+    // Calcular altura máxima das raízes para alinhamento vertical
+    const rootsDimensions = raizes.map(r => getDynamicDimensions(r.hierarquia, r.isAssessoria, r.tipoSetor));
+    const maxRootHeight = Math.max(...rootsDimensions.map(d => d.h));
+    const rootCenterY = maxRootHeight / 2;
+
     raizes.forEach((raiz, index) => {
         const width = rootWidths[index];
+        const { h: rootH } = rootsDimensions[index];
         const centerX = currentRootX + (width / 2);
 
-        posicionarNos(raiz, centerX, 0);
+        // Alinhar verticalmente pelo centro
+        // Se a raiz for menor que a maior raiz, desce para alinhar o meio
+        const y = rootCenterY - (rootH / 2);
+
+        posicionarNos(raiz, centerX, Math.round(y));
 
         currentRootX += width + 80; // Gap entre subárvores principais
     });

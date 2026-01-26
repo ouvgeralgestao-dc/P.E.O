@@ -272,14 +272,22 @@ const OrganogramaCanvasInner = ({
                         onStyleChange: onStyleChange, // Passar callback estável
                         onEditClick: onEditClick, // Passar callback estável
                         handleY: (() => {
-                            // Calcular altura dinâmica para centralizar o handle (Height / 2)
-                            const h = isAssessoriaNode ? 0 : parseInt(setor.hierarquia || 0);
-                            const isPrefeito = setor.tipoSetor === 'Prefeito' || setor.id === 'prefeito';
+                            // CRÍTICO: handleY DEVE ser EXATAMENTE height / 2
+                            // Para setas horizontais: Parent.Y + Parent.handleY = Child.Y + Child.handleY
+                            // O layoutHelpers.ts calcula: Child.Y = Parent.Y + (parentH/2 - childH/2)
+                            // Então: Parent.Y + parentH/2 = Child.Y + childH/2 (centros alinhados)
+                            // Se handleY = height/2 em ambos, as setas serão HORIZONTAIS
 
-                            if (h === 1 || isPrefeito) return 55; // 110/2
-                            if (h === 2) return 50; // 100/2
-                            if (h === 3) return 45; // 90/2
-                            return 40; // 80/2 (Nível 4+ e Assessorias)
+                            const h = isAssessoriaNode ? 0 : parseInt(setor.hierarquia || 0);
+
+                            // Nível 1 (Prefeito/Secretaria): H=110 -> handleY=55
+                            if (h === 1 || setor.tipoSetor === 'Prefeito') return 55;
+                            // Nível 2: H=100 -> handleY=50
+                            if (h === 2) return 50;
+                            // Nível 3: H=90 -> handleY=45
+                            if (h === 3) return 45;
+                            // Nível 4+ e Assessorias (H=80) -> handleY=40
+                            return 40;
                         })(),
                         _wasAutoLayouted: setor._wasAutoLayouted, // Flag para disparar auto-save
                         parentId: setor.parentId
@@ -483,15 +491,14 @@ const OrganogramaCanvasInner = ({
                             onEditClick: onEditClick, // Passar callback estável
                             _wasAutoLayouted: cargo._wasAutoLayouted,
                             handleY: (() => {
-                                // CORREÇÃO: Calcular altura dinâmica para centralizar o handle (Height / 2)
-                                // Sincronizado com a lógica de Reset Layout para evitar linhas diagonais
+                                // CRÍTICO: handleY DEVE ser EXATAMENTE height / 2
+                                // Sincronizado com layoutHelpers e estrutura acima
                                 const h_calc = isAssessoriaNode ? 0 : parseInt(cargo.hierarquia || cargo.nivel || 0);
-                                const isPrefeito = cargo.tipoSetor === 'Prefeito' || cargo.id === 'prefeito' || (cargo.nomeCargo && cargo.nomeCargo.toLowerCase().includes('prefeito'));
 
-                                if (h_calc === 1 || isPrefeito) return 55; // 110/2
-                                if (h_calc === 2) return 50; // 100/2
-                                if (h_calc === 3) return 45; // 90/2
-                                return 40; // 80/2 (Nível 4+ e Assessorias)
+                                if (h_calc === 1 || cargo.tipoSetor === 'Prefeito') return 55;
+                                if (h_calc === 2) return 50;
+                                if (h_calc === 3) return 45;
+                                return 40; // Assessorias e Nível 4+
                             })(),
                             parentId: cargo.parentId
                         },
@@ -796,14 +803,13 @@ const OrganogramaCanvasInner = ({
                     customStyle: {},
                     onStyleChange: onStyleChange,
                     handleY: (() => {
-                        // Calcular altura dinâmica para centralizar o handle (Height / 2)
+                        // CRÍTICO: handleY DEVE ser EXATAMENTE height / 2
                         const h = isAssessoriaNode ? 0 : parseInt(item.hierarquia || 0);
-                        const isPrefeito = item.tipoSetor === 'Prefeito' || item.id === 'prefeito' || (item.nomeCargo && item.nomeCargo.toLowerCase().includes('prefeito'));
 
-                        if (h === 1 || isPrefeito) return 55; // 110/2
-                        if (h === 2) return 50; // 100/2
-                        if (h === 3) return 45; // 90/2
-                        return 40; // 80/2 (Nível 4+ e Assessorias)
+                        if (h === 1 || item.tipoSetor === 'Prefeito') return 55;
+                        if (h === 2) return 50;
+                        if (h === 3) return 45;
+                        return 40;
                     })(),
                     parentId: item.parentId
                 },

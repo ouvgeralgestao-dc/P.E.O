@@ -27,7 +27,7 @@ const PasswordModal = ({
         setError('');
 
         try {
-            const success = await onSubmit(password);
+            const success = await onSubmit(password.trim());
             if (success) {
                 handleClose();
             } else {
