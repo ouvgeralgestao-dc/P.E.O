@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/common/BackButton';
 import { logger } from '../utils/logger';
+import api from '../services/api';
 import './GerenciarSenhas.css';
 
 /**
@@ -10,9 +11,9 @@ import './GerenciarSenhas.css';
  */
 function GerenciarSenhas() {
     const navigate = useNavigate();
-    const [orgaos, setOrgaos] = useState([]);
+    const [orgaos, setOrgaos] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editingOrgao, setEditingOrgao] = useState(null);
+    const [editingOrgao, setEditingOrgao] = useState<any>(null);
     const [novaSenha, setNovaSenha] = useState('');
     const [confirmaSenha, setConfirmaSenha] = useState('');
     const [error, setError] = useState('');
@@ -25,25 +26,24 @@ function GerenciarSenhas() {
     const carregarOrgaos = async () => {
         try {
             logger.info('GerenciarSenhas', 'Carregando lista de órgãos');
-            const response = await fetch('http://localhost:6001/api/organogramas');
+            const response = await api.get('/organogramas');
 
-            if (!response.ok) {
-                throw new Error('Erro ao carregar órgãos');
-            }
-
-            const result = await response.json();
-            const orgaosList = result.data || result || [];
+            const orgaosList = response.data.data || response.data || [];
             setOrgaos(orgaosList);
             logger.success('GerenciarSenhas', 'Órgãos carregados', { total: orgaosList.length });
-        } catch (err) {
+        } catch (err: any) {
             logger.error('GerenciarSenhas', 'Erro ao carregar órgãos', err);
+            if (err.response?.status === 401) {
+                // Erro de autenticação será tratado pelo interceptor
+                return;
+            }
             setError('Erro ao carregar lista de órgãos');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEditClick = (orgao) => {
+    const handleEditClick = (orgao: any) => {
         setEditingOrgao(orgao);
         setNovaSenha('');
         setConfirmaSenha('');
@@ -76,27 +76,17 @@ function GerenciarSenhas() {
         }
 
         try {
-            logger.info('GerenciarSenhas', 'Atualizando senha do órgão', { orgao: editingOrgao.orgao });
+            logger.info('GerenciarSenhas', 'Atualizando senha do órgão', { orgao: editingOrgao?.orgao });
 
-            const response = await fetch(`http://localhost:6001/api/organogramas/${editingOrgao.orgaoId}/update-password`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ novaSenha }),
-            });
+            const response = await api.put(`/organogramas/${editingOrgao?.orgaoId}/update-password`, { novaSenha });
 
-            if (!response.ok) {
-                throw new Error('Erro ao atualizar senha');
-            }
-
-            setSuccess(`Senha do órgão "${editingOrgao.orgao}" atualizada com sucesso!`);
+            setSuccess(`Senha do órgão "${editingOrgao?.orgao}" atualizada com sucesso!`);
             setEditingOrgao(null);
             setNovaSenha('');
             setConfirmaSenha('');
             setError('');
 
-            logger.success('GerenciarSenhas', 'Senha atualizada', { orgao: editingOrgao.orgao });
+            logger.success('GerenciarSenhas', 'Senha atualizada', { orgao: editingOrgao?.orgao });
 
             // Limpar mensagem de sucesso após 3 segundos
             setTimeout(() => setSuccess(''), 3000);

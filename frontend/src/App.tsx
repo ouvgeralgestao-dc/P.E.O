@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { logger } from './utils/logger';
+import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import CriarOrganograma from './pages/CriarOrganograma';
 import VisualizarOrganograma from './pages/VisualizarOrganograma';
 import EditarOrganograma from './pages/EditarOrganograma';
@@ -27,19 +29,72 @@ function AppContent() {
             <div className={!isPrintPage ? "app-layout" : "print-layout"}>
                 <main className={!isPrintPage ? "main-content" : "print-content"}>
                     <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/criar" element={<CriarOrganograma />} />
-                        <Route path="/orgao/:nomeOrgao" element={<PastaOrgao />} />
-                        <Route path="/visualizar/:nomeOrgao" element={<VisualizarOrganograma />} />
-                        <Route path="/editar/:nomeOrgao" element={<EditarOrganograma />} />
-                        <Route path="/geral" element={<OrganogramaGeral />} />
-                        <Route path="/geral-funcional" element={<OrganogramaGeralFuncional />} />
-                        <Route path="/configuracoes" element={<Configuracoes />} />
-                        <Route path="/configurar-orgaos" element={<ConfigurarOrgaos />} />
-                        <Route path="/configurar-setores" element={<ConfigurarSetores />} />
-                        <Route path="/configurar-prefixos" element={<ConfigurarPrefixos />} />
-                        <Route path="/gerenciar-senhas" element={<GerenciarSenhas />} />
-                        <Route path="/imprimir" element={<PrintPreview />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/" element={
+                            <ProtectedRoute>
+                                <Dashboard />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/criar" element={
+                            <ProtectedRoute>
+                                <CriarOrganograma />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/orgao/:nomeOrgao" element={
+                            <ProtectedRoute>
+                                <PastaOrgao />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/visualizar/:nomeOrgao" element={
+                            <ProtectedRoute>
+                                <VisualizarOrganograma />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/editar/:nomeOrgao" element={
+                            <ProtectedRoute requireAdmin>
+                                <EditarOrganograma />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/geral" element={
+                            <ProtectedRoute>
+                                <OrganogramaGeral />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/geral-funcional" element={
+                            <ProtectedRoute>
+                                <OrganogramaGeralFuncional />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/configuracoes" element={
+                            <ProtectedRoute>
+                                <Configuracoes />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/configurar-orgaos" element={
+                            <ProtectedRoute requireAdmin>
+                                <ConfigurarOrgaos />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/configurar-setores" element={
+                            <ProtectedRoute requireAdmin>
+                                <ConfigurarSetores />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/configurar-prefixos" element={
+                            <ProtectedRoute requireAdmin>
+                                <ConfigurarPrefixos />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/gerenciar-senhas" element={
+                            <ProtectedRoute requireAdmin>
+                                <GerenciarSenhas />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/imprimir" element={
+                            <ProtectedRoute>
+                                <PrintPreview />
+                            </ProtectedRoute>
+                        } />
                     </Routes>
                 </main>
                 {!isPrintPage && <Footer />}
@@ -49,7 +104,7 @@ function AppContent() {
 }
 
 function App() {
-    logger.info('App', 'Aplicação iniciada');
+    logger.info('App', 'Aplicação iniciada', { timestamp: new Date().toISOString() });
 
     return (
         <Router>

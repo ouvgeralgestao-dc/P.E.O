@@ -1,0 +1,186 @@
+/* Fundo da página agora é neutro para destacar o card */
+.login-container {
+    min-height: 100vh;
+    background-color: #f0f2f5; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* O card agora é Flexbox (Lado a Lado) */
+.login-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px; /* Aumentei para caber os dois lados */
+    display: flex;
+    overflow: hidden; /* Garante que o fundo não vaze nas bordas arredondadas */
+    min-height: 550px;
+}
+
+/* --- LADO ESQUERDO (Branding) --- */
+.login-branding {
+    flex: 1; /* Ocupa 50% ou o espaço disponível */
+    background: linear-gradient(135deg, #1e3a8a 0%, #5278e0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+}
+
+/* Padrão de fundo opcional (efeito sutil) */
+.login-branding::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+');
+    opacity: 0.3;
+}
+
+.branding-content {
+    position: relative;
+    z-index: 1;
+}
+
+.branding-logo {
+    width: 200px;
+    height: auto;
+    margin-bottom: 25px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+}
+
+.login-branding h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+
+.login-branding p {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+/* --- LADO DIREITO (Conteúdo/Form) --- */
+.login-content {
+    flex: 1; /* Ocupa os outros 50% */
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: white;
+}
+
+.form-header {
+    margin-bottom: 30px;
+}
+
+.form-header h2 {
+    font-size: 26px;
+    color: #1e3a8a;
+    margin-bottom: 5px;
+}
+
+.form-header span {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #334155;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    box-sizing: border-box; /* Importante para não quebrar o layout */
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #5278e0;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(82, 120, 224, 0.1);
+}
+
+.error-message {
+    background-color: #fef2f2;
+    color: #dc2626;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #fecaca;
+}
+
+.login-button {
+    width: 100%;
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.login-button:hover:not(:disabled) {
+    background: #172554;
+}
+
+.login-button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 768px) {
+    .login-card {
+        flex-direction: column; /* Vira coluna em telas pequenas */
+        max-width: 400px;
+    }
+
+    .login-branding {
+        padding: 30px 20px;
+    }
+
+    .branding-logo {
+        width: 80px;
+        margin-bottom: 15px;
+    }
+
+    .login-branding h1 {
+        font-size: 20px;
+    }
+    
+    .login-content {
+        padding: 30px;
+    }
+}

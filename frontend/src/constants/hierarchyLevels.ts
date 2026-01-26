@@ -20,33 +20,33 @@ export const HIERARCHY_LEVELS = {
 
 // Cores por hierarquia (Sincronizadas com Legenda Geral Funcional)
 export const HIERARCHY_COLORS = {
-    0: '#E0E0E0',    // Assessoria - Cinza
+    0: '#C0C0C0',    // Assessoria - Prata (Legend)
     0.5: '#E0E0E0',  // Subprefeito - Cinza
-    1: '#4ECDC4',    // Nível 1 - Verde Água Vibrante
-    2: '#64B5F6',    // Nível 2 - Azul Pastel
-    3: '#FFF59D',    // Nível 3 - Amarelo Pastel
-    4: '#E0E0E0',    // Nível 4 - Cinza
-    5: '#FFCC80',    // Nível 5 - Laranja Pastel
-    6: '#FFCC80',
-    7: '#FFCC80',
-    8: '#FFCC80',
-    9: '#FFCC80',
-    10: '#FFCC80'
+    1: '#4ECDC4',    // Nível 1 - Verde Água (Legend)
+    2: '#45B7D1',    // Nível 2 - Azul Cyan (Legend)
+    3: '#96CEB4',    // Nível 3 - Verde Menta (Legend)
+    4: '#96CEB4',    // Nível 4+ - Verde Menta (Legend)
+    5: '#96CEB4',
+    6: '#96CEB4',
+    7: '#96CEB4',
+    8: '#96CEB4',
+    9: '#96CEB4',
+    10: '#96CEB4'
 };
 
 export const HIERARCHY_BORDERS = {
     0: '#9E9E9E',
     0.5: '#9E9E9E',
     1: '#3DBDB4', // Escuro de #4ECDC4
-    2: '#1E88E5', // Escuro de #64B5F6
-    3: '#FBC02D', // Escuro de #FFF59D
-    4: '#9E9E9E', // Escuro de #E0E0E0
-    5: '#F57C00', // Escuro de #FFCC80
-    6: '#F57C00',
-    7: '#F57C00',
-    8: '#F57C00',
-    9: '#F57C00',
-    10: '#F57C00'
+    2: '#2C8E9E', // Escuro de #45B7D1
+    3: '#76A08A', // Escuro de #96CEB4
+    4: '#76A08A',
+    5: '#76A08A',
+    6: '#76A08A',
+    7: '#76A08A',
+    8: '#76A08A',
+    9: '#76A08A',
+    10: '#76A08A'
 };
 
 // Tipos de setor por nível hierárquico

@@ -224,12 +224,16 @@ const OrganogramaCanvasInner = ({
                     parent.isAssessoria ||
                     parent.data?.isAssessoria || // Se parent vier do nó ReactFlow
                     parseFloat(parent.hierarquia) === 0 ||
+                    parseFloat(parent.hierarquia) === 0.5 || // CORREÇÃO: Subprefeituras (0.5) também devem ter filhos verticais
                     (parent.nomeSetor || '').toLowerCase().includes('consultoria') ||
-                    (parent.nomeSetor || '').toLowerCase().includes('gabinete')
+                    (parent.nomeSetor || '').toLowerCase().includes('gabinete') ||
+                    (parent.tipoSetor || '').toLowerCase().includes('subprefeitura') // Reforço
                 );
 
                 // Se for assessoria, mas o pai é nível 3+ OU o pai já é uma assessoria -> Vertical
-                const isVerticalAssessoria = isAssessoriaNode && (parentLevel >= 3 || isParentAssessoria);
+                // CORREÇÃO (18/01/2026): Prioridade total para isParentAssessoria.
+                // Se o pai é Subprefeitura (isParentAssessoria=true), forçamos vertical, independente se o filho é considerado assessoria ou não.
+                const isVerticalAssessoria = isParentAssessoria || (isAssessoriaNode && parentLevel >= 3);
 
                 // Definir Posição dos Handles
                 let sourcePos, targetPos;

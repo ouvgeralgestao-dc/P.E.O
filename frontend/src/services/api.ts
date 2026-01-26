@@ -12,9 +12,15 @@ const api = axios.create({
     },
 });
 
-// Interceptor de requisição (logging)
+// Interceptor de requisição (adicionar token e logging)
 api.interceptors.request.use(
     (config) => {
+        // Adicionar token de autenticação
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        
         logger.api.request(config.method, config.url, config.data);
         return config;
     },
@@ -24,7 +30,7 @@ api.interceptors.request.use(
     }
 );
 
-// Interceptor de resposta (logging)
+// Interceptor de resposta (logging e tratamento de erros de autenticação)
 api.interceptors.response.use(
     (response) => {
         logger.api.response(response.config.method, response.config.url, response.data);
@@ -36,6 +42,15 @@ api.interceptors.response.use(
             error.config?.url || 'unknown',
             error
         );
+        
+        // Tratar erros de autenticação
+        if (error.response?.status === 401) {
+            // Token expirado ou inválido
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        
         return Promise.reject(error);
     }
 );
