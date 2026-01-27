@@ -1,53 +1,42 @@
-# Walkthrough - Refinamento Visual e UX
+# Guia de Funcionalidades do Projeto P.E.O 🚀
 
-## ✅ Melhorias Implementadas (Até 18/01/2026)
+Este documento serve como referência rápida para as melhorias implementadas em 27/01/2026.
 
-### 🎨 Nova Identidade Visual
-**Nome do Sistema:**
-- ❌ Antigo: "Gerador de Organogramas - PMDC"
-- ✅ Novo: "Planejador de Estrutura Organizacional"
+## 👥 Perfil de Usuário
 
-**Logo Profissional:**
-- ✅ Ícone moderno com estrutura hierárquica
-- ✅ Cores azul marinho (#1e3a8a) e teal (#3b82f6)
-- ✅ Fundo transparente
-- ✅ Tamanhos otimizados (64px Header / 120px Dashboard)
+O menu lateral agora identifica você:
+
+- **Nome em Negrito**: Exibe o seu primeiro nome em destaque.
+- **Matrícula**: Exibida em um badge discreto ao lado.
+- **Exemplo**: **Nilton** `[370517]`
+
+## 📋 Aprovação de Cadastro (Administrador)
+
+Ao receber um e-mail de nova solicitação:
+
+1. Clique em **"🔍 Analisar Solicitação"**.
+2. No campo **"Vincular ao Setor"**, não é mais necessário digitar. Selecione a categoria correta diretamente do menu suspenso (carregado via Dicionário).
+3. Defina se o usuário será **Administrador** ou **Usuário Comum**.
+
+## 🏛️ Dashboard e Filtros
+
+- **Gestores (Usuários Comuns)**: Só verão organogramas do próprio órgão ou que correspondam ao seu setor.
+- **Administradores**: Continuam com acesso total a todos os registros.
+
+## 💾 Segurança de Dados
+
+- **Banco de Dados**: Fica salvo localmente em `backend/data/organograma.sqlite`.
+- **Backup**: Recomenda-se copiar a pasta `backend/data` periodicamente.
+- **Credenciais**: Nunca compartilhe o arquivo `.env` ou chaves JSON da raiz.
+
+## 🚀 Como Executar em Novo PC
+
+1. Instale o Node.js v20+.
+2. Clone o repositório.
+3. Copie o arquivo `.env` para a raiz do `backend`.
+4. Digite `npm install` na pasta principal.
+5. Digite `npm start` para abrir o site.
 
 ---
 
-### 📊 Dashboard Profissional e Inteligente (Novo!)
-**Detalhamento Técnico de Cargos:**
-- ✅ Substituído gráfico de barras genérico por uma **Lista com Barras de Proporção**.
-- ✅ Agrupamento inteligente por prefixo de cargo.
-- ✅ Exibição de **Símbolos (Badges)** e suas respectivas quantidades, garantindo transparência total.
-
-**Unificação de Visualização:**
-- ✅ Gráficos de "Símbolos por Órgão" e "Símbolos por Setor" agora seguem o mesmo padrão de lista detalhada.
-
-**Limpeza Visual:**
-- ✅ Badges dos cards simplificados para **ESTRUTURAL** e **FUNCIONAL**.
-
----
-
-### 📐 Refinamentos na Visualização de Organogramas
-**Painel de Informações:**
-- ✅ Adicionada a métrica **Total de Cargos** no card lateral.
-- ✅ Rodapé da tabela renomeado para **Total de Cargos do Órgão**.
-
-**Interatividade e Estilo:**
-- ✅ Implementado **Editor de Estilo** por nó com suporte a **Edição em Lote** (Batch Edit).
-- ✅ Multi-seleção liberada (`Shift + Clique` ou Caixa de Seleção).
-
----
-
-### 📦 Estrutura e Performance
-- ✅ Container expandido para **1600px**.
-- ✅ Proteção por senha em áreas sensíveis.
-- ✅ Tamanhos de nós variáveis por hierarquia.
-- ✅ Integração total com **SQLite** e migração concluída com 37 órgãos ativos.
-
-### 🧩 Cross-Filtering Estrutural-Funcional (Novo!)
-
-### 🔄 Fluxo de Trabalho Git (Novo!)
-- ✅ **Repositório Conectado:** Projeto vinculado ao GitHub Privado (`ouvgeralgestao-dc/P.E.O`).
-- ✅ **Auto-Sync:** Protocolo de "Auto-Commit" ativado no `rules.mdc`. Toda tarefa finalizada é enviada automaticamente para a nuvem, garantindo backup e versionamento contínuo.
+_Atualizado em: 27 de Janeiro de 2026_
