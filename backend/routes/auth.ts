@@ -6,7 +6,7 @@ import { client } from '../src/db/index.js';
 import crypto from 'crypto';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+
 
 // Rota de login
 router.post('/login', [
@@ -26,7 +26,7 @@ router.post('/login', [
 
         // Buscar usuário no banco
         const user = client.prepare(`
-            SELECT id, matricula, email, senha, setor, cargo, tipo 
+            SELECT id, matricula, email, senha, nome, setor, cargo, tipo 
             FROM usuarios 
             WHERE matricula = ?
         `).get(matricula);
@@ -51,13 +51,18 @@ router.post('/login', [
         }
 
         // Gerar token JWT
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error('JWT_SECRET não configurado no backend!');
+        }
+
         const token = jwt.sign(
             { 
                 userId: user.id,
                 matricula: user.matricula,
                 tipo: user.tipo
             },
-            JWT_SECRET,
+            secret,
             { expiresIn: '24h' }
         );
 
@@ -85,14 +90,16 @@ router.get('/me', (req, res) => {
         return res.status(401).json({ error: 'Token não fornecido' });
     }
 
-    jwt.verify(token, JWT_SECRET, async (err: any, decoded: any) => {
+    const secret = process.env.JWT_SECRET || 'default_fallback_inseguro'; // Fallback para dev (não deve acontecer se .env carregar)
+
+    jwt.verify(token, secret, async (err: any, decoded: any) => {
         if (err) {
             return res.status(403).json({ error: 'Token inválido' });
         }
 
         try {
             const user = client.prepare(`
-                SELECT id, matricula, email, setor, cargo, tipo 
+                SELECT id, matricula, email, nome, setor, cargo, tipo 
                 FROM usuarios 
                 WHERE id = ?
             `).get(decoded.userId);

@@ -2,7 +2,10 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 
 // URL base da API
-const API_BASE_URL = 'http://localhost:6001/api';
+// URL base da API
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_PORT = 6001;
+const API_BASE_URL = `http://${window.location.hostname}:${API_PORT}/api`;
 
 // Criar instância do axios
 const api = axios.create({

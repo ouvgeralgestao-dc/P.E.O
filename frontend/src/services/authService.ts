@@ -20,10 +20,15 @@ export interface LoginResponse {
 
 export const authService = {
     async login(matricula: string, senha: string): Promise<LoginResponse> {
-        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+        const response = await api.post('/auth/login', {
             matricula,
             senha
         });
+        return response.data;
+    },
+
+    async registerRequest(data: any) {
+        const response = await api.post('/solicitacoes/register', data);
         return response.data;
     },
 

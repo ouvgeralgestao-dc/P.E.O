@@ -7,10 +7,88 @@
     justify-content: center;
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    overflow: hidden; /* Garante que ícones não vazem scroll */
 }
 
-/* O card agora é Flexbox (Lado a Lado) */
+/* Container de Decoração */
+.login-background-decor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Não interfere no clique */
+    z-index: 0;
+}
+
+/* Ícones Base */
+.bg-icon {
+    position: absolute;
+    color: #1e3a8a; /* Azul base do tema */
+    opacity: 0.10; /* Aumentado para 10% */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    animation: float 8s ease-in-out infinite; /* Tempo base reduzido para 8s (mais rápido) */
+}
+
+/* Animação de Flutuação */
+@keyframes float {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-60px) rotate(10deg); } /* Movimento bem mais amplo */
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Posicionamento Específico e Variação de Ícones */
+.icon-structure {
+    width: 300px;
+    height: 300px;
+    top: -50px;
+    right: -50px;
+    animation-duration: 15s;
+    opacity: 0.04;
+}
+
+.icon-gear {
+    width: 150px;
+    height: 150px;
+    bottom: 10%;
+    left: 5%;
+    animation-duration: 12s;
+    animation-delay: 2s;
+}
+
+.icon-board {
+    width: 120px;
+    height: 120px;
+    top: 15%;
+    left: 15%;
+    animation-duration: 18s;
+    animation-delay: 1s;
+}
+
+.icon-users {
+    width: 180px;
+    height: 180px;
+    bottom: -20px;
+    right: 20%;
+    animation-duration: 14s;
+    animation-delay: 3s;
+}
+
+.icon-chart {
+    width: 100px;
+    height: 100px;
+    top: 40%;
+    right: 10%;
+    animation-duration: 20s;
+    animation-delay: 5s;
+    opacity: 0.02;
+}
+
+/* Ajuste Z-Index do Card para ficar na frente */
 .login-card {
+    position: relative;
+    z-index: 10;
     background: white;
     border-radius: 16px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
@@ -49,10 +127,11 @@
 }
 
 .branding-logo {
-    width: 200px;
+    width: 280px; /* Aumentado para melhor visibilidade */
     height: auto;
-    margin-bottom: 25px;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    margin-bottom: 30px;
+    /* Sombras removidas para logo flat/clean ou ajustadas se necessário */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
 .login-branding h1 {
@@ -80,17 +159,18 @@
 
 .form-header {
     margin-bottom: 30px;
+    text-align: center; /* Garante centralização extra */
 }
 
-.form-header h2 {
-    font-size: 26px;
-    color: #1e3a8a;
-    margin-bottom: 5px;
-}
-
-.form-header span {
-    color: #64748b;
-    font-size: 14px;
+.login-dc-logo {
+    width: 150px;
+    height: auto;
+    margin-bottom: 20px;
+    /* 
+     * Converte QUALQUER cor base para preto primeiro (brightness: 0)
+     * e depois aplica o azul #1e3a8a
+     */
+    filter: brightness(0) saturate(100%) invert(18%) sepia(96%) saturate(2643%) hue-rotate(209deg) brightness(95%) contrast(104%);
 }
 
 .form-group {

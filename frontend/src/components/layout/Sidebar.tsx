@@ -120,12 +120,14 @@ function Sidebar() {
             {shouldShowExpanded && user && (
                 <div className="user-info">
                     <div className="user-avatar">
-                        {user.nome ? user.nome.charAt(0).toUpperCase() : user.matricula.charAt(0)}
+                        {user.nome ? user.nome.charAt(0).toUpperCase() : (user.matricula ? user.matricula.charAt(0) : 'U')}
                     </div>
                     <div className="user-details">
-                        <div className="user-name">{user.nome || user.matricula}</div>
-                        <div className="user-role">{user.cargo}</div>
-                        <div className="user-sector">{user.setor}</div>
+                        <div className="user-name-row">
+                            <span className="user-name">{user.nome ? user.nome.split(' ')[0] : 'Usuário'}</span>
+                            <span className="user-matricula">{user.matricula}</span>
+                        </div>
+                        <div className="user-sector">{user.setor || 'Setor não definido'}</div>
                         <div className={`user-type ${user.tipo}`}>
                             {user.tipo === 'admin' ? '👑 Administrador' : '👤 Usuário'}
                         </div>

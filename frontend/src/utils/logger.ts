@@ -58,14 +58,18 @@ export const logger = {
 
     api: {
         request: (method, url, data) => {
+            const sanitizedData = sanitizeData(data);
             console.log(
                 `%c🌐 [API] ${method.toUpperCase()} ${url}`,
                 'color: #00BCD4; font-weight: bold',
-                data || ''
+                sanitizedData || ''
             );
         },
 
         response: (method, url, data) => {
+            // Em respostas, geralmente não vem senha, mas o token pode ser longo. 
+            // Se quiser sanitizar também:
+            // const sanitizedData = sanitizeData(data);
             console.log(
                 `%c✅ [API] Resposta ${method.toUpperCase()} ${url}`,
                 'color: #4CAF50; font-weight: bold',
@@ -79,10 +83,34 @@ export const logger = {
                 'color: #F44336; font-weight: bold',
                 {
                     status: error.response?.status,
-                    mensagem: error.response?.data?.message || error.message,
+                    mensagem: error.response?.data?.error || error.response?.data?.message || error.message,
                     url: error.config?.url
                 }
             );
         }
     }
+};
+
+// Função auxiliar para mascarar dados sensíveis
+const sanitizeData = (data: any) => {
+    if (!data || typeof data !== 'object') return data;
+
+    // Lista de campos para mascarar
+    const sensitiveFields = ['senha', 'password', 'confirmarSenha', 'token', 'authorization'];
+
+    if (Array.isArray(data)) {
+        return data.map(item => sanitizeData(item));
+    }
+
+    const sanitized = { ...data };
+    
+    Object.keys(sanitized).forEach(key => {
+        if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+            sanitized[key] = '*** [OCULTO] ***';
+        } else if (typeof sanitized[key] === 'object') {
+            sanitized[key] = sanitizeData(sanitized[key]);
+        }
+    });
+
+    return sanitized;
 };

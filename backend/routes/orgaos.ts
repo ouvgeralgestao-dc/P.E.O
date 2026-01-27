@@ -4,6 +4,7 @@
 import express from 'express';
 import {
     getAllOrgaos,
+    getPublicOrgaos,
     createOrgao,
     updateOrgao,
     deleteOrgao
@@ -12,7 +13,10 @@ import { authenticateToken, requireAdmin, checkSectorAccess } from '../middlewar
 
 const router = express.Router();
 
-// Middleware de autenticação para todas as rotas
+// Rota pública para cadastro (dropdown de órgãos) - Dados limitados
+router.get('/public', getPublicOrgaos);
+
+// Middleware de autenticação para todas as rotas abaixo
 router.use(authenticateToken);
 
 // GET /api/orgaos - Listar todos os órgãos

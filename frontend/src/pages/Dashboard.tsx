@@ -44,9 +44,19 @@ const Dashboard = () => {
     // Funções de utilidade movidas para fora ou estabilizadas
     const formatOrgaoName = useCallback((name: string) => {
         if (!name) return '';
-        return name
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        // Se já tiver espaços, assume que é nome e não slug. Se tiver _, substitui por espaço.
+        const cleanName = name.replace(/_/g, ' ');
+        return cleanName
+            .split(' ')
+            .map((word, index) => {
+                const lower = word.toLowerCase();
+                // Lista de preposições que devem ficar em minúsculo (exceto se for a primeira palavra)
+                const ignoreList = ['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'para', 'com'];
+                if (index > 0 && ignoreList.includes(lower)) {
+                    return lower;
+                }
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            })
             .join(' ');
     }, []);
 
@@ -418,6 +428,47 @@ const Dashboard = () => {
         };
     }, [filteredOrganogramas, getOrgaoStats]);
 
+    // Helper de Ordenação Hierárquica
+    const getSymbolRank = useCallback((symbol: string) => {
+        const s = symbol.toUpperCase().trim();
+        
+        // 1. Topo da Pirâmide
+        if (s === 'DAS-S') return 1;
+        if (s === 'SS') return 2;
+        if (s === 'VP') return 3;
+        
+        // 2. FC-1 (Solicitado explicitamente após DAS-S)
+        if (s === 'FC-1') return 5;
+        if (s === 'FC-2') return 6; // Caso exista
+        
+        // 3. DAS Numéricos (DAS-10A -> DAS-1)
+        // Usamos regex para extrair o número. Quanto maior o número, menor o rank (aparece antes)
+        const matchDas = s.match(/^DAS-(\d+)/);
+        if (matchDas) {
+            const num = parseInt(matchDas[1]);
+            // Ex: DAS-10 -> 20 - 10 = 10
+            // Ex: DAS-1 -> 20 - 1 = 19
+            return 20 - num; 
+        }
+
+        // 4. CAI / DAI
+        const matchDai = s.match(/^DAI-(\d+)/);
+        if (matchDai) {
+            const num = parseInt(matchDai[1]);
+            return 40 - num; // 40-10=30 ... 40-1=39
+        }
+
+        // 5. Outros (Ficam no final)
+        return 100;
+    }, []);
+
+    const sortSymbolsByRank = useCallback((a: any, b: any) => {
+        // Suporta tanto objeto com 'label' quanto 'tipo' (para o caso consolidado)
+        const labelA = a.label || a.tipo || '';
+        const labelB = b.label || b.tipo || '';
+        return getSymbolRank(labelA) - getSymbolRank(labelB);
+    }, [getSymbolRank]);
+
     // Dados para os Gráficos (com filtragem interna por setor, símbolo e prefixo)
     const { chartDataSimbolos, chartDataCargosDetalhados, setoresPorOrgaoFull, cargosPorOrgaoFull, simbolosPorOrgaoFull, cargosPorSetorNaoNivel1Full } = useMemo(() => {
         const simbolosCount: Record<string, number> = {};
@@ -430,29 +481,22 @@ const Dashboard = () => {
             if (!orgaoStats[oName]) orgaoStats[oName] = { setores: new Set(), cargos: 0, simbolos: 0, simbolosMap: {} };
 
             // Estatísticas da Estrutura
-            // NOTA: Setores são coletados SEM filtro interno para que todos os setores dos organogramas filtrados apareçam
             if (org.organogramaEstrutural?.setores) {
                 const processEstrutura = (node: any, level = 0) => {
-                    // Verificar se o setor passa no filtro (de Setor)
                     const setorPassaFiltro = selectedSetores.length === 0 || selectedSetores.includes(node.nomeSetor);
-
-                    // Refinamento: Se houver filtro de Símbolo, o setor só passa se tiver o símbolo
                     let setorTemSimbolo = true;
                     if (selectedSimbolos.length > 0) {
                         setorTemSimbolo = node.cargos && node.cargos.some((c: any) => selectedSimbolos.includes(c.tipo));
                     }
 
-                    // Só adicionar à lista de setores visualizados se passar em TODOS os filtros aplicáveis
                     if (node.nomeSetor && setorPassaFiltro && setorTemSimbolo) {
                         orgaoStats[oName].setores.add(node.nomeSetor);
                     }
 
-                    // Para estatísticas de símbolos
                     if (node.cargos) {
                         if (setorPassaFiltro) {
                             node.cargos.forEach((c: any) => {
                                 const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(c.tipo);
-
                                 if (simboloPassaFiltro) {
                                     const qtd = (parseInt(c.quantidade) || 0);
                                     simbolosCount[c.tipo] = (simbolosCount[c.tipo] || 0) + qtd;
@@ -477,16 +521,13 @@ const Dashboard = () => {
                 org.organogramaEstrutural.setores.forEach(n => processEstrutura(n));
             }
 
-            // Estatísticas das Funções (com filtro de prefixo)
+            // Estatísticas das Funções
             if (org.organogramasFuncoes && org.organogramasFuncoes.length > 0) {
                 const latestFunc = org.organogramasFuncoes[0];
                 const processFuncao = (cargo: any) => {
                     if (cargo.nomeCargo) {
                         const prefixo = cargo.nomeCargo.split(' ')[0].trim();
-
-                        // Verificar se o prefixo passa no filtro (se houver filtro de prefixo)
                         const prefixoPassaFiltro = selectedPrefixos.length === 0 || selectedPrefixos.includes(prefixo);
-                        // Verificar se o setor de referência passa no filtro (CROSS-FILTERING)
                         const setorRefPassaFiltro = selectedSetores.length === 0 || (cargo.nome_setor_ref && selectedSetores.includes(cargo.nome_setor_ref));
 
                         if (prefixoPassaFiltro && setorRefPassaFiltro) {
@@ -501,7 +542,6 @@ const Dashboard = () => {
                                 cargo.simbolos.forEach((sim: any) => {
                                     const qtdSim = parseInt(sim.quantidade) || 0;
                                     const tipoSim = sim.tipo;
-                                    // Verificar se o símbolo passa no filtro
                                     const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(tipoSim);
                                     if (tipoSim && qtdSim > 0 && simboloPassaFiltro) {
                                         cargosPrefix[prefixo].simbolosMap[tipoSim] = (cargosPrefix[prefixo].simbolosMap[tipoSim] || 0) + qtdSim;
@@ -516,15 +556,24 @@ const Dashboard = () => {
             }
         });
 
+        // Aplicar ordenação hierárquica nos dados de saída
         return {
-            chartDataSimbolos: Object.entries(simbolosCount).map(([name, value]) => ({ label: name, value })),
+            // Sorting Chart 1: Símbolos (Principal change)
+            chartDataSimbolos: Object.entries(simbolosCount)
+                .map(([name, value]) => ({ label: name, value }))
+                .sort(sortSymbolsByRank), // Ordenado por Rank
+
+            // Sorting Chart 2: Detalhes de Símbolos dentro dos cargos
             chartDataCargosDetalhados: Object.entries(cargosPrefix)
                 .map(([name, info]) => ({
                     label: name,
                     value: info.total,
-                    details: Object.entries(info.simbolosMap).map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                    details: Object.entries(info.simbolosMap)
+                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value),
+
             setoresPorOrgaoFull: Object.entries(orgaoStats)
                 .filter(([_, s]) => s.setores.size > 0)
                 .map(([name, s]) => ({
@@ -532,22 +581,18 @@ const Dashboard = () => {
                     value: s.setores.size,
                     details: Array.from(s.setores).sort().map(setorName => ({ label: setorName, value: 1 }))
                 })),
+
             cargosPorOrgaoFull: Object.entries(orgaoStats)
                 .filter(([_, s]) => s.cargos > 0)
                 .map(([orgaoName, s]) => {
-                    // Coletar todos os cargos deste órgão agrupados por PREFIXO
                     const cargosPorPrefixo: Record<string, number> = {};
-
                     const orgData = filteredOrganogramas.find(o => o.orgao === orgaoName);
                     if (orgData?.organogramasFuncoes && orgData.organogramasFuncoes.length > 0) {
                         const latestFunc = orgData.organogramasFuncoes[0];
                         const collectCargos = (cargo: any) => {
                             if (cargo.nomeCargo) {
-                                // Extrair prefixo (primeira palavra)
                                 const prefixo = cargo.nomeCargo.split(' ')[0].trim();
-                                // Verificar se o prefixo passa no filtro
                                 const prefixoPassaFiltro = selectedPrefixos.length === 0 || selectedPrefixos.includes(prefixo);
-                                // Verificar se o setor de referência passa no filtro
                                 const setorRefPassaFiltro = selectedSetores.length === 0 || (cargo.nome_setor_ref && selectedSetores.includes(cargo.nome_setor_ref));
 
                                 if (prefixoPassaFiltro && setorRefPassaFiltro) {
@@ -559,32 +604,39 @@ const Dashboard = () => {
                         };
                         if (latestFunc.cargos) latestFunc.cargos.forEach(collectCargos);
                     }
-
                     return {
                         label: formatOrgaoName(orgaoName),
                         value: s.cargos,
                         details: Object.entries(cargosPorPrefixo)
                             .map(([prefixo, qtd]) => ({ label: prefixo, value: qtd }))
-                            .sort((a, b) => b.value - a.value) // Ordenar por quantidade (maior primeiro)
+                            .sort((a, b) => b.value - a.value)
                     };
                 }),
+
+            // Sorting Chart 3: Detalhes de Símbolos por Órgão
             simbolosPorOrgaoFull: Object.entries(orgaoStats)
                 .filter(([_, s]) => s.simbolos > 0)
                 .map(([name, s]) => ({
                     label: formatOrgaoName(name),
                     value: s.simbolos,
-                    details: Object.entries(s.simbolosMap).map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                    details: Object.entries(s.simbolosMap)
+                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value),
+
+            // Sorting Chart 4: Detalhes de Símbolos por Setor
             cargosPorSetorNaoNivel1Full: Object.entries(setorStats)
                 .map(([name, s]) => ({
                     label: name,
                     value: s.total,
-                    details: Object.entries(s.simbolosMap).map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                    details: Object.entries(s.simbolosMap)
+                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value)
         };
-    }, [filteredOrganogramas, formatOrgaoName, selectedSetores, selectedSimbolos, selectedPrefixos]);
+    }, [filteredOrganogramas, formatOrgaoName, selectedSetores, selectedSimbolos, selectedPrefixos, getSymbolRank, sortSymbolsByRank]);
 
     // Dados Consolidados (Cargos + Símbolos por Órgão) - com filtros aplicados
     const cargosESimbolosPorOrgao = useMemo(() => {
@@ -596,16 +648,12 @@ const Dashboard = () => {
             let totalCargos = 0;
             let totalSimbolos = 0;
 
-            // Processar organograma funcional para coletar prefixos e símbolos
             if (org.organogramasFuncoes && org.organogramasFuncoes.length > 0) {
                 const latestFunc = org.organogramasFuncoes[0];
                 const processCargo = (cargo: any) => {
                     if (cargo.nomeCargo) {
                         const prefixo = cargo.nomeCargo.split(' ')[0].trim();
-
-                        // Verificar se o prefixo passa no filtro
                         const prefixoPassaFiltro = selectedPrefixos.length === 0 || selectedPrefixos.includes(prefixo);
-                        // Verificar se o setor de referência passa no filtro
                         const setorRefPassaFiltro = selectedSetores.length === 0 || (cargo.nome_setor_ref && selectedSetores.includes(cargo.nome_setor_ref));
 
                         if (prefixoPassaFiltro && setorRefPassaFiltro) {
@@ -616,12 +664,10 @@ const Dashboard = () => {
                                 prefixosData[prefixo] = { prefixo, simbolos: {} };
                             }
 
-                            // Coletar símbolos deste cargo (com filtro)
                             if (cargo.simbolos && Array.isArray(cargo.simbolos)) {
                                 cargo.simbolos.forEach((sim: any) => {
                                     const qtdSim = parseInt(sim.quantidade) || 0;
                                     const tipoSim = sim.tipo;
-                                    // Verificar se o símbolo passa no filtro
                                     const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(tipoSim);
                                     if (tipoSim && qtdSim > 0 && simboloPassaFiltro) {
                                         prefixosData[prefixo].simbolos[tipoSim] = (prefixosData[prefixo].simbolos[tipoSim] || 0) + qtdSim;
@@ -636,7 +682,6 @@ const Dashboard = () => {
                 if (latestFunc.cargos) latestFunc.cargos.forEach(processCargo);
             }
 
-            // Montar estrutura final para este órgão
             if (Object.keys(prefixosData).length > 0) {
                 consolidatedData.push({
                     orgao: formatOrgaoName(orgaoName),
@@ -647,9 +692,10 @@ const Dashboard = () => {
                             prefixo: p.prefixo,
                             simbolos: Object.entries(p.simbolos)
                                 .map(([tipo, quantidade]) => ({ tipo, quantidade }))
-                                .sort((a, b) => b.quantidade - a.quantidade)
+                                .sort(sortSymbolsByRank) // Ordenado por Rank (NOVO)
                         }))
                         .sort((a, b) => {
+                            // Mantém a ordenação dos prefixos por quantidade total (opcional, pode ser mudado se quiser hierarquia aqui também)
                             const totalA = a.simbolos.reduce((sum, s) => sum + s.quantidade, 0);
                             const totalB = b.simbolos.reduce((sum, s) => sum + s.quantidade, 0);
                             return totalB - totalA;
@@ -659,7 +705,7 @@ const Dashboard = () => {
         });
 
         return consolidatedData.sort((a, b) => b.totalSimbolos - a.totalSimbolos);
-    }, [filteredOrganogramas, formatOrgaoName, selectedPrefixos, selectedSimbolos]);
+    }, [filteredOrganogramas, formatOrgaoName, selectedPrefixos, selectedSimbolos, sortSymbolsByRank]);
 
     const handleVisualizeClick = useCallback((org: Organograma) => {
         setViewSelectionOrg(org);

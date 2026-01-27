@@ -6,7 +6,7 @@ dist/
 build/
 
 # Environment variables
-# .env excluded by user request for private repo
+.env
 .env.local
 
 # Logs
@@ -32,3 +32,11 @@ _MODULO_MANUS/
 temp/
 output_check.json
 uploaded_image_*.png
+
+# Segurança e Dados
+*.sqlite
+*.sqlite-journal
+ouvidoria-*.json
+*.pdf
+pending.txt
+user_dump.txt

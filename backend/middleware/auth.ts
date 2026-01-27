@@ -7,6 +7,7 @@ interface AuthRequest extends Request {
         id: number;
         matricula: string;
         email: string;
+        nome: string;
         setor: string;
         cargo: string;
         tipo: 'admin' | 'user';
@@ -31,7 +32,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
         // Buscar informações atualizadas do usuário no banco
         try {
             const user = client.prepare(`
-                SELECT id, matricula, email, setor, cargo, tipo 
+                SELECT id, matricula, email, nome, setor, cargo, tipo 
                 FROM usuarios 
                 WHERE id = ?
             `).get(decoded.userId);

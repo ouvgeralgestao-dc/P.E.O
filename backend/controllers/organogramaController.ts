@@ -254,13 +254,21 @@ export async function getAllOrganogramas(req, res, next) {
         const isFiltered = req.user && req.user.tipo !== 'admin';
         
         if (isFiltered) {
-            const userSector = req.user.setor.toUpperCase();
-            listaFiltrada = listaBasica.filter(orgao => {
-                const orgaoCategoria = orgao.categoria ? orgao.categoria.toUpperCase() : '';
-                return orgaoCategoria === userSector || 
-                       orgaoCategoria.includes(userSector) ||
-                       userSector.includes(orgaoCategoria);
-            });
+            if (req.user.orgao_id) {
+                // Filtrar pelo ID do órgão vinculado ao usuário
+                listaFiltrada = listaBasica.filter(orgao => String(orgao.id) === String(req.user.orgao_id));
+            } else if (req.user.setor) {
+                const userSector = req.user.setor.toUpperCase();
+                listaFiltrada = listaBasica.filter(orgao => {
+                    const orgaoCategoria = orgao.categoria ? orgao.categoria.toUpperCase() : '';
+                    return orgaoCategoria === userSector || 
+                           orgaoCategoria.includes(userSector) ||
+                           userSector.includes(orgaoCategoria);
+                });
+            } else {
+                // Sem setor e sem órgão definido
+                listaFiltrada = [];
+            }
         }
 
         // Enriquecer com dados estruturais e funcionais para o Dashboard

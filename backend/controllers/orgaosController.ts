@@ -43,6 +43,27 @@ export const getAllOrgaos = async (req, res, next) => {
     }
 };
 
+// Listar órgãos para cadastro público (apenas id e nome)
+export const getPublicOrgaos = async (req, res, next) => {
+    try {
+        const orgaos = await storageService.listOrgaos();
+        
+        // Retornar apenas dados necessários para o dropdown
+        const mapped = orgaos.map(o => ({
+            id: o.id,
+            nome: o.orgao
+        }));
+
+        res.json({
+            success: true,
+            data: mapped,
+            count: mapped.length
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Criar novo órgão
 export const createOrgao = async (req, res, next) => {
     try {

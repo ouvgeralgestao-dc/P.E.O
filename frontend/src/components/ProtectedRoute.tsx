@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/authService';
-import Login from '../pages/Login';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -13,6 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const location = useLocation();
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -59,7 +60,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     if (!isAuthenticated) {
-        return <Login />;
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return <>{children}</>;
