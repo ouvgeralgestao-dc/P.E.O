@@ -87,10 +87,9 @@ export const createOrgao = async (req, res, next) => {
             });
         }
 
-        const formattedNome = formatTitleCase(nome);
         const novoOrgao = await storageService.createOrgaoAdmin({
             id,
-            nome: formattedNome,
+            nome: nome, // Preservar capitalização do usuário
             categoria,
             ordem: ordem || 999
         });
@@ -119,9 +118,8 @@ export const updateOrgao = async (req, res, next) => {
             });
         }
 
-        const formattedNome = nome ? formatTitleCase(nome) : meta.orgao;
         const updated = await storageService.updateOrgaoMetadata(id, {
-            nome: formattedNome,
+            nome: nome || meta.orgao, // Preservar capitalização do usuário
             categoria,
             ordem
         });

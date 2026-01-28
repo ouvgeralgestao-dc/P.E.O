@@ -1,6 +1,7 @@
 import { dbAsync } from '../database/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import * as layoutService from './layoutService.js';
+import * as fileSystem from '../utils/fileSystem.js';
 import { getNodeDimensions } from './layoutService.js';
 
 // ==========================================
@@ -29,20 +30,18 @@ export const listOrgaos = async () => {
     }
 };
 
-export const getOrgaoIdByName = async (termo: number) => {
+export const getOrgaoIdByName = async (termo: string) => {
     try {
         // 1. Tenta buscar por ID exato (UUID ou string)
         let row = await dbAsync.get('SELECT id FROM orgaos WHERE id = ?', [termo]);
         if (row) return row.id;
 
-        // 2. Tenta buscar por Nome exato
-        row = await dbAsync.get('SELECT id FROM orgaos WHERE nome = ?', [termo]);
+        // 2. Tenta buscar por Nome exato (Case insensitive)
+        row = await dbAsync.get('SELECT id FROM orgaos WHERE UPPER(nome) = UPPER(?)', [termo.trim()]);
         if (row) return row.id;
 
-        // 3. Tenta buscar por Nome parcial/Like (fallback para slugs mal formados)
-        // Isso ajuda se 'sec-fazenda' bater com 'Secretaria de Fazenda' de alguma forma? 
-        // Não muito, mas ajuda 'Fazenda' -> 'Secretaria Municipal de Fazenda'
-        row = await dbAsync.get('SELECT id FROM orgaos WHERE nome LIKE ?', [`%${termo}%`]);
+        // 3. Tenta buscar por Nome parcial/Like
+        row = await dbAsync.get('SELECT id FROM orgaos WHERE UPPER(nome) LIKE UPPER(?)', [`%${termo.trim()}%`]);
         if (row) return row.id;
 
         return null;
@@ -52,7 +51,7 @@ export const getOrgaoIdByName = async (termo: number) => {
     }
 };
 
-export const getOrgaoMetadata = async (orgaoId:number) => {
+export const getOrgaoMetadata = async (orgaoId: string) => {
     try {
         const row = await dbAsync.get('SELECT * FROM orgaos WHERE id = ?', [orgaoId]);
         if (!row) return null;
@@ -73,11 +72,7 @@ export const getOrgaoMetadata = async (orgaoId:number) => {
             updatedAt: safeDate(row.updated_at),
             // Fallbacks legacy
             created_at: safeDate(row.created_at),
-            updated_at: safeDate(row.updated_at),
-            auth: row.auth_hash ? {
-                hash: row.auth_hash,
-                salt: row.auth_salt
-            } : null
+            updated_at: safeDate(row.updated_at)
         };
     } catch (error) {
         console.error('Erro ao buscar metadata:', error);
@@ -146,54 +141,77 @@ export const createOrUpdateOrgao = async (orgaoData) => {
     if (!id) throw new Error('ID do órgão é obrigatório');
 
     try {
+        // BLINDAGEM V3: Buscar ID mestre pelo nome antes de qualquer coisa
+        let targetId = id;
+        const existingId = await getOrgaoIdByName(orgao);
+        if (existingId && existingId !== id) {
+            console.log(`[SQLite] Blindagem V3: Redirecionando ID ${id} -> ${existingId} para o órgão '${orgao}'`);
+            targetId = existingId;
+        }
+
         // DESABILITAR FK TEMPORARIAMENTE para permitir DELETE total sem travar em auto-referência
         await dbAsync.run("PRAGMA foreign_keys = OFF");
         await dbAsync.run("BEGIN TRANSACTION");
 
         // 1. Upsert Órgão
-        const existing = await dbAsync.get('SELECT id FROM orgaos WHERE id = ?', [id]);
+        const existing = await dbAsync.get('SELECT id FROM orgaos WHERE id = ?', [targetId]);
 
         if (existing) {
-            await dbAsync.run(
-                'UPDATE orgaos SET nome = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [orgao, id]
-            );
+            // No Update do organograma, AGORA atualizamos o nome se ele for diferente
+            // para permitir que renomeações via "Configurar Órgãos" se propaguem.
+            if (existing.nome !== orgao) {
+                // BLINDAGEM V4: Não permitir downgrade de nome formatado para slug (Ex: "Conselho..." -> "conselho_de...")
+                const oldName = existing.nome || '';
+                const newName = orgao || '';
+                const normalizedNew = fileSystem.normalizeOrgaoId(newName);
+                const normalizedOld = fileSystem.normalizeOrgaoId(oldName);
+                
+                // Se o novo nome é EXATAMENTE o slug (ex: "conselho_de_contribuintes")
+                // E o nome antigo tinha formatação (não era igual ao slug)
+                // Então ignoramos a atualização do nome
+                if (newName === normalizedNew && oldName !== normalizedOld) {
+                    console.warn(`[SQLite] BLINDAGEM V4: Bloqueando sobrescrita de nome formatado '${oldName}' pelo slug '${newName}'`);
+                } else {
+                    await dbAsync.run('UPDATE orgaos SET nome = ? WHERE id = ?', [orgao, targetId]);
+                }
+            }
+            
             if (auth) {
                 await dbAsync.run(
                     'UPDATE orgaos SET auth_hash = ?, auth_salt = ? WHERE id = ?',
-                    [auth.hash, auth.salt, id]
+                    [auth.hash, auth.salt, targetId]
                 );
             }
         } else {
             await dbAsync.run(
                 'INSERT INTO orgaos (id, nome, auth_hash, auth_salt) VALUES (?, ?, ?, ?)',
-                [id, orgao, auth?.hash || null, auth?.salt || null]
+                [targetId, orgao, auth?.hash || null, auth?.salt || null]
             );
         }
 
         // 2. Upsert ou Delete Organograma Estrutural Metadata
         if (!setores || setores.length === 0) {
-            await dbAsync.run('DELETE FROM organogramas_estruturais WHERE orgao_id = ?', [id]);
+            await dbAsync.run('DELETE FROM organogramas_estruturais WHERE orgao_id = ?', [targetId]);
         } else {
-            const existingOrg = await dbAsync.get('SELECT orgao_id FROM organogramas_estruturais WHERE orgao_id = ?', [id]);
+            const existingOrg = await dbAsync.get('SELECT orgao_id FROM organogramas_estruturais WHERE orgao_id = ?', [targetId]);
             if (existingOrg) {
                 await dbAsync.run(
                     'UPDATE organogramas_estruturais SET tamanho_folha = ?, updated_at = CURRENT_TIMESTAMP WHERE orgao_id = ?',
-                    [tamanhoFolha || 'A4', id]
+                    [tamanhoFolha || 'A4', targetId]
                 );
             } else {
                 await dbAsync.run(
                     'INSERT INTO organogramas_estruturais (orgao_id, tamanho_folha, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-                    [id, tamanhoFolha || 'A4']
+                    [targetId, tamanhoFolha || 'A4']
                 );
             }
         }
 
         // 3. Reescrever Setores
-        await dbAsync.run('DELETE FROM setores WHERE orgao_id = ?', [id]);
+        await dbAsync.run('DELETE FROM setores WHERE orgao_id = ?', [targetId]);
 
         if (setores) {
-            const flatSetores = flattenSetores(setores, id);
+            const flatSetores = flattenSetores(setores, targetId);
 
             // DEDUPLICAÇÃO DE IDS (CRÍTICO: Evita erro UNIQUE constraint)
             const uniqueSetores = [];
@@ -593,8 +611,21 @@ export const updateOrgaoMetadata = async (id, data) => {
         const params = [];
 
         if (nome !== undefined) {
-            updates.push('nome = ?');
-            params.push(nome);
+            // BLINDAGEM V4 em Metadata:
+            const current = await getOrgaoMetadata(id);
+            const oldName = current ? current.orgao : '';
+            const newName = nome;
+            const normalizedNew = fileSystem.normalizeOrgaoId(newName);
+            const normalizedOld = fileSystem.normalizeOrgaoId(oldName);
+
+            // Bloquear Update se for Downgrade para Slug
+            if (oldName && newName === normalizedNew && oldName !== normalizedOld) {
+                console.error(`[SQLite] 🛡️ BLINDAGEM METADATA: Bloqueando renomeação de '${oldName}' para slug '${newName}'`);
+                // Não adiciona 'nome' ao updates
+            } else {
+                updates.push('nome = ?');
+                params.push(nome);
+            }
         }
         if (categoria !== undefined) {
             updates.push('categoria = ?');
@@ -652,6 +683,10 @@ export const deleteOrgao = async (orgaoId) => {
     }
 };
 
+/**
+ * Remove TODO o conteúdo do organograma (estrutural + funcional) mas MANTÉM o órgão na lista de configuração
+ * Usado quando o admin deleta o organograma estrutural
+ */
 export const clearOrgaoContent = async (orgaoId) => {
     try {
         console.log(`[SQLite] Limpando conteúdo do órgão ${orgaoId}...`);
@@ -667,12 +702,36 @@ export const clearOrgaoContent = async (orgaoId) => {
         // Deletar layout personalizado
         await dbAsync.run('DELETE FROM layout_personalizado WHERE orgao_id = ?', [orgaoId]);
 
+        // ⚠️ NÃO deletar da tabela 'orgaos' - o órgão permanece na lista de configuração
+        // Isso permite recriar organogramas para o mesmo órgão depois
+
         await dbAsync.run("COMMIT");
-        console.log(`[SQLite] Conteúdo limpo com sucesso para ${orgaoId}`);
+        console.log(`[SQLite] ✅ Conteúdo limpo (organogramas removidos, órgão permanece na configuração)`);
         return { success: true };
     } catch (error) {
         await dbAsync.run("ROLLBACK");
         console.error(`Erro ao limpar conteúdo do órgão ${orgaoId}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Remove APENAS o organograma funcional, mantendo o estrutural e o órgão na configuração
+ */
+export const clearOrgaoFuncional = async (orgaoId) => {
+    try {
+        console.log(`[SQLite] Removendo apenas organograma FUNCIONAL de ${orgaoId}...`);
+        await dbAsync.run("BEGIN TRANSACTION");
+
+        // Deletar apenas diagramas funcionais
+        await dbAsync.run('DELETE FROM diagramas_funcionais WHERE orgao_id = ?', [orgaoId]);
+
+        await dbAsync.run("COMMIT");
+        console.log(`[SQLite] ✅ Organograma funcional removido. Estrutural e configuração mantidos.`);
+        return { success: true };
+    } catch (error) {
+        await dbAsync.run("ROLLBACK");
+        console.error(`Erro ao remover funcional do órgão ${orgaoId}:`, error);
         throw error;
     }
 };

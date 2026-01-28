@@ -10,7 +10,7 @@ const COLORS = {
 };
 
 export const logger = {
-    info: (component, message, data) => {
+    info: (component: string, message: string, data?: any) => {
         console.log(
             `%cℹ️ [${component}] ${message}`,
             `color: ${COLORS.info}; font-weight: bold`,
@@ -18,7 +18,7 @@ export const logger = {
         );
     },
 
-    success: (component, message, data) => {
+    success: (component: string, message: string, data?: any) => {
         console.log(
             `%c✅ [${component}] ${message}`,
             `color: ${COLORS.success}; font-weight: bold`,
@@ -26,7 +26,7 @@ export const logger = {
         );
     },
 
-    warn: (component, message, data) => {
+    warn: (component: string, message: string, data?: any) => {
         console.warn(
             `%c⚠️ [${component}] ${message}`,
             `color: ${COLORS.warning}; font-weight: bold`,
@@ -34,7 +34,7 @@ export const logger = {
         );
     },
 
-    error: (component, message, error) => {
+    error: (component: string, message: string, error?: any) => {
         console.error(
             `%c❌ [${component}] ${message}`,
             `color: ${COLORS.error}; font-weight: bold`,
@@ -46,7 +46,7 @@ export const logger = {
         );
     },
 
-    debug: (component, message, data) => {
+    debug: (component: string, message: string, data?: any) => {
         if (import.meta.env.DEV) {
             console.debug(
                 `%c🔍 [${component}] ${message}`,

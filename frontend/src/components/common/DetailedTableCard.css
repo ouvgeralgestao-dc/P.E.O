@@ -116,11 +116,11 @@
     text-align: center;
 }
 
-.qty-cell {
+.qty-cell.qty-emphasis {
     text-align: center;
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 15px;
+    font-weight: 800;
+    color: #ea580c;
+    font-size: 16px;
 }
 
 .detailed-table-empty {

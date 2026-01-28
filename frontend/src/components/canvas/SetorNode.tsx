@@ -212,17 +212,17 @@ const SetorNode = ({ data, selected }) => {
                     <div className="node-ocupante">{ocupante}</div>
                 )}
 
-                {/* Hierarquia */}
-                <div className="node-hierarquia">
-                    {isAssessoria ? 'Assessoria' : `Nível ${hierarquia}`}
-                </div>
-
                 {/* Setor de Referência (Cross-Filtering) */}
                 {data.nomeSetorRef && (
                     <div className="node-setor-ref">
-                        📌 {data.nomeSetorRef}
+                        {data.nomeSetorRef}
                     </div>
                 )}
+
+                {/* Hierarquia */}
+                <div className="node-hierarquia">
+                    {isAssessoria ? 'Assessoria' : `Nível ${!isNaN(parseFloat(hierarquia)) ? parseFloat(hierarquia).toFixed(1) : hierarquia}`}
+                </div>
 
                 {/* Cargos (para organograma estrutural) */}
                 {cargos && cargos.length > 0 && (

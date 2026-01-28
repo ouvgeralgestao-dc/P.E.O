@@ -301,6 +301,27 @@ const Dashboard = () => {
                         </svg>
                         Visualizar
                     </Button>
+
+                    {/* Botão Premium para criar Funcional se apenas Estrutural existir */}
+                    {org.organogramaEstrutural && (!org.organogramasFuncoes || org.organogramasFuncoes.length === 0) && (
+                        <Button
+                            variant="success"
+                            fullWidth
+                            className="btn-criar-funcional-premium"
+                            onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                navigate(`/criar?tipo=funcoes&orgao=${encodeURIComponent(org.orgao)}`);
+                            }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <line x1="19" y1="8" x2="19" y2="14" />
+                                <line x1="16" y1="11" x2="22" y2="11" />
+                            </svg>
+                            CRIAR ORGANOGRAMA FUNCIONAL
+                        </Button>
+                    )}
                 </div>
             </div>
         );
@@ -352,13 +373,6 @@ const Dashboard = () => {
     const StatsSection = memo(({ stats, totalCargosFull, totalSetores, totalSimbolosFull }: any) => {
         return (
             <div className="stats-grid" style={{ marginTop: '32px' }}>
-                <div className="stat-card stat-primary">
-                    <div className="stat-icon">🏛️</div>
-                    <div className="stat-content">
-                        <div className="stat-value">{stats.total}</div>
-                        <div className="stat-label">Total de Órgãos</div>
-                    </div>
-                </div>
                 <div className="stat-card stat-info">
                     <div className="stat-icon">📊</div>
                     <div className="stat-content">
@@ -366,18 +380,18 @@ const Dashboard = () => {
                         <div className="stat-label">ORGANOGRAMAS ESTRUTURAIS</div>
                     </div>
                 </div>
-                <div className="stat-card stat-success">
-                    <div className="stat-icon">👥</div>
-                    <div className="stat-content">
-                        <div className="stat-value">{totalCargosFull}</div>
-                        <div className="stat-label">Total de Cargos</div>
-                    </div>
-                </div>
                 <div className="stat-card stat-purple">
                     <div className="stat-icon">📂</div>
                     <div className="stat-content">
                         <div className="stat-value">{stats.funcoes}</div>
                         <div className="stat-label">ORGANOGRAMAS FUNCIONAIS</div>
+                    </div>
+                </div>
+                <div className="stat-card stat-primary">
+                    <div className="stat-icon">🏛️</div>
+                    <div className="stat-content">
+                        <div className="stat-value">{stats.total}</div>
+                        <div className="stat-label">Total de Órgãos</div>
                     </div>
                 </div>
                 <div className="stat-card stat-warning">
@@ -392,6 +406,13 @@ const Dashboard = () => {
                     <div className="stat-content">
                         <div className="stat-value">{totalSimbolosFull}</div>
                         <div className="stat-label">Total de Símbolos</div>
+                    </div>
+                </div>
+                <div className="stat-card stat-success">
+                    <div className="stat-icon">👥</div>
+                    <div className="stat-content">
+                        <div className="stat-value">{totalCargosFull}</div>
+                        <div className="stat-label">Total de Cargos</div>
                     </div>
                 </div>
             </div>
@@ -638,64 +659,68 @@ const Dashboard = () => {
         };
     }, [filteredOrganogramas, formatOrgaoName, selectedSetores, selectedSimbolos, selectedPrefixos, getSymbolRank, sortSymbolsByRank]);
 
-    // Dados Consolidados (Cargos + Símbolos por Órgão) - com filtros aplicados
-    const cargosESimbolosPorOrgao = useMemo(() => {
+    // Dados Consolidados (Setores + Símbolos por Órgão) - vindo do ESTRUTURAL
+    const setoresESimbolosPorOrgao = useMemo(() => {
         const consolidatedData: any[] = [];
 
         filteredOrganogramas.forEach(org => {
             const orgaoName = org.orgao;
-            const prefixosData: Record<string, { prefixo: string; simbolos: Record<string, number> }> = {};
-            let totalCargos = 0;
+            const setoresData: Record<string, { setor: string; simbolos: Record<string, number> }> = {};
+            let totalSetores = 0;
             let totalSimbolos = 0;
 
-            if (org.organogramasFuncoes && org.organogramasFuncoes.length > 0) {
-                const latestFunc = org.organogramasFuncoes[0];
-                const processCargo = (cargo: any) => {
-                    if (cargo.nomeCargo) {
-                        const prefixo = cargo.nomeCargo.split(' ')[0].trim();
-                        const prefixoPassaFiltro = selectedPrefixos.length === 0 || selectedPrefixos.includes(prefixo);
-                        const setorRefPassaFiltro = selectedSetores.length === 0 || (cargo.nome_setor_ref && selectedSetores.includes(cargo.nome_setor_ref));
+            if (org.organogramaEstrutural?.setores) {
+                const processSetor = (node: any) => {
+                    if (node.nomeSetor) {
+                        const setorPassaFiltro = selectedSetores.length === 0 || selectedSetores.includes(node.nomeSetor);
+                        
+                        // Coletar símbolos deste setor
+                        const simbolosDoSetor: Record<string, number> = {};
+                        let temSimboloNoFiltro = selectedSimbolos.length === 0;
 
-                        if (prefixoPassaFiltro && setorRefPassaFiltro) {
-                            const qtdCargo = parseInt(cargo.quantidade || cargo.qtd || '1') || 1;
-                            totalCargos += qtdCargo;
+                        if (node.cargos && Array.isArray(node.cargos)) {
+                            node.cargos.forEach((c: any) => {
+                                const qtd = parseInt(c.quantidade) || 0;
+                                const tipo = c.tipo;
+                                
+                                const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(tipo);
+                                if (tipo && qtd > 0 && simboloPassaFiltro) {
+                                    simbolosDoSetor[tipo] = (simbolosDoSetor[tipo] || 0) + qtd;
+                                    totalSimbolos += qtd;
+                                    if (selectedSimbolos.includes(tipo)) temSimboloNoFiltro = true;
+                                }
+                            });
+                        }
 
-                            if (!prefixosData[prefixo]) {
-                                prefixosData[prefixo] = { prefixo, simbolos: {} };
-                            }
-
-                            if (cargo.simbolos && Array.isArray(cargo.simbolos)) {
-                                cargo.simbolos.forEach((sim: any) => {
-                                    const qtdSim = parseInt(sim.quantidade) || 0;
-                                    const tipoSim = sim.tipo;
-                                    const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(tipoSim);
-                                    if (tipoSim && qtdSim > 0 && simboloPassaFiltro) {
-                                        prefixosData[prefixo].simbolos[tipoSim] = (prefixosData[prefixo].simbolos[tipoSim] || 0) + qtdSim;
-                                        totalSimbolos += qtdSim;
-                                    }
-                                });
+                        // Só adiciona se passar pelos filtros de setor e símbolo
+                        if (setorPassaFiltro && temSimboloNoFiltro && Object.keys(simbolosDoSetor).length > 0) {
+                            totalSetores++;
+                            if (!setoresData[node.id || node.nomeSetor]) {
+                                setoresData[node.id || node.nomeSetor] = { 
+                                    setor: node.nomeSetor, 
+                                    simbolos: simbolosDoSetor 
+                                };
                             }
                         }
                     }
-                    if (cargo.children) cargo.children.forEach(processCargo);
+                    if (node.children) node.children.forEach(processSetor);
                 };
-                if (latestFunc.cargos) latestFunc.cargos.forEach(processCargo);
+                org.organogramaEstrutural.setores.forEach(processSetor);
             }
 
-            if (Object.keys(prefixosData).length > 0) {
+            if (Object.keys(setoresData).length > 0) {
                 consolidatedData.push({
                     orgao: formatOrgaoName(orgaoName),
-                    totalCargos,
+                    totalSetores,
                     totalSimbolos,
-                    prefixos: Object.values(prefixosData)
-                        .map(p => ({
-                            prefixo: p.prefixo,
-                            simbolos: Object.entries(p.simbolos)
+                    setores: Object.values(setoresData)
+                        .map(s => ({
+                            setor: s.setor,
+                            simbolos: Object.entries(s.simbolos)
                                 .map(([tipo, quantidade]) => ({ tipo, quantidade }))
-                                .sort(sortSymbolsByRank) // Ordenado por Rank (NOVO)
+                                .sort(sortSymbolsByRank)
                         }))
                         .sort((a, b) => {
-                            // Mantém a ordenação dos prefixos por quantidade total (opcional, pode ser mudado se quiser hierarquia aqui também)
                             const totalA = a.simbolos.reduce((sum, s) => sum + s.quantidade, 0);
                             const totalB = b.simbolos.reduce((sum, s) => sum + s.quantidade, 0);
                             return totalB - totalA;
@@ -705,7 +730,7 @@ const Dashboard = () => {
         });
 
         return consolidatedData.sort((a, b) => b.totalSimbolos - a.totalSimbolos);
-    }, [filteredOrganogramas, formatOrgaoName, selectedPrefixos, selectedSimbolos, sortSymbolsByRank]);
+    }, [filteredOrganogramas, formatOrgaoName, selectedSetores, selectedSimbolos, sortSymbolsByRank]);
 
     const handleVisualizeClick = useCallback((org: Organograma) => {
         setViewSelectionOrg(org);
@@ -817,8 +842,8 @@ const Dashboard = () => {
                         itemLabel="Setor"
                     />
                     <ConsolidatedTableCard
-                        title="📊 Cargos e Símbolos por Órgão"
-                        data={cargosESimbolosPorOrgao}
+                        title="📊 Setores e Símbolos por Órgão"
+                        data={setoresESimbolosPorOrgao}
                     />
                 </div>
             </div>
@@ -829,6 +854,10 @@ const Dashboard = () => {
                 // @ts-ignore
                 onSelect={handleViewSelection}
                 orgaoName={formatOrgaoName(viewSelectionOrg?.orgao || '')}
+                // @ts-ignore
+                hasEstrutural={!!viewSelectionOrg?.organogramaEstrutural}
+                // @ts-ignore
+                hasFuncional={!!(viewSelectionOrg?.organogramasFuncoes && viewSelectionOrg.organogramasFuncoes.length > 0)}
             />
         </div>
     );

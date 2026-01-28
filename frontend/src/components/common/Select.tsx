@@ -4,7 +4,27 @@
 import React from 'react';
 import './Select.css';
 
-const Select = ({
+interface Option {
+    value: string;
+    label: string;
+}
+
+interface SelectProps {
+    label?: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    options: Option[];
+    required?: boolean;
+    disabled?: boolean;
+    error?: string | null;
+    helperText?: string | null;
+    name?: string;
+    id?: string;
+    placeholder?: string;
+    className?: string;
+}
+
+const Select: React.FC<SelectProps> = ({
     label,
     value,
     onChange,

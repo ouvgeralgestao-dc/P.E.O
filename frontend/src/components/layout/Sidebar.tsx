@@ -145,7 +145,13 @@ function Sidebar() {
                 {/* Criar Organograma - Todos podem criar (mas só para seu setor) */}
                 <Link to="/criar" className="sidebar-link">
                     <span className="sidebar-icon">➕</span>
-                    {shouldShowExpanded && <span className="sidebar-text">Criar Organograma</span>}
+                    {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
+                </Link>
+
+                {/* Criação Livre (Sandbox) */}
+                <Link to="/criacao-livre" className="sidebar-link">
+                    <span className="sidebar-icon">🎨</span>
+                    {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
                 </Link>
 
                 {/* Organograma Geral Estrutural - Apenas admin */}

@@ -6,16 +6,16 @@ interface Simbolo {
     quantidade: number;
 }
 
-interface PrefixoData {
-    prefixo: string;
+interface SetorData {
+    setor: string;
     simbolos: Simbolo[];
 }
 
 interface OrgaoData {
     orgao: string;
-    totalCargos: number;
+    totalSetores: number;
     totalSimbolos: number;
-    prefixos: PrefixoData[];
+    setores: SetorData[];
 }
 
 interface ConsolidatedTableCardProps {
@@ -47,34 +47,34 @@ const ConsolidatedTableCard: React.FC<ConsolidatedTableCardProps> = ({ title, da
                     <thead>
                         <tr>
                             <th className="col-orgao">Órgão</th>
-                            <th className="col-prefixo">Prefixo Cargo</th>
+                            <th className="col-prefixo">SETOR</th>
                             <th className="col-simbolos">Símbolos</th>
                         </tr>
                     </thead>
                     <tbody>
                         {data.map((orgao, orgaoIndex) => {
-                            const totalPrefixos = orgao.prefixos.length || 1;
+                            const totalSetores = orgao.setores?.length || 1;
 
                             return (
                                 <React.Fragment key={orgaoIndex}>
-                                    {orgao.prefixos.length > 0 ? (
-                                        orgao.prefixos.map((prefixo, prefixoIndex) => (
-                                            <tr key={`${orgaoIndex}-${prefixoIndex}`} className={prefixoIndex === 0 ? 'first-row' : ''}>
-                                                {prefixoIndex === 0 && (
-                                                    <td className="orgao-cell" rowSpan={totalPrefixos}>
+                                    {orgao.setores && orgao.setores.length > 0 ? (
+                                        orgao.setores.map((setorData, setorIndex) => (
+                                            <tr key={`${orgaoIndex}-${setorIndex}`} className={setorIndex === 0 ? 'first-row' : ''}>
+                                                {setorIndex === 0 && (
+                                                    <td className="orgao-cell" rowSpan={totalSetores}>
                                                         <div className="orgao-name">{orgao.orgao}</div>
                                                         <div className="orgao-stats">
-                                                            <span className="stat-badge cargos">Cargos: {orgao.totalCargos}</span>
+                                                            <span className="stat-badge cargos">Setores: {orgao.totalSetores}</span>
                                                             <span className="stat-badge simbolos">Símbolos: {orgao.totalSimbolos}</span>
                                                         </div>
                                                     </td>
                                                 )}
-                                                <td className="prefixo-cell">{prefixo.prefixo}</td>
+                                                <td className="prefixo-cell">{setorData.setor}</td>
                                                 <td className="simbolos-cell">
                                                     <div className="simbolos-list">
-                                                        {prefixo.simbolos.map((sim, simIndex) => (
+                                                        {setorData.simbolos.map((sim, simIndex) => (
                                                             <span key={simIndex} className="simbolo-badge">
-                                                                {sim.tipo}: <strong>{sim.quantidade}</strong>
+                                                                {sim.tipo}: <strong className="qty-emphasis">{sim.quantidade}</strong>
                                                             </span>
                                                         ))}
                                                     </div>
@@ -86,12 +86,12 @@ const ConsolidatedTableCard: React.FC<ConsolidatedTableCardProps> = ({ title, da
                                             <td className="orgao-cell">
                                                 <div className="orgao-name">{orgao.orgao}</div>
                                                 <div className="orgao-stats">
-                                                    <span className="stat-badge cargos">Cargos: {orgao.totalCargos}</span>
+                                                    <span className="stat-badge cargos">Setores: {orgao.totalSetores}</span>
                                                     <span className="stat-badge simbolos">Símbolos: {orgao.totalSimbolos}</span>
                                                 </div>
                                             </td>
                                             <td className="prefixo-cell empty-cell" colSpan={2}>
-                                                Sem cargos cadastrados
+                                                Sem setores cadastrados
                                             </td>
                                         </tr>
                                     )}

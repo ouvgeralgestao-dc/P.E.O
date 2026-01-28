@@ -9,7 +9,6 @@ import Button from '../common/Button';
 import Card from '../common/Card';
 import { HIERARCHY_LEVELS, HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
 import { CARGOS_DAS } from '../../constants/cargosDAS';
-import { PAGE_SIZE_OPTIONS } from '../../constants/pageSizes';
 import { getOrgaoById } from '../../constants/orgaos';
 import { validateCargo } from '../../utils/validators';
 import api from '../../services/api';
@@ -50,11 +49,6 @@ const FuncoesForm = ({ data, updateData, errors }) => {
         };
         fetchPrefixos();
     }, []);
-    // Estados para controle de senha e verificação
-    const [isCheckingOrgao, setIsCheckingOrgao] = useState(false);
-    const [isNewOrgan, setIsNewOrgan] = useState(false);
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [orgaosOptions, setOrgaosOptions] = useState([]);
 
     // Buscar lista de órgãos da API
@@ -71,7 +65,7 @@ const FuncoesForm = ({ data, updateData, errors }) => {
                     .filter(orgao => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
                     .map(orgao => ({
                         value: orgao.id,
-                        label: orgao.nome
+                        label: orgao.nome.length > 85 ? orgao.nome.substring(0, 85) + '...' : orgao.nome
                     }))
                     .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -112,16 +106,14 @@ const FuncoesForm = ({ data, updateData, errors }) => {
         return options;
     };
 
-    // Verificar se o órgão existe quando o nome mudar
+    // Verificar se o órgão existe e carregar setores estruturais
     React.useEffect(() => {
         const checkOrgao = async () => {
             if (!nomeOrgao) {
-                setIsNewOrgan(false);
                 setSetoresOptions([]);
                 return;
             }
 
-            setIsCheckingOrgao(true);
             try {
                 // Resolver nome real se for um ID conhecido
                 const orgaoInfo = getOrgaoById(nomeOrgao);
@@ -129,14 +121,6 @@ const FuncoesForm = ({ data, updateData, errors }) => {
 
                 const response = await api.get(`/organogramas/${encodeURIComponent(nomeParaChecar)}`);
                 const data = response.data?.data;
-
-                // Se o órgão existir mas NÃO tiver senha configurada, tratamos como novo
-                const hasPassword = !!data?.auth;
-                setIsNewOrgan(!hasPassword);
-
-                if (hasPassword) {
-                    updateData({ password: null });
-                }
 
                 // Carregar setores estruturais para referência
                 if (data?.organogramaEstrutural?.setores) {
@@ -148,49 +132,30 @@ const FuncoesForm = ({ data, updateData, errors }) => {
                     setSetoresOptions([]);
                 }
 
-            } catch (error) {
+            } catch (error: any) {
                 if (error.response && error.response.status === 404) {
-                    setIsNewOrgan(true);
                     setSetoresOptions([]);
                 }
-            } finally {
-                setIsCheckingOrgao(false);
             }
         };
 
+        checkOrgao();
+
         const timeoutId = setTimeout(() => {
-            if (nomeOrgao && !orgaoTravado) {
+            if (nomeOrgao) {
                 checkOrgao();
             }
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [nomeOrgao, orgaoTravado]);
-
-    // Sincronizar status de senha requerida com o pai
-    React.useEffect(() => {
-        updateData({ passwordRequired: isNewOrgan });
-    }, [isNewOrgan]);
+    }, [nomeOrgao]);
 
     // Atualizar nome do órgão
     const handleNomeOrgaoChange = (e) => {
         updateData({ nomeOrgao: e.target.value });
     };
 
-    // Atualizar senha nos dados globais
-    const handlePasswordChange = (field, value) => {
-        if (field === 'password') {
-            setPassword(value);
-            updateData({ password: value });
-        } else {
-            setConfirmPassword(value);
-        }
-    };
 
-    // Atualizar tamanho da folha
-    const handleTamanhoFolhaChange = (e) => {
-        updateData({ tamanhoFolha: e.target.value });
-    };
 
     // Atualizar campo do cargo atual
     const handleCargoFieldChange = (field, value) => {
@@ -306,9 +271,7 @@ const FuncoesForm = ({ data, updateData, errors }) => {
             });
 
             if (outrasRaizes.length === 0) {
-                const confirmar = window.confirm(
-                    "⚠️ ATENÇÃO: O único cargo nível 1 será removido e o organograma funcional não existirá mais!\n\nDeseja prosseguir com a exclusão total?"
-                );
+                const confirmar = window.confirm("TEM CERTEZA QUE DESEJA DELETAR?");
 
                 if (!confirmar) return;
 
@@ -404,44 +367,11 @@ const FuncoesForm = ({ data, updateData, errors }) => {
                         required
                         disabled={orgaoTravado}
                         error={errors.nomeOrgao}
-                        helperText={isCheckingOrgao ? "Verificando..." : orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : isNewOrgan ? "Novo órgão detectado: Defina uma senha abaixo" : "Órgão existente: Senha não necessária"}
-                    />
-                    <Select
-                        label="Tamanho da Folha"
-                        value={tamanhoFolha || 'A3'}
-                        onChange={handleTamanhoFolhaChange}
-                        options={PAGE_SIZE_OPTIONS}
-                        placeholder="Selecione o tamanho"
-                        required
+                        helperText={orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional"}
                     />
                 </div>
 
-                {/* Campos de Senha (Apenas para novos órgãos) */}
-                {isNewOrgan && (
-                    <div className="form-row password-section" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #eee' }}>
-                        <div className="password-alert" style={{ gridColumn: '1 / -1', marginBottom: '10px', color: '#d97706', fontSize: '0.9em' }}>
-                            ℹ️ Este é o primeiro organograma deste órgão. Defina uma senha administrativa.
-                        </div>
-                        <Input
-                            label="Senha Administrativa"
-                            type="password"
-                            value={password}
-                            onChange={(e) => handlePasswordChange('password', e.target.value)}
-                            placeholder="Crie uma senha"
-                            required
-                            error={errors.password}
-                        />
-                        <Input
-                            label="Confirmar Senha"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                            placeholder="Repita a senha"
-                            required
-                            error={password !== confirmPassword && confirmPassword ? "Senhas não conferem" : ""}
-                        />
-                    </div>
-                )}
+
             </Card>
 
             {/* Adicionar Cargo */}

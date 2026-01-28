@@ -12,21 +12,21 @@ import { logger } from '../utils/logger';
 import api from '../services/api';
 import './OrganogramaGeralFuncional.css';
 
-import PasswordModal from '../components/common/PasswordModal';
 import Input from '../components/common/Input';
+import { authService } from '../services/authService';
 // import { toast } from 'react-hot-toast'; // Removido pois não está instalado. Usando alert.
 
 function OrganogramaGeralFuncional() {
     const navigate = useNavigate();
-    const [organogramaData, setOrganogramaData] = useState(null);
+    const [organogramaData, setOrganogramaData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     // Edit Mode States
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [editData, setEditData] = useState({});
+    const [editData, setEditData] = useState<any>({});
     const [saving, setSaving] = useState(false);
+    const [user] = useState<any>(authService.getUser());
 
     useEffect(() => {
         loadOrganogramaGeralFuncional();
@@ -49,7 +49,7 @@ function OrganogramaGeralFuncional() {
 
             logger.success('OrganogramaGeralFuncional', 'Organograma geral de funções carregado', adaptedData);
             setOrganogramaData(adaptedData);
-        } catch (err) {
+        } catch (err: any) {
             logger.error('OrganogramaGeralFuncional', 'Erro ao carregar organograma geral de funções', err);
             setError(err.response?.data?.message || 'Erro ao carregar organograma geral de funções');
         } finally {
@@ -89,33 +89,30 @@ function OrganogramaGeralFuncional() {
 
     // Handlers de Edição
     const handleEditClick = () => {
-        setShowPasswordModal(true);
-    };
-
-    const handleAuthSubmit = async (password) => {
-        if (password === 'admouv1234') {
-            // Carregar dados atuais nos campos
-            const cargos = organogramaData?.organogramasFuncoes?.[0]?.cargos || [];
-            const currentData = {};
-            const fixedIds = [
-                'prefeito-cargo',
-                'gabinete-cargo',
-                'subprefeitura-1-cargo',
-                'subprefeitura-2-cargo',
-                'subprefeitura-3-cargo',
-                'subprefeitura-4-cargo'
-            ];
-
-            fixedIds.forEach(id => {
-                const cargo = cargos.find(c => c.id === id);
-                currentData[id] = cargo?.ocupante || '';
-            });
-
-            setEditData(currentData);
-            setShowEditModal(true);
-            return true;
+        if (user?.tipo !== 'admin') {
+            alert('Acesso restrito a administradores.');
+            return;
         }
-        return false;
+
+        // Carregar dados atuais nos campos
+        const cargos = (organogramaData as any)?.organogramasFuncoes?.[0]?.cargos || [];
+        const currentData: any = {};
+        const fixedIds = [
+            'prefeito-cargo',
+            'gabinete-cargo',
+            'subprefeitura-1-cargo',
+            'subprefeitura-2-cargo',
+            'subprefeitura-3-cargo',
+            'subprefeitura-4-cargo'
+        ];
+
+        fixedIds.forEach(id => {
+            const cargo = cargos.find((c: any) => c.id === id);
+            currentData[id] = cargo?.ocupante || '';
+        });
+
+        setEditData(currentData);
+        setShowEditModal(true);
     };
 
     const handleSaveOccupants = async () => {
@@ -135,8 +132,8 @@ function OrganogramaGeralFuncional() {
         }
     };
 
-    const handleInputChange = (id, value) => {
-        setEditData(prev => ({
+    const handleInputChange = (id: string, value: any) => {
+        setEditData((prev: any) => ({
             ...prev,
             [id]: value
         }));
@@ -160,7 +157,7 @@ function OrganogramaGeralFuncional() {
             <div className="organograma-geral-funcional">
                 <div className="container">
                     <Card title="Erro">
-                        <p className="error-message">{error}</p>
+                        <p className="error-message">{error as any}</p>
                         <Button onClick={() => navigate('/')}>
                             ← Voltar para Dashboard
                         </Button>
@@ -259,27 +256,27 @@ function OrganogramaGeralFuncional() {
                             <span className="stat-label">Total de Cargos:</span>
                             <span className="stat-value">
                                 {(() => {
-                                    const cargos = organogramaData?.estatisticas?.cargos || [];
-                                    return cargos.reduce((acc, c) => acc + c.quantidade, 0);
+                                    const cargos = (organogramaData as any)?.estatisticas?.cargos || [];
+                                    return cargos.reduce((acc: number, c: any) => acc + (c.quantidade || 0), 0);
                                 })()}
                             </span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Tipos de Cargos:</span>
                             <span className="stat-value">
-                                {organogramaData?.estatisticas?.cargos?.length || 0}
+                                { (organogramaData as any)?.estatisticas?.cargos?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Tipos de Símbolos:</span>
                             <span className="stat-value">
-                                {organogramaData?.estatisticas?.simbolos?.length || 0}
+                                { (organogramaData as any)?.estatisticas?.simbolos?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Órgãos com Cargos:</span>
                             <span className="stat-value">
-                                {organogramaData?.estatisticas?.setores?.length || 0}
+                                { (organogramaData as any)?.estatisticas?.setores?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">
@@ -305,8 +302,8 @@ function OrganogramaGeralFuncional() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {organogramaData?.estatisticas?.simbolos && organogramaData.estatisticas.simbolos.length > 0 ? (
-                                            organogramaData.estatisticas.simbolos.map((item, index) => (
+                                        {(organogramaData as any)?.estatisticas?.simbolos && (organogramaData as any).estatisticas.simbolos.length > 0 ? (
+                                            (organogramaData as any).estatisticas.simbolos.map((item: any, index: number) => (
                                                 <tr key={index}>
                                                     <td className="simbolo-name">{item.simbolo}</td>
                                                     <td className="simbolo-count">{item.quantidade}</td>
@@ -333,8 +330,8 @@ function OrganogramaGeralFuncional() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {organogramaData?.estatisticas?.cargos && organogramaData.estatisticas.cargos.length > 0 ? (
-                                            organogramaData.estatisticas.cargos.map((item, index) => (
+                                        {(organogramaData as any)?.estatisticas?.cargos && (organogramaData as any).estatisticas.cargos.length > 0 ? (
+                                            (organogramaData as any).estatisticas.cargos.map((item: any, index: number) => (
                                                 <tr key={index}>
                                                     <td className="setor-name">{item.nome}</td>
                                                     <td className="setor-count">{item.quantidade}</td>
@@ -352,14 +349,6 @@ function OrganogramaGeralFuncional() {
                     </div>
                 </div>
 
-                {/* Modals */}
-                <PasswordModal
-                    isOpen={showPasswordModal}
-                    onClose={() => setShowPasswordModal(false)}
-                    onSubmit={handleAuthSubmit}
-                    title="Acesso Restrito"
-                    description="Digite a senha para editar os ocupantes:"
-                />
 
                 {showEditModal && (
                     <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
@@ -371,40 +360,52 @@ function OrganogramaGeralFuncional() {
                             <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                     <Input
+                                        id="prefeito-cargo"
+                                        name="prefeito-cargo"
                                         label="Prefeito Municipal"
                                         value={editData['prefeito-cargo'] || ''}
-                                        onChange={e => handleInputChange('prefeito-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('prefeito-cargo', e.target.value)}
                                         placeholder="Nome do Prefeito"
                                     />
                                     <Input
+                                        id="gabinete-cargo"
+                                        name="gabinete-cargo"
                                         label="Gabinete do Prefeito"
                                         value={editData['gabinete-cargo'] || ''}
-                                        onChange={e => handleInputChange('gabinete-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('gabinete-cargo', e.target.value)}
                                         placeholder="Nome do Chefe de Gabinete ou Responsável"
                                     />
                                     <div style={{ height: '1px', background: '#eee', margin: '5px 0' }}></div>
                                     <Input
+                                        id="subprefeitura-1-cargo"
+                                        name="subprefeitura-1-cargo"
                                         label="Subprefeito(a) - 1º Distrito"
                                         value={editData['subprefeitura-1-cargo'] || ''}
-                                        onChange={e => handleInputChange('subprefeitura-1-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('subprefeitura-1-cargo', e.target.value)}
                                         placeholder="Nome do Subprefeito(a)"
                                     />
                                     <Input
+                                        id="subprefeitura-2-cargo"
+                                        name="subprefeitura-2-cargo"
                                         label="Subprefeito(a) - 2º Distrito"
                                         value={editData['subprefeitura-2-cargo'] || ''}
-                                        onChange={e => handleInputChange('subprefeitura-2-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('subprefeitura-2-cargo', e.target.value)}
                                         placeholder="Nome do Subprefeito(a)"
                                     />
                                     <Input
+                                        id="subprefeitura-3-cargo"
+                                        name="subprefeitura-3-cargo"
                                         label="Subprefeito(a) - 3º Distrito"
                                         value={editData['subprefeitura-3-cargo'] || ''}
-                                        onChange={e => handleInputChange('subprefeitura-3-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('subprefeitura-3-cargo', e.target.value)}
                                         placeholder="Nome do Subprefeito(a)"
                                     />
                                     <Input
+                                        id="subprefeitura-4-cargo"
+                                        name="subprefeitura-4-cargo"
                                         label="Subprefeito(a) - 4º Distrito"
                                         value={editData['subprefeitura-4-cargo'] || ''}
-                                        onChange={e => handleInputChange('subprefeitura-4-cargo', e.target.value)}
+                                        onChange={(e: any) => handleInputChange('subprefeitura-4-cargo', e.target.value)}
                                         placeholder="Nome do Subprefeito(a)"
                                     />
                                 </div>

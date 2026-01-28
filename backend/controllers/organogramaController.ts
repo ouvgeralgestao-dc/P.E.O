@@ -9,8 +9,8 @@ import * as layoutService from '../services/layoutService.js';
 // Route chama: updateOrganogramaEstrutural (Alias necessário)
 export const createOrganogramaEstrutural = async (req, res, next) => {
     try {
+        const { tamanhoFolha, setores } = req.body;
         let { nomeOrgao } = req.body;
-        const { tamanhoFolha, setores, password } = req.body;
 
         if (!nomeOrgao && req.params.nomeOrgao) {
             nomeOrgao = decodeURIComponent(req.params.nomeOrgao);
@@ -20,14 +20,57 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
             return res.status(400).json({ success: false, message: 'Dados incompletos' });
         }
 
+        const orgaoIdSlug = fileSystem.normalizeOrgaoId(nomeOrgao);
+
+        // Validação de Duplicidade CORRETA
+        const existingOrgaoId = await storageService.getOrgaoIdByName(nomeOrgao) || orgaoIdSlug;
+        
+        // RECUPERAÇÃO DE NOME INTELIGENTE (Smart Retrieval V2 - Heurística de Qualidade)
+        // Objetivo: Impedir que um nome rico (ex: "Conselho de Contribuintes") seja sobrescrito por um slug ("conselho_de_contribuintes")
+        if (existingOrgaoId) {
+             const existingMeta = await storageService.getOrgaoMetadata(existingOrgaoId);
+             if (existingMeta && existingMeta.orgao) {
+                 const currentName = existingMeta.orgao;
+                 const inputName = nomeOrgao;
+                 
+                 // Heurística: O nome atual tem formatação humana (Maiúsculas ou Espaços)?
+                 const hasHumanFormat = /[A-Z]/.test(currentName) || /\s/.test(currentName);
+                 
+                 // Heurística: O input parece um slug técnico (só minúsculas, números e underscore)?
+                 const isTechnicalSlug = /^[a-z0-9_]+$/.test(inputName.trim());
+
+                 // Se temos um nome formatado guardado e estão tentando salvar um slug técnico...
+                 // IGNORAMOS o slug e usamos o nome guardado.
+                 if (hasHumanFormat && isTechnicalSlug) {
+                     console.log(`[Controller] 🛡️ Smart Name: Input '${inputName}' ignorado em favor de '${currentName}'`);
+                     nomeOrgao = currentName;
+                 } else if (inputName === orgaoIdSlug && currentName !== orgaoIdSlug) {
+                     // Fallback para caso simples de igualdade exata
+                     nomeOrgao = currentName;
+                 }
+             }
+        }
+
+        // Buscar se já existe organograma estrutural para este órgão
+        const existingSetores = await storageService.getOrgaoEstrutural(existingOrgaoId);
+        const hasExistingContent = Array.isArray(existingSetores) && existingSetores.length > 0;
+
+        console.log(`[DUPLICATE CHECK] Órgão: "${nomeOrgao}" | Slug: "${orgaoIdSlug}"`);
+        console.log(`[DUPLICATE CHECK] Organograma existente: ${hasExistingContent ? 'SIM (com ' + existingSetores.length + ' setores)' : 'NÃO'}`);
+
+        if (hasExistingContent) {
+            console.warn(`[DUPLICATE CHECK] Bloqueando: Já existe organograma estrutural para ${nomeOrgao}`);
+            return res.status(400).json({ success: false, message: 'Este órgão já possui um organograma estrutural!' });
+        }
+
         // Verificar se usuário comum pode criar organograma para este setor
         if (req.user && req.user.tipo !== 'admin') {
             const userSector = req.user.setor.toUpperCase();
             
             // Verificar se o órgão pertence ao setor do usuário
-            const orgaoData = await storageService.getOrgaoMetadata(nomeOrgao);
-            if (orgaoData) {
-                const orgaoCategoria = (orgaoData as any).categoria ? (orgaoData as any).categoria.toUpperCase() : '';
+            const meta = await storageService.getOrgaoMetadata(orgaoIdSlug);
+            if (meta) {
+                const orgaoCategoria = (meta as any).categoria ? (meta as any).categoria.toUpperCase() : '';
                 
                 if (orgaoCategoria !== userSector && 
                     !orgaoCategoria.includes(userSector) && 
@@ -40,28 +83,7 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
             }
         }
 
-        const existingId = await storageService.getOrgaoIdByName(nomeOrgao);
-        const orgaoId = existingId || fileSystem.normalizeOrgaoId(nomeOrgao);
-        if (existingId) {
-            const meta = await storageService.getOrgaoMetadata(existingId);
-            // Removendo verificação de senha no update/create para evitar bloqueio 401 indevido
-            /*
-            if (meta && meta.auth) {
-                if (!password) {
-                    return res.status(401).json({ success: false, message: 'Senha necessária' });
-                }
-                const isValid = verifyPasswordHash(password, meta.auth.salt, meta.auth.hash);
-                if (!isValid) {
-                    return res.status(401).json({ success: false, message: 'Senha incorreta' });
-                }
-            }
-            */
-        }
-
-        let authData = null;
-        if (password) {
-            authData = hashPassword(password);
-        }
+        const orgaoId = orgaoIdSlug;
 
         // Função recursiva para verificar se existe algum posicionamento customizado na árvore
         const checkHasPositions = (nodes: any[]): boolean => {
@@ -88,7 +110,6 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
         const orgaoData = {
             id: orgaoId,
             orgao: nomeOrgao,
-            auth: authData,
             tamanhoFolha: tamanhoFolha || 'A4',
             setores: setoresParaSalvar
         };
@@ -100,9 +121,78 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
         next(error);
     }
 };
+// Handler de UPDATE para organograma estrutural (não verifica duplicidade)
+export const updateOrganogramaEstrutural = async (req, res, next) => {
+    try {
+        const { nomeOrgao } = req.params; // Nome vem da URL
+        const { tamanhoFolha, setores } = req.body;
 
-// Alias para update (mesma lógica de upsert)
-export const updateOrganogramaEstrutural = createOrganogramaEstrutural;
+        const decodedName = decodeURIComponent(nomeOrgao);
+        console.log(`[UPDATE] Atualizando organograma estrutural: "${decodedName}"`);
+
+        if (!setores || !Array.isArray(setores)) {
+            return res.status(400).json({ success: false, message: 'Setores inválidos' });
+        }
+
+        const orgaoIdSlug = fileSystem.normalizeOrgaoId(decodedName);
+        const orgaoId = (await storageService.getOrgaoIdByName(decodedName)) || orgaoIdSlug;
+
+        // HEURÍSTICA DE PROTEÇÃO DE NOME (Auto-Save Fix)
+        // O frontend envia o slug na URL durante o auto-save.
+        // Se o nome do banco for "Rico" e o da URL for "Pobre (Slug)", preservamos o do banco.
+        let finalName = decodedName;
+        if (orgaoId) {
+             const existingMeta = await storageService.getOrgaoMetadata(orgaoId);
+             if (existingMeta && existingMeta.orgao) {
+                 const currentName = existingMeta.orgao;
+                 const inputName = decodedName;
+                 
+                 const hasHumanFormat = /[A-Z]/.test(currentName) || /\s/.test(currentName);
+                 const isTechnicalSlug = /^[a-z0-9_]+$/.test(inputName.trim());
+
+                 if (hasHumanFormat && isTechnicalSlug) {
+                     console.log(`[UPDATE] 🛡️ Smart Name: URL Slug '${inputName}' ignorado em favor de '${currentName}'`);
+                     finalName = currentName;
+                 }
+             }
+        }
+
+        // Função recursiva para verificar se existe algum posicionamento customizado na árvore
+        const checkHasPositions = (nodes: any[]): boolean => {
+            if (!nodes || !Array.isArray(nodes)) return false;
+            return nodes.some(s =>
+                (s.position && (s.position.x !== 0 || s.position.y !== 0)) ||
+                (s.children && s.children.length > 0 && checkHasPositions(s.children))
+            );
+        };
+
+        const temPosicoes = checkHasPositions(setores);
+        console.log(`[UPDATE] Salvando '${finalName}': temPosicoes=${temPosicoes}`);
+
+        let setoresParaSalvar = setores;
+
+        if (!temPosicoes) {
+            console.log(`[UPDATE] Calculando AUTO-LAYOUT para '${decodedName}' (sem posições prévias)`);
+            const setoresComPosicao = layoutService.calculateHierarchicalLayout(setores);
+            setoresParaSalvar = layoutService.centerLayout(setoresComPosicao);
+        } else {
+            console.log(`[UPDATE] Respeitando LAYOUT DO FRONTEND para '${decodedName}'`);
+        }
+
+        const orgaoData = {
+            id: orgaoId,
+            orgao: finalName,
+            tamanhoFolha: tamanhoFolha || 'A4',
+            setores: setoresParaSalvar
+        };
+
+        await storageService.createOrUpdateOrgao(orgaoData);
+
+        res.json({ success: true, message: 'Organograma atualizado com sucesso!' });
+    } catch (error) {
+        next(error);
+    }
+};
 
 // ==========================================
 
@@ -161,7 +251,6 @@ export const getOrganogramaByName = async (req, res, next) => {
                 orgaoId: metadata.id,
                 createdAt: metadata.createdAt,
                 updatedAt: metadata.updatedAt,
-                auth: !!metadata.auth,
                 organogramaEstrutural: estrutura && estrutura.length > 0 ? {
                     tamanhoFolha: tamanhoFolha,
                     setores: estrutura
@@ -175,41 +264,6 @@ export const getOrganogramaByName = async (req, res, next) => {
     }
 };
 
-// Route chama: verifyPassword
-export async function verifyPassword(req, res, next) {
-    try {
-        let { nomeOrgao, password } = req.body;
-        const { orgaoId: urlParamId } = req.params;
-
-        // Se não veio no body, pega da URL (que o router mapeia como :orgaoId)
-        if (!nomeOrgao && urlParamId) {
-            nomeOrgao = decodeURIComponent(urlParamId);
-        }
-
-        // Validação defensiva
-        if (!nomeOrgao) {
-            return res.status(400).json({ success: false, message: 'Nome do órgão não informado' });
-        }
-
-        let orgaoId = await storageService.getOrgaoIdByName(nomeOrgao);
-        if (!orgaoId) orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
-
-        const meta = await storageService.getOrgaoMetadata(orgaoId);
-        if (!meta || !meta.auth) {
-            return res.json({ success: true, valid: true });
-        }
-
-        const isValid = verifyPasswordHash(password, meta.auth.salt, meta.auth.hash);
-
-        if (isValid) {
-            res.json({ success: true, valid: true });
-        } else {
-            res.status(401).json({ success: false, message: 'Senha incorreta' });
-        }
-    } catch (error) {
-        next(error);
-    }
-};
 
 export async function updateOrgaoName(req, res, next) {
     try {
@@ -219,29 +273,6 @@ export async function updateOrgaoName(req, res, next) {
     } catch (e) { next(e); }
 }
 
-// Route chama: updatePassword
-export async function updatePassword(req, res, next) {
-    try {
-        let { orgaoId } = req.params;
-        const { novaSenha } = req.body;
-
-        // Se orgaoId não veio na URL, tenta pegar do body (embora a rota defina :orgaoId)
-        if (!orgaoId && req.body.orgaoId) orgaoId = req.body.orgaoId;
-
-        if (!orgaoId) {
-            return res.status(400).json({ success: false, message: 'ID do órgão não fornecido' });
-        }
-
-        if (!novaSenha) {
-            return res.status(400).json({ success: false, message: 'Nova senha não fornecida' });
-        }
-
-        const authData = hashPassword(novaSenha);
-        await storageService.updateOrgaoAuth(orgaoId, authData.salt, authData.hash);
-
-        res.json({ success: true, message: 'Senha atualizada com sucesso' });
-    } catch (e) { next(e); }
-}
 
 // Route chama: getAllOrganogramas
 // Route chama: getAllOrganogramas
@@ -384,12 +415,23 @@ export async function createOrganogramaFuncoes(req, res, next) {
             nomeOrgao = decodeURIComponent(req.params.nomeOrgao);
         }
 
-        // 1. Tentar resolver ID real no banco pelo Nome
-        let orgaoId = await storageService.getOrgaoIdByName(nomeOrgao);
+        const orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
 
-        // 2. Se não achar, fallback para normalização (comportamento antigo)
-        if (!orgaoId) {
-            orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
+        // Validação de Duplicidade CORRETA (Funcional): Verificar se já existe organograma FUNCIONAL
+        // Um órgão pode ter organograma estrutural sem ter funcional, então verificamos especificamente
+        if (req.method === 'POST') {
+            const existingFuncional = await storageService.listOrganogramasFuncoes(orgaoId);
+            const hasExistingFuncional = Array.isArray(existingFuncional) && existingFuncional.length > 0;
+
+            console.log(`[DUPLICATE CHECK FUNCIONAL] Órgão: "${nomeOrgao}" | ID: "${orgaoId}"`);
+            console.log(`[DUPLICATE CHECK FUNCIONAL] Existe funcional: ${hasExistingFuncional ? 'SIM (com ' + existingFuncional.length + ' cargos)' : 'NÃO'}`);
+
+            if (hasExistingFuncional) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Este órgão já possui um organograma funcional!' 
+                });
+            }
         }
 
         // Suporte a payload legado (organogramaFuncoes) ou novo (direto na raiz)
@@ -506,4 +548,45 @@ export const deleteCustomPositions = async (req, res, next) => {
     } catch (e) { next(e); }
 };
 
+/**
+ * Deleta organograma ESTRUTURAL (remove estrutural + funcional, mantém órgão na config)
+ * Mensagem de aviso severa: "Ao deletar o estrutural, o funcional também será deletado!"
+ */
+export const deleteOrganogramaEstrutural = async (req, res, next) => {
+    try {
+        const { nomeOrgao } = req.params;
+        const decodedName = decodeURIComponent(nomeOrgao);
+
+        let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+        if (!orgaoId) {
+            orgaoId = fileSystem.normalizeOrgaoId(decodedName);
+        }
+
+        console.log(`[DELETE] Deletando organograma ESTRUTURAL (e funcional) de ${decodedName}`);
+        await storageService.clearOrgaoContent(orgaoId);
+        res.json({ success: true, message: 'Organograma estrutural e funcional deletados. O órgão permanece na lista de configuração.' });
+    } catch (e) { next(e); }
+};
+
+/**
+ * Deleta APENAS organograma FUNCIONAL (mantém estrutural e configuração)
+ */
+export const deleteOrganogramaFuncional = async (req, res, next) => {
+    try {
+        const { nomeOrgao } = req.params;
+        const decodedName = decodeURIComponent(nomeOrgao);
+
+        let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+        if (!orgaoId) {
+            orgaoId = fileSystem.normalizeOrgaoId(decodedName);
+        }
+
+        console.log(`[DELETE] Deletando APENAS organograma FUNCIONAL de ${decodedName}`);
+        await storageService.clearOrgaoFuncional(orgaoId);
+        res.json({ success: true, message: 'Organograma funcional deletado. O estrutural e a configuração permanecem.' });
+    } catch (e) { next(e); }
+};
+
+// Alias legado (mesmo comportamento que deleteOrganogramaEstrutural)
 export const deleteOrganograma = deleteOrgao;
+

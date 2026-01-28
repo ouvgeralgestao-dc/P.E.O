@@ -73,11 +73,11 @@
     transform: scaleY(1.02);
 }
 
-.chart-value {
+.chart-value.qty-emphasis {
     font-size: 14px;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: 800;
+    color: #ffd700; /* Amarelo ouro para contraste sobre fundo escuro */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* Labels dos gráficos verticais - FORÇAR QUEBRA DE LINHA */
@@ -212,8 +212,10 @@
     gap: 4px;
 }
 
-.chart-badge strong {
-    color: #374151;
+.chart-badge strong.qty-emphasis {
+    color: #ea580c;
+    font-weight: 800;
+    font-size: 1.1em;
 }
 
 /* Scrollbar fina para o container detalhado */

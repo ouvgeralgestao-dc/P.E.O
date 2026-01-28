@@ -59,7 +59,7 @@ const DetailedTableCard: React.FC<DetailedTableCardProps> = ({ title, data, item
                                                 </td>
                                             )}
                                             <td className="item-cell">{item.label}</td>
-                                            <td className="qty-cell">{item.value}</td>
+                                            <td className="qty-cell qty-emphasis">{item.value}</td>
                                         </tr>
                                     ))
                                 ) : (

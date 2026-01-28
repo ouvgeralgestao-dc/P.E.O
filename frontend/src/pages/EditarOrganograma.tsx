@@ -293,7 +293,6 @@ function EditarOrganograma() {
                 component: FuncoesForm,
                 validate: (data) => {
                     const errors = {};
-                    if (!data.tamanhoFolha) errors.tamanhoFolha = 'Selecione o tamanho da folha';
                     // Nota: Permitimos 0 cargos agora para suportar a exclusão total via "Finalizar"
                     return {
                         valid: Object.keys(errors).length === 0,

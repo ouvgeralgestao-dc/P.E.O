@@ -19,10 +19,12 @@ import ConfigurarOrgaos from "./pages/ConfigurarOrgaos";
 import ConfigurarSetores from "./pages/ConfigurarSetores";
 import ConfigurarPrefixos from "./pages/ConfigurarPrefixos";
 import Configuracoes from "./pages/Configuracoes";
-import GerenciarSenhas from "./pages/GerenciarSenhas";
+import GerenciarAcesso from "./pages/GerenciarAcesso";
 import PrintPreview from "./pages/PrintPreview";
 import Sidebar from "./components/layout/Sidebar";
 import Footer from "./components/layout/Footer";
+import SandboxList from "./pages/SandboxList";
+import SandboxEditor from "./pages/SandboxEditor";
 import "./App.css";
 
 function AppContent() {
@@ -67,6 +69,22 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <CriarOrganograma />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre"
+              element={
+                <ProtectedRoute>
+                  <SandboxList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre/editor/:id"
+              element={
+                <ProtectedRoute>
+                  <SandboxEditor />
                 </ProtectedRoute>
               }
             />
@@ -143,10 +161,10 @@ function AppContent() {
               }
             />
             <Route
-              path="/gerenciar-senhas"
+              path="/gerenciar-acesso"
               element={
                 <ProtectedRoute requireAdmin>
-                  <GerenciarSenhas />
+                  <GerenciarAcesso />
                 </ProtectedRoute>
               }
             />

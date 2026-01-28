@@ -348,9 +348,11 @@
     opacity: 0;
     transform: translateX(-10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal; /* Permite quebra de linha para nomes longos */
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.25; /* Melhor leitura em duas linhas */
+    max-width: 200px; /* Garante que não estoure a sidebar */
 }
 
 .sidebar.expanded .sidebar-text {

@@ -76,7 +76,7 @@ const ConfigurarSetores = () => {
     };
 
     const handleDeletarSetor = async (setor) => {
-        if (!confirm(`⚠️ ATENÇÃO: Tem certeza que deseja excluir o tipo "${setor.nome}"?\n\nIsso removerá esta opção dos formulários, mas não apagará setores já criados nos organogramas.`)) return;
+        if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
             await api.delete(`/setores/config/${setor.id}`);

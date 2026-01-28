@@ -78,7 +78,7 @@ const ConfigurarPrefixos = () => {
     };
 
     const handleDeletarPrefixo = async (id) => {
-        if (!confirm('Tem certeza que deseja deletar este prefixo? Isso pode afetar cargos existentes.')) return;
+        if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
             await api.delete(`/prefixos/${id}`);

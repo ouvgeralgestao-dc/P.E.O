@@ -1,8 +1,8 @@
 /**
  * Página de Criação de Organogramas
  */
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import WizardForm from '../components/forms/WizardForm';
 import EstruturaForm from '../components/forms/EstruturaForm';
 import FuncoesForm from '../components/forms/FuncoesForm';
@@ -18,14 +18,31 @@ import './CriarOrganograma.css';
 
 function CriarOrganograma() {
     const navigate = useNavigate();
-    const [tipoOrganograma, setTipoOrganograma] = useState(null);
+    const location = useLocation();
+    const [tipoOrganograma, setTipoOrganograma] = useState<string | null>(null);
+    const [prefilledOrgao, setPrefilledOrgao] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [previewData, setPreviewData] = useState({ setores: [], cargos: [] });
-    const [pendingNavigate, setPendingNavigate] = useState(null);
+    const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
 
-    logger.info('CriarOrganograma', 'Página carregada');
+    // Efeito para preencher via Query Params
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tipo = params.get('tipo');
+        const orgao = params.get('orgao');
+
+        if (tipo === 'estrutural' || tipo === 'funcoes') {
+            setTipoOrganograma(tipo);
+        }
+
+        if (orgao) {
+            setPrefilledOrgao(orgao);
+        }
+    }, [location]);
+
+    logger.info('CriarOrganograma', 'Página carregada', { tipoOrganograma, prefilledOrgao });
 
     // Selecionar tipo de organograma
     const handleSelectTipo = (tipo) => {
@@ -189,11 +206,12 @@ function CriarOrganograma() {
                         Selecione o tipo de organograma que deseja criar
                     </p>
 
-                    <div className="tipo-selection">
+                    <div className="tipo-selection single-option" style={{ display: 'flex', justifyContent: 'center' }}>
                         <Card
                             hoverable
                             onClick={() => handleSelectTipo('estrutural')}
-                            className="tipo-card"
+                            className="tipo-card premium-selection-card"
+                            style={{ maxWidth: '500px' }}
                         >
                             <div className="tipo-icon">🏢</div>
                             <h3>Estrutura Organizacional</h3>
@@ -201,21 +219,6 @@ function CriarOrganograma() {
                                 Crie a hierarquia de setores do órgão, definindo a estrutura
                                 organizacional completa com níveis hierárquicos ajustados.
                             </p>
-
-                        </Card>
-
-                        <Card
-                            hoverable
-                            onClick={() => handleSelectTipo('funcoes')}
-                            className="tipo-card"
-                        >
-                            <div className="tipo-icon">👥</div>
-                            <h3>Funções e Cargos</h3>
-                            <p>
-                                Detalhe os cargos e nome dos ocupantes com símbolos do cargo,
-                                montando uma estrutura funcional completa com níveis hierárquicos ajustados.
-                            </p>
-
                         </Card>
                     </div>
                 </div>
@@ -228,7 +231,7 @@ function CriarOrganograma() {
         <div className="criar-organograma">
             {showSuccess && (
                 <SuccessOverlay
-                    onComplete={() => navigate(pendingNavigate)}
+                    onComplete={() => navigate(pendingNavigate || '/')}
                 />
             )}
             <div className="container">
@@ -254,6 +257,7 @@ function CriarOrganograma() {
                                 onComplete={tipoOrganograma === 'estrutural' ? handleCreateEstrutural : handleCreateFuncoes}
                                 onCancel={handleBack}
                                 onDataChange={handleDataChange}
+                                initialData={{ nomeOrgao: prefilledOrgao }}
                             />
                         </div>
                         <div className="preview-panel">

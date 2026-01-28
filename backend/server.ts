@@ -8,6 +8,7 @@ import prefixosRoutes from './routes/prefixos.js';
 import authRoutes from './routes/auth.js';
 import usuariosRoutes from './routes/usuarios.js';
 import solicitacoesRoutes from './routes/solicitacoes.js';
+import sandboxRoutes from './routes/sandbox.js';
 import errorHandler from './middleware/errorHandler.js';
 
 // Carregar variáveis de ambiente
@@ -29,6 +30,7 @@ app.use('/api/prefixos', prefixosRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/solicitacoes', solicitacoesRoutes);
+app.use('/api/sandbox', sandboxRoutes);
 
 // Rota de teste
 app.get('/api/health', (req, res) => {

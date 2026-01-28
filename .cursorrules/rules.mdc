@@ -6,11 +6,11 @@
 ## 🌟 DIRETRIZ SUPREMA DE EXECUÇÃO E APRENDIZADO
 
 1.  **LEITURA E EXECUÇÃO ABSOLUTA:**
-    - **TUDO** o que estiver contido neste documento (`rules/rules.mdc`) DEVE ser:
+    - **TUDO** o que estiver contido neste documento (`rules.mdc`) e no arquivo de documentação central (**[TECHNICAL_INDEX.md](file:///c:/Users/junio/OneDrive/Área de Trabalho/Criador_Organograma/.cursorrules/TECHNICAL_INDEX.md)**) DEVE ser:
         - **Lido** na íntegra.
         - **Aprendido** profundamente.
-        - **Compreendido** em suas nuances.
-        - **Estudado completamente**.
+        - **Compreendido** em suas nuances e lógicas de negócio.
+        - **Estudado completamente** antes de qualquer ação.
         - **Executado como diretriz máxima**, sem exceções.
     - Esta regra se aplica a **todo momento** de trabalho, sem esquecimento.
 
@@ -34,10 +34,10 @@
 
 **GATILHO:** Sempre que o usuário executar `node start-server.js`, o agente de IA ativo deve:
 
-1. **Ler automaticamente** este arquivo completo (`rules/rules.mdc`)
-2. **Contextualizar-se** em todas as regras, estrutura e objetivos do projeto
-3. **Tornar-se especialista** no Gerador de Organogramas PMDC
-4. **Estar pronto** para auxiliar com conhecimento completo do contexto
+1. **Ler automaticamente** este arquivo completo e o **[TECHNICAL_INDEX.md](file:///c:/Users/junio/OneDrive/Área de Trabalho/Criador_Organograma/.cursorrules/TECHNICAL_INDEX.md)**
+2. **Contextualizar-se** em todas as regras, estrutura, lógicas de Órgão vs Setor, hierarquias e objetivos do projeto
+3. **Tornar-se especialista** completo no Gerador de Organogramas PMDC
+4. **Estar pronto** para auxiliar com conhecimento técnico e de negócio absoluto
 
 **OBJETIVO:** Garantir que qualquer agente de IA que assista o desenvolvimento esteja sempre atualizado e contextualizado.
 

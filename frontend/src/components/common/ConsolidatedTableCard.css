@@ -162,9 +162,10 @@
     white-space: nowrap;
 }
 
-.simbolo-badge strong {
-    color: #374151;
-    font-weight: 600;
+.simbolo-badge strong.qty-emphasis {
+    color: #ea580c; /* Laranja de destaque */
+    font-weight: 800;
+    font-size: 1.1em;
 }
 
 .consolidated-table-empty {

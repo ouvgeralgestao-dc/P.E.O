@@ -36,14 +36,14 @@ router.put('/:nomeOrgao/estrutura', requireAdmin, validateUpdateOrganogramaEstru
 // Editar organograma de funções (apenas admin)
 router.put('/:nomeOrgao/funcoes', requireAdmin, validateUpdateOrganogramaFuncoes, organogramaController.updateOrganogramaFuncoes);
 
-// Deletar organograma (apenas admin)
+// Deletar organograma ESTRUTURAL (deleta estrutural + funcional, mantém órgão na config)
+router.delete('/:nomeOrgao/estrutura', requireAdmin, organogramaController.deleteOrganogramaEstrutural);
+
+// Deletar organograma FUNCIONAL (só deleta funcional, mantém estrutural e config)
+router.delete('/:nomeOrgao/funcoes', requireAdmin, organogramaController.deleteOrganogramaFuncional);
+
+// Deletar organograma (rota legada - mesmo comportamento que estrutural)
 router.delete('/:nomeOrgao', requireAdmin, organogramaController.deleteOrganograma);
-
-// Verificar senha de órgão
-router.post('/:orgaoId/verify-password', checkSectorAccess, organogramaController.verifyPassword);
-
-// Atualizar senha de órgão (apenas admin)
-router.put('/:orgaoId/update-password', requireAdmin, organogramaController.updatePassword);
 
 // Salvar posições customizadas (apenas admin)
 router.post('/:organogramaId/positions', requireAdmin, organogramaController.saveCustomPositions);

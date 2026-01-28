@@ -115,3 +115,28 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_tipo ON usuarios(tipo);
+
+-- TABELA 11: SANDBOX_PROJETOS (Projetos de criação livre)
+CREATE TABLE IF NOT EXISTS sandbox_projects (
+    id TEXT PRIMARY KEY,           -- UUID
+    user_id INTEGER NOT NULL,      -- Dono do projeto (referência a usuarios)
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    tipo TEXT NOT NULL,            -- 'orgao' ou 'setor'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
+-- TABELA 12: SANDBOX_ITENS (Nós e Arestas dos projetos livres)
+CREATE TABLE IF NOT EXISTS sandbox_items (
+    id TEXT PRIMARY KEY,           -- UUID do item
+    project_id TEXT NOT NULL,
+    type TEXT NOT NULL,            -- 'node' ou 'edge'
+    data_json TEXT NOT NULL,       -- Posição, Estilo, Texto, Parents, etc.
+    FOREIGN KEY (project_id) REFERENCES sandbox_projects(id) ON DELETE CASCADE
+);
+
+-- Índices para Sandbox
+CREATE INDEX IF NOT EXISTS idx_sandbox_projects_user ON sandbox_projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_items_project ON sandbox_items(project_id);

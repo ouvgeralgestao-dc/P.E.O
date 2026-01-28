@@ -4,7 +4,14 @@
 import React from 'react';
 import './Button.css';
 
-const Button = ({
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'; // Add variants used
+    size?: 'sm' | 'md' | 'lg';
+    fullWidth?: boolean;
+    icon?: React.ReactNode;
+}
+
+const Button: React.FC<ButtonProps> = ({
     children,
     onClick,
     variant = 'primary',
@@ -13,7 +20,8 @@ const Button = ({
     disabled = false,
     fullWidth = false,
     icon = null,
-    className = ''
+    className = '',
+    ...rest
 }) => {
     const buttonClass = `btn btn-${variant} ${size !== 'md' ? `btn-${size}` : ''} ${fullWidth ? 'btn-full-width' : ''} ${className}`.trim();
 
@@ -23,6 +31,7 @@ const Button = ({
             className={buttonClass}
             onClick={onClick}
             disabled={disabled}
+            {...rest}
         >
             {icon && <span className="btn-icon">{icon}</span>}
             {children}

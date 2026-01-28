@@ -6,7 +6,6 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import PasswordModal from '../components/common/PasswordModal';
 import BackButton from '../components/common/BackButton';
 import { logger } from '../utils/logger';
 import { exportToPNG, exportToJPG, exportToPDF } from '../utils/exportHelpers';
@@ -19,15 +18,13 @@ function VisualizarOrganograma() {
     const { nomeOrgao } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [fullData, setFullData] = useState(null); // Dados brutos da API
-    const [displayData, setDisplayData] = useState(null); // Dados filtrados para o Canvas
+    const [fullData, setFullData] = useState<any>(null); // Dados brutos da API
+    const [displayData, setDisplayData] = useState<any>(null); // Dados filtrados para o Canvas
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [exporting, setExporting] = useState(false);
 
-    // Estados para proteção por senha
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [pendingAction, setPendingAction] = useState(null); // { type: 'edit'|'delete' }
+    // Estados para proteção por senha REMOVIDOS
 
     // Ref para guardar os dados atuais do React Flow (nós e arestas)
     const flowDataRef = React.useRef({ nodes: [], edges: [] });
@@ -36,7 +33,7 @@ function VisualizarOrganograma() {
     const fullDataRef = React.useRef(null);
 
     // Callback para atualizar a ref quando o Canvas mudar
-    const handleFlowDataChange = useCallback((data) => {
+    const handleFlowDataChange = useCallback((data: any) => {
         flowDataRef.current = data;
     }, []);
 
@@ -62,7 +59,7 @@ function VisualizarOrganograma() {
             // O backend retorna ordenado por createdAt DESC, então [0] é o atual.
             // Exibir múltiplas versões ao mesmo tempo causa sobreposição e estatísticas incorretas.
             const funcoes = idVisualizacao
-                ? fullData.organogramasFuncoes.filter(f => f.id === idVisualizacao)
+                ? fullData.organogramasFuncoes.filter((f: any) => f.id === idVisualizacao)
                 : (fullData.organogramasFuncoes.length > 0 ? [fullData.organogramasFuncoes[0]] : []);
 
             setDisplayData({
@@ -83,12 +80,12 @@ function VisualizarOrganograma() {
 
             logger.info('VisualizarOrganograma', 'Carregando organograma', { nomeOrgao });
 
-            const response = await api.get(`/organogramas/${encodeURIComponent(nomeOrgao)}`);
+            const response = await api.get(`/organogramas/${encodeURIComponent(nomeOrgao as string)}`);
 
             logger.success('VisualizarOrganograma', 'Organograma carregado', response.data);
             setFullData(response.data.data);
             fullDataRef.current = response.data.data; // Atualizar ref também
-        } catch (err) {
+        } catch (err: any) {
             logger.error('VisualizarOrganograma', 'Erro ao carregar organograma', err);
             setError(err.response?.data?.message || 'Erro ao carregar organograma');
         } finally {
@@ -96,17 +93,24 @@ function VisualizarOrganograma() {
         }
     };
 
-    // Solicitar senha antes de editar
+    // Ir direto para edição (permissão controlada por ProtectedRoute e Backend)
     const handleEditClick = () => {
-        setPendingAction({ type: 'edit' });
-        setShowPasswordModal(true);
+        navigate(`/editar/${encodeURIComponent(nomeOrgao as string)}?tipo=${tipoVisualizacao}`);
     };
 
-    // Solicitar senha antes de deletar (Meta 4.2 - Botão movido para cá)
-    const handleDeleteClick = () => {
-        // Abrir modal de senha diretamente (confirmação implícita ao digitar senha)
-        setPendingAction({ type: 'delete' });
-        setShowPasswordModal(true);
+    // Confirmar e deletar com mensagens diferenciadas por tipo
+    const handleDeleteClick = async () => {
+        let confirmMessage = '';
+        
+        if (tipoVisualizacao === 'estrutura') {
+            confirmMessage = '⚠️ ATENÇÃO: Ao deletar o organograma ESTRUTURAL, o FUNCIONAL também será deletado!\n\nO órgão permanecerá na lista de configuração para criação futura.\n\nTEM CERTEZA QUE DESEJA CONTINUAR?';
+        } else {
+            confirmMessage = 'Deseja deletar o organograma funcional?\n\nO organograma estrutural e o órgão permanecem intactos.\n\nConfirmar?';
+        }
+        
+        if (window.confirm(confirmMessage)) {
+            await executeDelete();
+        }
     };
 
     const [styleSettings, setStyleSettings] = useState(null); // { backgroundColor, textColor, ... }
@@ -115,7 +119,7 @@ function VisualizarOrganograma() {
 
     // Callback recebido do Canvas quando usuário clica em Salvar Posições
     // Usa fullDataRef para evitar stale closure
-    const handleSaveLayoutRequest = useCallback((updatedNodesData) => {
+    const handleSaveLayoutRequest = useCallback((updatedNodesData: any) => {
         // Salvamento direto sem senha (Meta 0)
         executeSaveLayout(updatedNodesData);
     }, []);
@@ -141,13 +145,13 @@ function VisualizarOrganograma() {
             isSavingRef.current = true;
             logger.info('VisualizarOrganograma', 'Salvando layout customizado');
 
-            const orgaoId = currentFullData.orgaoId || encodeURIComponent(nomeOrgao);
+            const orgaoId = (currentFullData as any).orgaoId || encodeURIComponent(nomeOrgao as string);
 
             // Função utilitária para "achatar" árvores antes de enviar para o backend
-            const flattenRecursively = (items) => {
-                let result = [];
+            const flattenRecursively = (items: any[]) => {
+                let result: any[] = [];
                 items.forEach(item => {
-                    const { children, ...rest } = item;
+                    const { children, ...rest } = item as any;
                     result.push(rest);
                     if (children && children.length > 0) {
                         result = [...result, ...flattenRecursively(children)];
@@ -163,12 +167,12 @@ function VisualizarOrganograma() {
                 console.log('[DEBUG Save] dataToSave do canvas:', dataToSave);
 
                 // Pegar estrutura original completa
-                const originalSetores = currentFullData.organogramaEstrutural?.setores || [];
+                const originalSetores = (currentFullData as any).organogramaEstrutural?.setores || [];
 
                 // Função recursiva para atualizar posições/estilos preservando hierarquia
-                const updateSetoresRecursively = (setores) => {
+                const updateSetoresRecursively = (setores: any[]) => {
                     return setores.map(setor => {
-                        const match = dataToSave.find(n => n.id === setor.id);
+                        const match = (dataToSave as any[]).find((n: any) => n.id === setor.id);
                         const updatedSetor = {
                             ...setor,
                             position: match?.position || setor.position,
@@ -201,13 +205,13 @@ function VisualizarOrganograma() {
 
             } else if (tipoVisualizacao === 'funcoes') {
                 // Preparar dados para updateFuncoes
-                const currentOrgFuncoes = currentFullData.organogramasFuncoes?.[0];
+                const currentOrgFuncoes = (currentFullData as any).organogramasFuncoes?.[0];
                 if (!currentOrgFuncoes) return;
 
                 // Função recursiva para atualizar cargos em toda a árvore
-                const updateCargosRecursively = (cargos) => {
+                const updateCargosRecursively = (cargos: any[]) => {
                     return cargos.map(cargo => {
-                        const match = dataToSave.find(n => n.id === cargo.id);
+                        const match = (dataToSave as any[]).find((n: any) => n.id === cargo.id);
 
                         // DEBUG: Verificar se encontrou o match para atualização de posição
                         if (!match) {
@@ -266,60 +270,28 @@ function VisualizarOrganograma() {
         }
     };
 
-    // Validar senha e executar ação
-    const handlePasswordSubmit = async (password) => {
-        console.log('🔐 [handlePasswordSubmit] Iniciando. pendingAction:', pendingAction, '| fullData:', fullData ? 'presente' : 'null');
+    // Validar senha REMOVIDO (Lógica obsoleta)
 
-        if (!pendingAction || !fullData) {
-            console.log('🔐 [handlePasswordSubmit] Retornando false - pendingAction ou fullData é null');
-            return false;
-        }
-
-        try {
-            // Verificar senha com o backend
-            const endpoint = `/organogramas/${fullData.orgaoId || encodeURIComponent(nomeOrgao)}/verify-password`;
-            console.log('🔐 [handlePasswordSubmit] Chamando endpoint:', endpoint);
-
-            const response = await api.post(endpoint, { password });
-            console.log('🔐 [handlePasswordSubmit] Resposta:', response.data);
-
-            if (response.data.success) {
-                console.log('🔐 [handlePasswordSubmit] Senha válida! Ação pendente:', pendingAction.type);
-
-                // Senha correta, executar ação
-                if (pendingAction.type === 'edit') {
-                    console.log('🔐 [handlePasswordSubmit] Navegando para editar...');
-                    navigate(`/editar/${encodeURIComponent(nomeOrgao)}?tipo=${tipoVisualizacao}`);
-                } else if (pendingAction.type === 'delete') {
-                    console.log('🗑️ [handlePasswordSubmit] Chamando executeDelete...');
-                    await executeDelete();
-                    console.log('🗑️ [handlePasswordSubmit] executeDelete concluído!');
-                } else if (pendingAction.type === 'save_layout') {
-                    console.log('🔐 [handlePasswordSubmit] Chamando executeSaveLayout...');
-                    await executeSaveLayout();
-                }
-                return true;
-            }
-            console.log('🔐 [handlePasswordSubmit] Resposta não teve success=true');
-            return false;
-        } catch (error) {
-            console.error('🔐 [handlePasswordSubmit] ERRO:', error);
-            logger.error('VisualizarOrganograma', 'Erro ao validar senha', error);
-            return false;
-        }
-    };
-
-    // Executar exclusão após validação de senha (confirmação já feita antes)
+    // Executar exclusão com rota específica para cada tipo
     const executeDelete = async () => {
         try {
-            logger.info('VisualizarOrganograma', 'Deletando organograma', { nomeOrgao });
+            const encodedName = encodeURIComponent(nomeOrgao as string);
+            let endpoint = '';
+            
+            if (tipoVisualizacao === 'estrutura') {
+                endpoint = `/organogramas/${encodedName}/estrutura`;
+                logger.info('VisualizarOrganograma', 'Deletando organograma ESTRUTURAL (e funcional)', { nomeOrgao });
+            } else {
+                endpoint = `/organogramas/${encodedName}/funcoes`;
+                logger.info('VisualizarOrganograma', 'Deletando apenas organograma FUNCIONAL', { nomeOrgao });
+            }
 
-            await api.delete(`/organogramas/${encodeURIComponent(nomeOrgao)}`);
+            await api.delete(endpoint);
 
             logger.success('VisualizarOrganograma', 'Organograma deletado');
             alert('Organograma deletado com sucesso!');
             navigate('/');
-        } catch (err) {
+        } catch (err: any) {
             logger.error('VisualizarOrganograma', 'Erro ao deletar organograma', err);
             alert('Erro ao deletar organograma: ' + (err.response?.data?.message || err.message));
         }
@@ -432,7 +404,7 @@ function VisualizarOrganograma() {
 
         const stats = {};
 
-        const processarCargos = (lista) => {
+        const processarCargos = (lista: any[]) => {
             if (!lista) return;
             lista.forEach(cargo => {
                 const nome = cargo.nomeCargo;
@@ -441,19 +413,19 @@ function VisualizarOrganograma() {
                     const prefixo = nome.split(' ')[0].trim();
                     const qtdCargo = cargo.quantidade ? parseInt(cargo.quantidade) : 1;
 
-                    if (!stats[prefixo]) {
-                        stats[prefixo] = { total: 0, simbolosMap: {} };
+                    if (!(stats as any)[prefixo]) {
+                        (stats as any)[prefixo] = { total: 0, simbolosMap: {} };
                     }
 
-                    stats[prefixo].total += qtdCargo;
+                    (stats as any)[prefixo].total += qtdCargo;
 
                     // Agregar símbolos deste cargo
                     if (cargo.simbolos && Array.isArray(cargo.simbolos)) {
-                        cargo.simbolos.forEach(sim => {
+                        cargo.simbolos.forEach((sim: any) => {
                             const qtdSim = sim.quantidade ? parseInt(sim.quantidade) : 0;
                             const tipoSim = sim.tipo;
                             if (tipoSim && qtdSim > 0) {
-                                stats[prefixo].simbolosMap[tipoSim] = (stats[prefixo].simbolosMap[tipoSim] || 0) + qtdSim;
+                                (stats as any)[prefixo].simbolosMap[tipoSim] = ((stats as any)[prefixo].simbolosMap[tipoSim] || 0) + qtdSim;
                             }
                         });
                     }
@@ -472,19 +444,19 @@ function VisualizarOrganograma() {
         // Formatar para exibição na tabela (compatível com nova estrutura de objeto)
         const formattedStats = {};
         Object.keys(stats).forEach(prefixo => {
-            const item = stats[prefixo];
-            const detalhesArr = Object.entries(item.simbolosMap)
+            const item = (stats as any)[prefixo];
+            const detalhesArr = Object.entries(item.simbolosMap as any)
                 .map(([tipo, qtd]) => `${tipo} (${qtd})`);
 
             const detalhes = detalhesArr.length > 0 ? detalhesArr.join(', ') : '-';
 
-            formattedStats[prefixo] = {
+            (formattedStats as any)[prefixo] = {
                 total: item.total,
                 detalhes: detalhes
             };
         });
 
-        return formattedStats;
+        return formattedStats as any;
     }, [displayData, tipoVisualizacao]);
 
     if (loading) {
@@ -748,18 +720,6 @@ function VisualizarOrganograma() {
                 </div>
             </div>
 
-            {/* Modal de Senha */}
-            <PasswordModal
-                isOpen={showPasswordModal}
-                onClose={() => {
-                    setShowPasswordModal(false);
-                    setPendingAction(null);
-                }}
-                onSubmit={handlePasswordSubmit}
-                title={pendingAction?.type === 'delete' ? '🗑️ Confirmar Exclusão' : '✏️ Confirmar Edição'}
-                description={`Digite a senha do órgão "${displayData?.orgao || ''}" para continuar:`}
-                submitText={pendingAction?.type === 'delete' ? 'Deletar' : 'Editar'}
-            />
         </div>
     );
 }

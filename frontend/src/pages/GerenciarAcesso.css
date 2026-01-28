@@ -1,0 +1,187 @@
+
+.gerenciar-acesso {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  color: #1a202c;
+  font-weight: 700;
+}
+
+/* Table Styles - Mantendo o que já estava bom mas refinando */
+.users-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 16px 24px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.users-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.users-table tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status-active {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-inactive {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Modal Redesign */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Centralizar verticalmente */
+  padding: 24px;
+  z-index: 50;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 800px; /* Largura maior para Grid */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 90vh; /* Evitar overflow da tela */
+  overflow-y: auto; /* Scroll se necessário */
+  animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  background-color: #1d4ed8;
+  padding: 24px 32px;
+  margin: -32px -32px 32px -32px;
+  border-radius: 16px 16px 0 0;
+  border-bottom: 1px solid #1e40af;
+  position: relative; /* Contexto de empilhamento */
+}
+
+.modal-header h2 {
+  font-size: 24px;
+  color: #ffffff !important; /* Forçar branco */
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 10; /* Trazer para frente */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Leve sombra para destacar */
+}
+
+/* Grid Layout for Form */
+.modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px; /* Mais compacto */
+}
+
+.form-col-span-2 {
+  grid-column: span 2;
+}
+
+/* Input & Select Styling overrides (se necessário para consistência) */
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: capitalize; /* Padronizar labels */
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  grid-column: span 2;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 640px) {
+  .modal-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .form-col-span-2 {
+    grid-column: span 1;
+  }
+  
+  .users-table-container {
+    border-radius: 8px;
+  }
+
+  .action-buttons {
+      flex-direction: column;
+  }
+}

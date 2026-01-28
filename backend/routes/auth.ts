@@ -26,13 +26,18 @@ router.post('/login', [
 
         // Buscar usuário no banco
         const user = client.prepare(`
-            SELECT id, matricula, email, senha, nome, setor, cargo, tipo 
+            SELECT id, matricula, email, senha, nome, setor, cargo, tipo, ativo
             FROM usuarios 
             WHERE matricula = ?
         `).get(matricula);
 
         if (!user) {
             return res.status(401).json({ error: 'Matrícula ou senha incorretos' });
+        }
+
+        // Verificar se usuário está ativo
+        if (user.ativo === 0) {
+            return res.status(403).json({ error: 'Seu acesso está desativado. Procure o gestor do seu Órgão!' });
         }
 
         // Verificar senha (compatível com hash SHA256 atual e bcrypt futuro)

@@ -7,11 +7,11 @@ import { logger } from '../utils/logger';
 import api from '../services/api';
 
 function PastaOrgao() {
-    const { nomeOrgao } = useParams();
+    const { nomeOrgao } = useParams<{ nomeOrgao: string }>();
     const navigate = useNavigate();
-    const [orgaoData, setOrgaoData] = useState(null);
+    const [orgaoData, setOrgaoData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadOrgao();
@@ -22,7 +22,7 @@ function PastaOrgao() {
             setLoading(true);
             const response = await api.get(`/organogramas/${encodeURIComponent(nomeOrgao)}`);
             setOrgaoData(response.data.data);
-        } catch (err) {
+        } catch (err: any) {
             setError(err.response?.data?.message || 'Erro ao carregar pasta do órgão');
             logger.error('PastaOrgao', 'Erro', err);
         } finally {
@@ -31,10 +31,12 @@ function PastaOrgao() {
     };
 
     const handleOpenEstrutura = () => {
+        if (!nomeOrgao) return;
         navigate(`/visualizar/${encodeURIComponent(nomeOrgao)}?tipo=estrutura`);
     };
 
-    const handleOpenFuncoes = (id) => {
+    const handleOpenFuncoes = (id: any) => {
+        if (!nomeOrgao) return;
         navigate(`/visualizar/${encodeURIComponent(nomeOrgao)}?tipo=funcoes&id=${id}`);
     };
 
@@ -91,15 +93,18 @@ function PastaOrgao() {
                         </Card>
                     ))}
 
-                    {/* Botão para criar novo se não houver (opcional) */}
-                    <Card
-                        hoverable
-                        className="item-card add-card"
-                        onClick={() => navigate('/criar')}
-                    >
-                        <div className="icon">+</div>
-                        <h3>Criar Novo</h3>
-                    </Card>
+                    {/* Botão para criar funcional se não houver */}
+                    {orgaoData?.organogramaEstrutural && nomeOrgao && (!orgaoData?.organogramasFuncoes || orgaoData.organogramasFuncoes.length === 0) && (
+                        <Card
+                            hoverable
+                            className="item-card add-card functional-add-card"
+                            onClick={() => navigate(`/criar?tipo=funcoes&orgao=${encodeURIComponent(nomeOrgao)}`)}
+                        >
+                            <div className="icon">👥</div>
+                            <h3>CRIAR ORGANOGRAMA FUNCIONAL</h3>
+                            <p>Clique para detalhar cargos e funções</p>
+                        </Card>
+                    )}
                 </div>
             </div>
             <style>{`
@@ -116,6 +121,18 @@ function PastaOrgao() {
                 .add-card .icon { color: #cbd5e1; }
                 .add-card:hover { border-color: #2563eb; color: #2563eb; }
                 .add-card:hover .icon { color: #2563eb; }
+                .functional-add-card { 
+                    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+                    border: 2px dashed #10b981;
+                }
+                .functional-add-card:hover {
+                    border-style: solid;
+                    border-color: #10b981;
+                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                    transform: translateY(-8px) !important;
+                    box-shadow: 0 12px 24px rgba(16, 185, 129, 0.15);
+                }
+                .functional-add-card h3 { color: #059669; font-weight: 800; font-size: 1.1rem; }
             `}</style>
         </div>
     );

@@ -28,12 +28,6 @@ const EstruturaForm = ({ data, updateData, errors }) => {
         isEditing: false
     });
     const [currentCargo, setCurrentCargo] = useState({ tipo: '', quantidade: 1 });
-
-    // Estados para controle de senha
-    const [isCheckingOrgao, setIsCheckingOrgao] = useState(false);
-    const [isNewOrgan, setIsNewOrgan] = useState(false);
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [tipoSetorOptions, setTipoSetorOptions] = useState([]); // Dicionário dinâmico do banco
     const [orgaosOptions, setOrgaosOptions] = useState([]); // Lista dinâmica de órgãos
 
@@ -57,8 +51,8 @@ const EstruturaForm = ({ data, updateData, errors }) => {
                 const formattedOptions = orgaos
                     .filter(orgao => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
                     .map(orgao => ({
-                        value: orgao.id,
-                        label: orgao.nome
+                        value: orgao.nome, // Valor agora é o nome real para evitar slugs na UI
+                        label: orgao.nome.length > 85 ? orgao.nome.substring(0, 85) + '...' : orgao.nome
                     }))
                     .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -79,55 +73,6 @@ const EstruturaForm = ({ data, updateData, errors }) => {
 
     const tamanhoFolha = data.tamanhoFolha || 'A3';
 
-    // Verificar se o órgão existe quando o nome mudar
-    useEffect(() => {
-        const checkOrgao = async () => {
-            if (!nomeOrgao) {
-                setIsNewOrgan(false);
-                return;
-            }
-
-            setIsCheckingOrgao(true);
-            try {
-                // Resolver nome real se for um ID conhecido
-                const orgaoInfo = getOrgaoById(nomeOrgao);
-                const nomeParaChecar = orgaoInfo ? orgaoInfo.nome : nomeOrgao;
-
-                // Tenta buscar o órgão. Se erro 404, é novo.
-                const response = await api.get(`/organogramas/${encodeURIComponent(nomeParaChecar)}`);
-                // Se o órgão existir mas NÃO tiver senha configurada, tratamos como novo
-                const hasPassword = !!response.data.data?.auth;
-                setIsNewOrgan(!hasPassword);
-
-                if (hasPassword) {
-                    updateData({ password: null });
-                }
-            } catch (error) {
-                if (error.response && error.response.status === 404) {
-                    setIsNewOrgan(true);
-                }
-            } finally {
-                setIsCheckingOrgao(false);
-            }
-        };
-
-        // Debounce simples
-        const timeoutId = setTimeout(() => {
-            if (nomeOrgao && !orgaoTravado) {
-                checkOrgao();
-            }
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [nomeOrgao, orgaoTravado]);
-
-    // Sincronizar status de senha requerida com o pai (apenas se mudou)
-    useEffect(() => {
-        if (data.passwordRequired !== isNewOrgan) {
-            updateData({ passwordRequired: isNewOrgan });
-        }
-    }, [isNewOrgan, data.passwordRequired]);
-
     // Carregar dicionário de tipos de setor do banco
     useEffect(() => {
         const fetchSectorConfig = async () => {
@@ -144,18 +89,6 @@ const EstruturaForm = ({ data, updateData, errors }) => {
     // Atualizar nome do órgão
     const handleNomeOrgaoChange = (e) => {
         updateData({ nomeOrgao: e.target.value });
-    };
-
-    // Atualizar senha nos dados globais
-    const handlePasswordChange = (field, value) => {
-        if (field === 'password') {
-            setPassword(value);
-            // Atualiza no pai apenas se as senhas conferem (ou validação posterior)
-            // Aqui mandamos direto, validação final ocorre no submit
-            updateData({ password: value });
-        } else {
-            setConfirmPassword(value);
-        }
     };
 
     // Atualizar tamanho da folha
@@ -373,9 +306,7 @@ const EstruturaForm = ({ data, updateData, errors }) => {
             });
 
             if (outrasRaizes.length === 0) {
-                const confirmar = window.confirm(
-                    "⚠️ ATENÇÃO: O único setor nível 1 será removido e o organograma não existirá mais!\n\nDeseja prosseguir com a exclusão total?"
-                );
+                const confirmar = window.confirm("TEM CERTEZA QUE DESEJA DELETAR?");
 
                 if (!confirmar) return;
 
@@ -449,43 +380,18 @@ const EstruturaForm = ({ data, updateData, errors }) => {
                 <div className="form-row">
                     <Select
                         label="Nome do Órgão"
-                        value={nomeOrgao}
+                        value={getOrgaoById(nomeOrgao)?.nome || nomeOrgao} // Resolve nome se for ID antigo
                         onChange={handleNomeOrgaoChange}
                         options={orgaosOptions}
                         placeholder="Selecione o órgão"
                         required
                         disabled={orgaoTravado}
                         error={errors.nomeOrgao}
-                        helperText={isCheckingOrgao ? "Verificando..." : orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : isNewOrgan ? "Novo órgão detectado: Defina uma senha abaixo" : "Órgão existente: Senha não necessária"}
+                        helperText={orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : ""}
                     />
                 </div>
 
-                {/* Campos de Senha (Apenas para novos órgãos) */}
-                {isNewOrgan && (
-                    <div className="form-row password-section" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #eee' }}>
-                        <div className="password-alert" style={{ gridColumn: '1 / -1', marginBottom: '10px', color: '#d97706', fontSize: '0.9em' }}>
-                            ℹ️ Este é o primeiro organograma deste órgão. Defina uma senha administrativa.
-                        </div>
-                        <Input
-                            label="Senha Administrativa"
-                            type="password"
-                            value={password}
-                            onChange={(e) => handlePasswordChange('password', e.target.value)}
-                            placeholder="Crie uma senha"
-                            required
-                            error={errors.password}
-                        />
-                        <Input
-                            label="Confirmar Senha"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                            placeholder="Repita a senha"
-                            required
-                            error={password !== confirmPassword && confirmPassword ? "Senhas não conferem" : ""}
-                        />
-                    </div>
-                )}
+
             </Card>
 
             {/* Adicionar Setor */}

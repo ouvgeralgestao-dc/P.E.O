@@ -47,7 +47,7 @@ const ChartCard = ({ title, data, color = '#3b82f6', maxHeight = 200, layout = '
                                 <div className="chart-row-details">
                                     {item.details.sort((a: any, b: any) => b.value - a.value).map((detail: any, dIndex: number) => (
                                         <span key={dIndex} className="chart-badge">
-                                            {detail.label}: <strong>{detail.value}</strong>
+                                            {detail.label}: <strong className="qty-emphasis">{detail.value}</strong>
                                         </span>
                                     ))}
                                 </div>
@@ -80,7 +80,7 @@ const ChartCard = ({ title, data, color = '#3b82f6', maxHeight = 200, layout = '
                                                 maxHeight: `${maxHeight}px`
                                             }}
                                         >
-                                            <span className="chart-value">{item.value}</span>
+                                            <span className="chart-value qty-emphasis">{item.value}</span>
                                         </div>
                                     </div>
                                     <div className="chart-label">{item.label}</div>

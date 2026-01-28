@@ -4,7 +4,22 @@
 import React from 'react';
 import './Input.css';
 
-const Input = ({
+interface InputProps {
+    label?: string;
+    type?: string;
+    value: string | number;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
+    required?: boolean;
+    disabled?: boolean;
+    error?: string | null;
+    helperText?: string | null;
+    name?: string;
+    id?: string;
+    className?: string;
+}
+
+const Input: React.FC<InputProps> = ({
     label,
     type = 'text',
     value,

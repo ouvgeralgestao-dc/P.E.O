@@ -76,7 +76,7 @@ const ConfigurarOrgaos = () => {
     };
 
     const handleDeletarOrgao = async (id) => {
-        if (!confirm('Tem certeza que deseja deletar este órgão?')) return;
+        if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
             await api.delete(`/orgaos/${id}`);

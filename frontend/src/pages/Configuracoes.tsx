@@ -30,10 +30,10 @@ const Configuracoes = () => {
             variant: 'secondary'
         },
         {
-            title: 'Gerenciar Senhas',
-            description: 'Alterar senha de administrador.',
-            icon: '🔐',
-            path: '/gerenciar-senhas',
+            title: 'Gerenciar Acesso',
+            description: 'Gerencie usuários e controle de acesso.',
+            icon: '👥',
+            path: '/gerenciar-acesso',
             variant: 'danger' // Destaque visual
         }
     ];

@@ -2,7 +2,7 @@ import React from 'react';
 import Button from './Button';
 import './ViewSelectionModal.css';
 
-const ViewSelectionModal = ({ isOpen, onClose, onSelect, orgaoName }) => {
+const ViewSelectionModal = ({ isOpen, onClose, onSelect, orgaoName, hasEstrutural = true, hasFuncional = true }) => {
     if (!isOpen) return null;
 
     return (
@@ -15,26 +15,36 @@ const ViewSelectionModal = ({ isOpen, onClose, onSelect, orgaoName }) => {
 
                 <div className="modal-body">
                     <p className="modal-description">
-                        O órgão <strong>{orgaoName}</strong> possui visualizações Estrutural e Funcional.
+                        O órgão <strong>{orgaoName}</strong> possui as seguintes visualizações disponíveis.
                         <br />Selecione qual deseja abrir:
                     </p>
 
                     <div className="view-options">
-                        <div className="view-option-card" onClick={() => onSelect('estrutura')}>
-                            <div className="view-icon">📊</div>
-                            <div className="view-info">
-                                <h3>Estrutural</h3>
-                                <p>Hierarquia, departamentos e subordinações.</p>
+                        {hasEstrutural && (
+                            <div className="view-option-card" onClick={() => onSelect('estrutura')}>
+                                <div className="view-icon">📊</div>
+                                <div className="view-info">
+                                    <h3>Estrutural</h3>
+                                    <p>Hierarquia, departamentos e subordinações.</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="view-option-card" onClick={() => onSelect('funcoes')}>
-                            <div className="view-icon">👥</div>
-                            <div className="view-info">
-                                <h3>Funcional</h3>
-                                <p>Lista de cargos, funções e quantidades.</p>
+                        {hasFuncional && (
+                            <div className="view-option-card" onClick={() => onSelect('funcoes')}>
+                                <div className="view-icon">👥</div>
+                                <div className="view-info">
+                                    <h3>Funcional</h3>
+                                    <p>Lista de cargos, funções e quantidades.</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {!hasEstrutural && !hasFuncional && (
+                            <div className="no-views-message">
+                                <p>Nenhuma visualização disponível para este órgão.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

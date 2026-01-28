@@ -226,17 +226,3 @@
         /* Empilhar em mobile */
     }
 }
-
-/* Password Alert Section */
-.password-section {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #eee;
-}
-
-.password-alert {
-    grid-column: 1 / -1;
-    margin-bottom: 10px;
-    color: #d97706;
-    font-size: 0.9em;
-}
