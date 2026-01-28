@@ -27,8 +27,8 @@ function SandboxList() {
         try {
             setLoading(true);
             const response = await api.get('/orgaos');
-            setOrgaos(response.data.orgaos || []);
-            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.orgaos?.length });
+            setOrgaos(response.data.data || []);
+            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.data?.length });
         } catch (error) {
             logger.error('SandboxList', 'Erro ao carregar órgãos', error);
             alert('Erro ao carregar lista de órgãos.');

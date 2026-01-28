@@ -27,7 +27,7 @@ function CriarSandboxFuncional() {
     const loadOrgao = async () => {
         try {
             const orgaosResponse = await api.get('/orgaos');
-            const orgao = orgaosResponse.data.orgaos?.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
+            const orgao = orgaosResponse.data.data?.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
             
             if (!orgao) {
                 alert('Órgão não encontrado.');
