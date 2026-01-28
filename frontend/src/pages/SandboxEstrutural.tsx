@@ -29,7 +29,7 @@ function SandboxEstrutural() {
             const orgaosResponse = await api.get('/orgaos');
             const listaOrgaos = orgaosResponse.data.data || [];
             const orgao = listaOrgaos.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
-            
+
             if (!orgao) {
                 setError('Órgão sandbox não encontrado.');
                 return;
@@ -39,7 +39,7 @@ function SandboxEstrutural() {
 
             // Buscar organograma estrutural
             const response = await api.get(`/sandbox/estrutural/${orgao.id}`);
-            
+
             setOrganogramaData({
                 orgao: response.data.orgao,
                 organogramaEstrutural: {
@@ -74,14 +74,14 @@ function SandboxEstrutural() {
             // Atualizar estado local para refletir as novas posições/estilos e evitar loop de validação do Canvas
             setOrganogramaData((prev: any) => {
                 if (!prev || !prev.organogramaEstrutural) return prev;
-                
+
                 const updatedSetores = prev.organogramaEstrutural.setores.map((s: any) => {
                     const updateInfo = positions.find((p: any) => p.id === s.id);
                     if (updateInfo) {
-                        return { 
-                            ...s, 
+                        return {
+                            ...s,
                             position: updateInfo.position || s.position,
-                            customStyle: updateInfo.customStyle || s.customStyle 
+                            customStyle: updateInfo.customStyle || s.customStyle
                         };
                     }
                     return s;
@@ -125,8 +125,8 @@ function SandboxEstrutural() {
             <div className="visualizar-organograma">
                 <div className="container">
                     <div className="header-section">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
                             ← Voltar
@@ -141,8 +141,8 @@ function SandboxEstrutural() {
                             <p style={{ color: '#64748b', marginBottom: '2rem' }}>
                                 Comece criando a estrutura de setores do órgão
                             </p>
-                            <Button 
-                                variant="primary" 
+                            <Button
+                                variant="primary"
                                 onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-estrutural`)}
                             >
                                 Criar Organograma Estrutural
@@ -187,35 +187,55 @@ function SandboxEstrutural() {
         <div className="visualizar-organograma">
             <div className="container">
                 <div className="header-section">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                        <Button 
-                            variant="outline" 
+                    {/* Zona 1: Navegação (Esquerda) */}
+                    <div className="header-zone-left">
+                        <button
+                            type="button"
+                            className="btn-back"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
-                            ← Voltar
-                        </Button>
-                        <h1 style={{ margin: 0 }}>🏢 Organograma Estrutural - {organogramaData.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                            <span className="btn-icon">←</span>
+                            Voltar
+                        </button>
                     </div>
-                    
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <Button 
-                            variant="outline" 
-                            onClick={handlePrint}
-                        >
-                            🖨️ Imprimir
-                        </Button>
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-estrutural`)}
-                        >
-                            ✏️ Editar
-                        </Button>
-                        <Button 
-                            variant="danger" 
-                            onClick={handleDelete}
-                        >
-                            🗑️ Excluir
-                        </Button>
+
+                    {/* Zona 2: Título Centralizado */}
+                    <div className="header-zone-center">
+                        <h1>
+                            <span>🏢</span>
+                            Organograma Estrutural - {organogramaData.orgao}
+                            <span className="sandbox-badge">SANDBOX</span>
+                        </h1>
+                    </div>
+
+                    {/* Zona 3: Ações Agrupadas */}
+                    <div className="header-zone-actions">
+                        <div className="actions-container">
+                            <button
+                                type="button"
+                                className="btn-action-primary"
+                                onClick={handlePrint}
+                            >
+                                <span className="btn-icon">🖨️</span>
+                                Imprimir
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-action-secondary"
+                                onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-estrutural`)}
+                            >
+                                <span className="btn-icon">✏️</span>
+                                Editar
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-action-danger"
+                                onClick={handleDelete}
+                            >
+                                <span className="btn-icon">🗑️</span>
+                                Excluir
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -228,19 +248,6 @@ function SandboxEstrutural() {
                     />
                 </div>
             </div>
-
-            <style>{`
-                .sandbox-badge { 
-                    font-size: 0.6rem; 
-                    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-                    color: white; 
-                    padding: 0.25rem 0.75rem; 
-                    border-radius: 999px; 
-                    font-weight: 700;
-                    letter-spacing: 0.5px;
-                    margin-left: 1rem;
-                }
-            `}</style>
         </div>
     );
 }

@@ -165,7 +165,7 @@ export const createOrUpdateOrgao = async (orgaoData) => {
                 const newName = orgao || '';
                 const normalizedNew = fileSystem.normalizeOrgaoId(newName);
                 const normalizedOld = fileSystem.normalizeOrgaoId(oldName);
-                
+
                 // Se o novo nome é EXATAMENTE o slug (ex: "conselho_de_contribuintes")
                 // E o nome antigo tinha formatação (não era igual ao slug)
                 // Então ignoramos a atualização do nome
@@ -175,7 +175,7 @@ export const createOrUpdateOrgao = async (orgaoData) => {
                     await dbAsync.run('UPDATE orgaos SET nome = ? WHERE id = ?', [orgao, targetId]);
                 }
             }
-            
+
             if (auth) {
                 await dbAsync.run(
                     'UPDATE orgaos SET auth_hash = ?, auth_salt = ? WHERE id = ?',
@@ -894,7 +894,7 @@ export const updateOrganogramaGeral = async () => {
                 nivelHierarquico: 0,
                 ordem: 1,
                 dataCriacao: new Date().toISOString(),
-                position: { x: 0, y: 0 }, // Centro superior
+                position: { x: -150, y: 0 }, // Centro exato (0 - 150)
                 style: {
                     background: 'linear-gradient(135deg, #FFD700 0%, #B8860B 100%)', // Ouro Gradiente
                     border: '1px solid #D4AF37',
@@ -914,7 +914,6 @@ export const updateOrganogramaGeral = async () => {
                 parentId: 'prefeito',
                 isAssessoria: true,
                 dataCriacao: new Date().toISOString(),
-                // Alinhamento Y=0 para garantir linha reta horizontal com o Prefeito
                 position: { x: 350, y: 0 },
                 style: {
                     backgroundColor: '#C0C0C0', // Prata Fosco
@@ -928,14 +927,13 @@ export const updateOrganogramaGeral = async () => {
                 nomeSetor: 'Subprefeitura do 1º Distrito',
                 tipoSetor: 'Subprefeitura',
                 nivelHierarquico: 1,
-                hierarquia: 0.5, // Adicionado para forçar lógica de conexão vertical no frontend
+                hierarquia: 0.5,
                 ordem: 2,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                // Aumentado Y para 250 para forçar detecção vertical clara
-                position: { x: -495, y: 250 }, // Esquerda extrema
+                position: { x: -890, y: 300 }, // Centro -750
                 style: {
-                    background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)', // Prata Reluzente
+                    background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
                     boxShadow: '0 0 10px rgba(192, 192, 192, 0.4)',
                     color: '#333333',
@@ -951,7 +949,7 @@ export const updateOrganogramaGeral = async () => {
                 ordem: 3,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: -165, y: 250 }, // Centro-esquerda
+                position: { x: -490, y: 300 }, // Centro -350
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -969,7 +967,7 @@ export const updateOrganogramaGeral = async () => {
                 ordem: 4,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: 165, y: 250 }, // Centro-direita
+                position: { x: 210, y: 300 }, // Centro +350
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -987,7 +985,7 @@ export const updateOrganogramaGeral = async () => {
                 ordem: 5,
                 parentId: 'prefeito',
                 dataCriacao: new Date().toISOString(),
-                position: { x: 495, y: 250 }, // Direita extrema
+                position: { x: 610, y: 300 }, // Centro +750
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1003,7 +1001,7 @@ export const updateOrganogramaGeral = async () => {
         // 4. Agregar TODOS os setores de todos os órgãos (hierarquia completa de forma PLANA)
         let currentCursorX = -600; // Posição X inicial (mais à esquerda)
         const GAP = 250; // Espaçamento entre organogramas
-        const orgaoY = 400; // Y fixo abaixo das subprefeituras
+        const orgaoY = 600; // Y fixo abaixo das subprefeituras (Aumentado DRASTICAMENTE)
 
         for (const orgao of orgaos) {
             const setoresTree = await getOrgaoEstrutural(orgao.id);
@@ -1175,7 +1173,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 simbolos: [],
                 quantidade: 1,
                 ordem: 1,
-                position: { x: 0, y: 0 }, // Centro superior
+                position: { x: -150, y: 0 }, // Centro exato (0 - 150)
                 style: {
                     background: 'linear-gradient(135deg, #FFD700 0%, #B8860B 100%)', // Ouro Gradiente
                     border: '1px solid #D4AF37',
@@ -1216,7 +1214,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 3,
                 parentId: 'prefeito-cargo',
-                position: { x: -495, y: 250 }, // Esquerda extrema
+                position: { x: -890, y: 300 }, // Centro -750
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)', // Prata Reluzente
                     border: '1px solid #808080',
@@ -1235,7 +1233,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 4,
                 parentId: 'prefeito-cargo',
-                position: { x: -165, y: 250 }, // Centro-esquerda
+                position: { x: -490, y: 300 }, // Centro -350
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1254,7 +1252,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 5,
                 parentId: 'prefeito-cargo',
-                position: { x: 165, y: 250 }, // Centro-direita
+                position: { x: 210, y: 300 }, // Centro +350
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1273,7 +1271,7 @@ export const updateOrganogramaGeralFuncional = async () => {
                 quantidade: 1,
                 ordem: 6,
                 parentId: 'prefeito-cargo',
-                position: { x: 495, y: 250 }, // Direita extrema
+                position: { x: 610, y: 300 }, // Centro +750
                 style: {
                     background: 'linear-gradient(135deg, #E0E0E0 0%, #A9A9A9 100%)',
                     border: '1px solid #808080',
@@ -1289,7 +1287,7 @@ export const updateOrganogramaGeralFuncional = async () => {
         // 4. Agregar TODOS os cargos de todos os órgãos (hierarquia completa)
         let currentCursorX = -600; // Posição X inicial
         const GAP = 300; // Espaçamento horizontal entre árvores de cargos
-        const cargoY = 400; // Y fixo abaixo dos subprefeitos
+        const cargoY = 600; // Y fixo abaixo dos subprefeitos (Aumentado DRASTICAMENTE)
 
         for (const orgao of orgaos) {
             const funcoesMeta = await listOrganogramasFuncoes(orgao.id);

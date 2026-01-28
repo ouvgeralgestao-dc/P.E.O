@@ -86,7 +86,7 @@ const SetorNode = ({ data, selected }) => {
         e.stopPropagation(); // Evitar conflito com canvas
         console.log('🖱️ [SetorNode] Botão 🎨 clicado! ID:', data.id, '| onEditClick presente:', !!data.onEditClick);
         if (data.onEditClick) {
-            data.onEditClick(data.id);
+            data.onEditClick(data.id, true); // Forçar abrir
         } else {
             console.error('❌ [SetorNode] onEditClick NÃO está disponível no data!');
         }
@@ -97,7 +97,7 @@ const SetorNode = ({ data, selected }) => {
         e.stopPropagation();
         console.log('🖱️🖱️ [SetorNode] Duplo clique! ID:', data.id, '| onEditClick presente:', !!data.onEditClick);
         if (data.onEditClick) {
-            data.onEditClick(data.id);
+            data.onEditClick(data.id, true); // Forçar abrir
         } else {
             console.error('❌ [SetorNode] onEditClick NÃO está disponível no data!');
         }
@@ -112,14 +112,14 @@ const SetorNode = ({ data, selected }) => {
 
     const handleCloseEditor = () => {
         if (data.onEditClick) {
-            data.onEditClick(data.id); // Toggle off
+            data.onEditClick(data.id, false); // Força fechamento
         }
     };
 
     return (
         <div
             ref={nodeRef}
-            className={`setor-node ${isRoot ? 'root-node' : ''} ${selected ? 'selected' : ''} ${isAssessoriaNode ? 'assessoria-node' : ''} ${isNested ? 'nested-assessoria' : ''} ${isPrefeito ? 'prefeito' : ''}`}
+            className={`setor-node ${isRoot ? 'root-node' : ''} ${selected ? 'selected' : ''} ${isAssessoriaNode ? 'assessoria-node' : ''} ${isNested ? 'nested-assessoria' : ''} ${isPrefeito ? 'prefeito' : ''} ${showEditor ? 'is-editing' : ''}`}
             onDoubleClick={handleDoubleClick}
             style={{
                 background: backgroundStyle,
@@ -140,29 +140,18 @@ const SetorNode = ({ data, selected }) => {
         >
             <button
                 className="node-edit-button"
-                onPointerDownCapture={(e) => {
-                    // Captura o evento ANTES de qualquer outro handler
+                onPointerDown={(e) => {
+                    // Impede que o clique propague para o ReactFlow (evita selecionar/arrastar o nó)
                     e.stopPropagation();
-                    e.preventDefault();
-                    console.log('🔴 [SetorNode] PointerDown capturado no botão 🎨');
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
-                    e.preventDefault();
+                    console.log('🖱️ [SetorNode] Botão 🎨 clicado!');
                     handleNodeClick(e);
-                }}
-                onMouseDown={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                }}
-                onMouseUp={(e) => {
-                    e.stopPropagation();
                 }}
                 title="Editar Estilo (clique único ou duplo-clique no nó)"
                 style={{
-                    opacity: selected || showEditor ? 1 : 0,
-                    pointerEvents: 'auto', // Sempre permitir clique se estiver visível
-                    visibility: selected || showEditor ? 'visible' : 'hidden'
+                    // Visibilidade controlada via CSS (SetorNode.css)
                 }}
             >
                 🎨

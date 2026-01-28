@@ -189,16 +189,19 @@
     pointer-events: auto !important;
     transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+
+    /* Estado padrão: Invisível */
+    opacity: 0;
+    visibility: hidden;
 }
 
-/* Mostrar botão ao passar o mouse no nó */
-.setor-node:hover .node-edit-button {
+/* Mostrar botão quando o nó está selecionado, em hover, ou em edição */
+.setor-node:hover .node-edit-button,
+.setor-node.selected .node-edit-button,
+.setor-node.is-editing .node-edit-button {
     opacity: 1;
-}
-
-/* Mostrar botão quando o nó está selecionado */
-.setor-node.selected .node-edit-button {
-    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 /* Efeito hover no próprio botão */

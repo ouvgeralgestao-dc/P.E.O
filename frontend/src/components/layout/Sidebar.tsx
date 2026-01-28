@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils/logger';
 import { authService } from '../../services/authService';
+import api from '../../services/api';
 import Logo from '../common/Logo';
 import './Sidebar.css';
 
@@ -26,11 +27,51 @@ function Sidebar() {
     // Informações do usuário
     const [user, setUser] = useState<any>(null);
 
+    // Permissões do usuário
+    const [permissoes, setPermissoes] = useState<Record<string, boolean>>({});
+
     // Carregar informações do usuário
     useEffect(() => {
         const currentUser = authService.getUser();
         setUser(currentUser);
     }, []);
+
+    // Carregar permissões do usuário
+    useEffect(() => {
+        const loadPermissoes = async () => {
+            if (user && user.tipo === 'user') {
+                try {
+                    // Usar endpoint /me para consultar próprias permissões
+                    const response = await api.get('/permissoes/me');
+                    const permsMap: Record<string, boolean> = {};
+                    response.data.permissoes.forEach((p: any) => {
+                        permsMap[p.modulo] = p.permitido === 1;
+                    });
+                    setPermissoes(permsMap);
+                    logger.info('Sidebar', 'Permissões carregadas', permsMap);
+                } catch (error) {
+                    logger.error('Sidebar', 'Erro ao carregar permissões', error);
+                }
+            }
+        };
+        loadPermissoes();
+
+        // Escutar evento de atualização de permissões
+        const handlePermissoesUpdate = (event: any) => {
+            const { userId } = event.detail || {};
+            // Recarregar permissões se for o usuário atual
+            if (user && userId === user.id) {
+                logger.info('Sidebar', 'Permissões atualizadas, recarregando...');
+                loadPermissoes();
+            }
+        };
+
+        window.addEventListener('permissoesUpdated', handlePermissoesUpdate);
+
+        return () => {
+            window.removeEventListener('permissoesUpdated', handlePermissoesUpdate);
+        };
+    }, [user]);
 
     // Persistir estado no localStorage
     useEffect(() => {
@@ -85,6 +126,12 @@ function Sidebar() {
     const handleConfiguracoesClick = (e: React.MouseEvent) => {
         e.preventDefault();
         navigate('/configuracoes');
+    };
+
+    // Verificar se usuário tem permissão para um módulo
+    const hasPermission = (modulo: string): boolean => {
+        if (user?.tipo === 'admin') return true;
+        return permissoes[modulo] || false;
     };
 
     return (
@@ -142,39 +189,53 @@ function Sidebar() {
                     {shouldShowExpanded && <span className="sidebar-text">Home</span>}
                 </Link>
 
-                {/* Criar Organograma - Todos podem criar (mas só para seu setor) */}
-                <Link to="/criar" className="sidebar-link">
-                    <span className="sidebar-icon">➕</span>
-                    {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
-                </Link>
+                {/* Criar Organograma Institucional - Verifica permissão */}
+                {hasPermission('criar_institucional') ? (
+                    <Link to="/criar" className="sidebar-link">
+                        <span className="sidebar-icon">➕</span>
+                        {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
+                    </Link>
+                ) : (
+                    <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
+                        <span className="sidebar-icon">🔒</span>
+                        {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
+                    </div>
+                )}
 
-                {/* Criação Livre (Sandbox) */}
-                <Link to="/criacao-livre" className="sidebar-link">
-                    <span className="sidebar-icon">🎨</span>
-                    {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
-                </Link>
+                {/* Criação Livre (Sandbox) - Verifica permissão */}
+                {hasPermission('criacao_livre') ? (
+                    <Link to="/criacao-livre" className="sidebar-link">
+                        <span className="sidebar-icon">🎨</span>
+                        {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
+                    </Link>
+                ) : (
+                    <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
+                        <span className="sidebar-icon">🔒</span>
+                        {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
+                    </div>
+                )}
 
-                {/* Organograma Geral Estrutural - Apenas admin */}
-                {user?.tipo === 'admin' ? (
+                {/* Organograma Geral Estrutural */}
+                {hasPermission('geral_estrutural') ? (
                     <Link to="/geral" className="sidebar-link">
                         <span className="sidebar-icon">🏛️</span>
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Estrutural</span>}
                     </Link>
                 ) : (
-                    <div className="sidebar-link disabled-link" title="Acesso restrito a administradores">
+                    <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
                         <span className="sidebar-icon">🔒</span>
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Estrutural</span>}
                     </div>
                 )}
 
-                {/* Organograma Geral Funcional - Apenas admin */}
-                {user?.tipo === 'admin' ? (
+                {/* Organograma Geral Funcional */}
+                {hasPermission('geral_funcional') ? (
                     <Link to="/geral-funcional" className="sidebar-link">
                         <span className="sidebar-icon">📋</span>
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Funcional</span>}
                     </Link>
                 ) : (
-                    <div className="sidebar-link disabled-link" title="Acesso restrito a administradores">
+                    <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
                         <span className="sidebar-icon">🔒</span>
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Funcional</span>}
                     </div>
@@ -184,7 +245,7 @@ function Sidebar() {
                 <div style={{ flex: 1 }}></div>
 
                 {/* Botão de Configurações */}
-                {user?.tipo === 'admin' && (
+                {hasPermission('configuracoes') && (
                     <a href="#" onClick={handleConfiguracoesClick} className="sidebar-link config-link">
                         <span className="sidebar-icon">⚙️</span>
                         {shouldShowExpanded && <span className="sidebar-text">Configurações</span>}

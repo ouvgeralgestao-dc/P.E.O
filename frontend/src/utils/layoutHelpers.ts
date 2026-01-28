@@ -13,12 +13,14 @@ const LAYOUT_CONSTANTS = {
 // Obter dimensões baseadas na hierarquia (Meta 11)
 // TORNANDO GENÉRICO: Baseado apenas em Nível numérico (1, 2, 3...)
 const getDynamicDimensions = (hierarquia, isAssessoria = false, tipoSetor = '') => {
-    // Normalizar hierarquia
-    let h = parseInt(hierarquia);
+    // Normalizar hierarquia (parseFloat para suportar 0.5)
+    let h = parseFloat(hierarquia);
     if (isNaN(h)) h = 0; // Default para 0
 
+    // Nível 0.5: Subprefeituras (Especial)
+    if (h === 0.5) return { w: 280, h: 100 };
+
     // Nível 1 (Máximo): Prefeito, Secretário, Presidente, etc.
-    // Também considera tipoSetor 'Prefeito' explicitamente para garantir retrocompatibilidade
     if (h === 1 || tipoSetor === 'Prefeito') return { w: 300, h: 110 };
 
     // Nível 2: Subsecretário, Superintendente
@@ -294,36 +296,67 @@ export const calculateHierarchicalLayout = (setores) => {
 
         if (subordinados.length === 0) return;
 
-        // 3. Posicionar Subordinados Verticais (Pirâmide)
-        subordinados.sort((a, b) => parseFloat(a.hierarquia || 0) - parseFloat(b.hierarquia || 0));
+        // 3. Posicionar Subordinados Verticais (Pirâmide em Camadas)
 
-        const largurasSubordinados = subordinados.map(child => calcularLarguraSubarvore(child));
-        const totalLarguraSubordinados = largurasSubordinados.reduce((a, b) => a + b, 0) +
-            (subordinados.length - 1) * LAYOUT_CONSTANTS.HORIZONTAL_GAP;
+        // Agrupar por Nível Hierárquico para criar Layers Visuais
+        const layers = new Map();
+        subordinados.forEach(child => {
+            const h = parseFloat(child.hierarquia || 0);
+            if (!layers.has(h)) layers.set(h, []);
+            layers.get(h).push(child);
+        });
 
-        let currentX = x_center_available - (totalLarguraSubordinados / 2);
+        // Ordenar níveis (0.5 -> 1.0 -> 2.0 ...)
+        const levels = Array.from(layers.keys()).sort((a, b) => a - b);
 
-        subordinados.forEach((filho, index) => {
-            const larguraFilho = largurasSubordinados[index];
-            const centroFilho = currentX + (larguraFilho / 2);
+        let currentLayerY = y;
 
-            const { h: parentH } = getDynamicDimensions(setor.hierarquia, setor.isAssessoria, setor.tipoSetor);
+        levels.forEach((level, idx) => {
+            const layerNodes = layers.get(level);
 
-            // Se for nível alto (onde tem assessorias laterais), empurrar filhos centrais MUITO para baixo.
-            // Aumentado para 320 para limpar completamente a área dos filhos de assessoria.
-            // CRÍTICO: Aplicar APENAS se o pai for Nível 1 (Secretaria -> Superintendência).
-            // Se for Nível 2 (Superintendência -> Diretoria), NÃO aplicar gap extra.
+            // Definir Gap Vertical para esta Layer
+            let verticalGap = 200; // Padrão
 
-            const parentLevelInternal = parseInt(setor.hierarquia);
-            const isLevel1 = parentLevelInternal === 1;
+            if (idx === 0) {
+                // Primeira Layer: Considerar gap extra do pai (para limpar assessorias laterais)
+                const parentLevelInternal = parseInt(setor.hierarquia);
+                const isLevel1 = parentLevelInternal === 1; // Pai é Prefeito/Sec
+                const extraGap = (isHighLevel && isLevel1) ? 320 : 0;
+                verticalGap += extraGap;
+            } else {
+                // Layers subsequentes (ex: Entre Subprefeitura e Secretaria)
+                // Aumentar gap para garantir que a linha de conexão não atropele a layer anterior
+                verticalGap = 300;
+            }
 
-            const extraGap = (isHighLevel && isLevel1) ? 320 : 0;
-            const verticalStep = 200 + extraGap; // Gap visual FIXO de 200px + extra se Level1
+            currentLayerY += verticalGap;
+            const finalY = Math.round(currentLayerY);
 
-            // Arredondar Y para evitar linhas tortas/grossas
-            const finalY = Math.round(y + verticalStep);
-            posicionarNos(filho, centroFilho, finalY);
-            currentX += larguraFilho + LAYOUT_CONSTANTS.HORIZONTAL_GAP;
+            // Calcular Largura e Posição X desta Layer
+            // Detectar se é grupo de Subprefeituras (0.5) para gap horizontal extra
+            // CRÍTICO: Detecção robusta para garantir espaçamento
+            const isSubGroup = layerNodes.some(f => {
+                const hVal = parseFloat(f.hierarquia || f.nivel || 0);
+                const nameVal = (f.nomeSetor || f.nomeCargo || '').toLowerCase();
+                const typeVal = (f.tipoSetor || '').toLowerCase();
+                return hVal === 0.5 || typeVal.includes('sub') || nameVal.includes('subprefeit') || nameVal.includes('distrito');
+            });
+
+            // Gap: 350px para Subprefeituras (muito largo para garantir vão central), 40px para outros
+            const hGap = isSubGroup ? 350 : LAYOUT_CONSTANTS.HORIZONTAL_GAP;
+
+            const widths = layerNodes.map(child => calcularLarguraSubarvore(child));
+            const totalWidth = widths.reduce((a, b) => a + b, 0) + (layerNodes.length - 1) * hGap;
+
+            let currentX = x_center_available - (totalWidth / 2);
+
+            layerNodes.forEach((node, i) => {
+                const w = widths[i];
+                const cx = currentX + (w / 2);
+
+                posicionarNos(node, cx, finalY);
+                currentX += w + hGap;
+            });
         });
     };
 

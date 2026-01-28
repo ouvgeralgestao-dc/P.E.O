@@ -101,13 +101,13 @@ function VisualizarOrganograma() {
     // Confirmar e deletar com mensagens diferenciadas por tipo
     const handleDeleteClick = async () => {
         let confirmMessage = '';
-        
+
         if (tipoVisualizacao === 'estrutura') {
             confirmMessage = '⚠️ ATENÇÃO: Ao deletar o organograma ESTRUTURAL, o FUNCIONAL também será deletado!\n\nO órgão permanecerá na lista de configuração para criação futura.\n\nTEM CERTEZA QUE DESEJA CONTINUAR?';
         } else {
             confirmMessage = 'Deseja deletar o organograma funcional?\n\nO organograma estrutural e o órgão permanecem intactos.\n\nConfirmar?';
         }
-        
+
         if (window.confirm(confirmMessage)) {
             await executeDelete();
         }
@@ -176,7 +176,8 @@ function VisualizarOrganograma() {
                         const updatedSetor = {
                             ...setor,
                             position: match?.position || setor.position,
-                            style: match?.style || setor.style
+                            // CORREÇÃO: Verificar customStyle que vem do Canvas
+                            style: match?.customStyle || match?.style || setor.style
                         };
 
                         // Processar children recursivamente
@@ -217,7 +218,7 @@ function VisualizarOrganograma() {
                         if (!match) {
                             console.warn(`[VisualizarOrganograma] Match não encontrado para cargo ${cargo.id} (${cargo.nomeCargo}). Posição não será atualizada.`);
                         } else {
-                            // console.log(`[VisualizarOrganograma] Atualizando cargo ${cargo.id} com nova posição:`, match.position);
+                            console.log(`[VisualizarOrganograma] Atualizando cargo ${cargo.id}. Match found? ${!!match} | Style no match:`, match?.customStyle || match?.style);
                         }
 
                         const updatedCargo = {
@@ -231,7 +232,8 @@ function VisualizarOrganograma() {
                             parentId: cargo.parentId || cargo.parent_id || null,
                             simbolos: cargo.simbolos || [],
                             position: match?.position || cargo.position || { x: 0, y: 0 },
-                            style: match?.style || cargo.style || cargo.customStyle || {}
+                            // CORREÇÃO: Verificar customStyle que vem do Canvas
+                            style: match?.customStyle || match?.style || cargo.style || cargo.customStyle || {}
                         };
 
                         if (cargo.children && cargo.children.length > 0) {
@@ -277,7 +279,7 @@ function VisualizarOrganograma() {
         try {
             const encodedName = encodeURIComponent(nomeOrgao as string);
             let endpoint = '';
-            
+
             if (tipoVisualizacao === 'estrutura') {
                 endpoint = `/organogramas/${encodedName}/estrutura`;
                 logger.info('VisualizarOrganograma', 'Deletando organograma ESTRUTURAL (e funcional)', { nomeOrgao });

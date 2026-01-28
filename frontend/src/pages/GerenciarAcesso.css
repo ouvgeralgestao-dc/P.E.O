@@ -1,4 +1,3 @@
-
 .gerenciar-acesso {
   max-width: 1200px;
   margin: 0 auto;
@@ -83,6 +82,21 @@
 .action-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Padronizar tamanho dos botões de ação */
+.action-buttons button {
+  min-width: 100px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Botão de excluir (ícone apenas) */
+.action-buttons button[title="Excluir Permanentemente"] {
+  min-width: 40px;
+  padding: 6px 12px;
 }
 
 /* Modal Redesign */
@@ -93,7 +107,8 @@
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
-  align-items: center; /* Centralizar verticalmente */
+  align-items: center;
+  /* Centralizar verticalmente */
   padding: 24px;
   z-index: 50;
 }
@@ -103,16 +118,26 @@
   border-radius: 16px;
   padding: 32px;
   width: 100%;
-  max-width: 800px; /* Largura maior para Grid */
+  max-width: 800px;
+  /* Largura maior para Grid */
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  max-height: 90vh; /* Evitar overflow da tela */
-  overflow-y: auto; /* Scroll se necessário */
+  max-height: 90vh;
+  /* Evitar overflow da tela */
+  overflow-y: auto;
+  /* Scroll se necessário */
   animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalPop {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -121,24 +146,29 @@
   margin: -32px -32px 32px -32px;
   border-radius: 16px 16px 0 0;
   border-bottom: 1px solid #1e40af;
-  position: relative; /* Contexto de empilhamento */
+  position: relative;
+  /* Contexto de empilhamento */
 }
 
 .modal-header h2 {
   font-size: 24px;
-  color: #ffffff !important; /* Forçar branco */
+  color: #ffffff !important;
+  /* Forçar branco */
   font-weight: 700;
   margin: 0;
   position: relative;
-  z-index: 10; /* Trazer para frente */
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Leve sombra para destacar */
+  z-index: 10;
+  /* Trazer para frente */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* Leve sombra para destacar */
 }
 
 /* Grid Layout for Form */
 .modal-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px; /* Mais compacto */
+  gap: 16px;
+  /* Mais compacto */
 }
 
 .form-col-span-2 {
@@ -152,7 +182,8 @@
   color: #475569;
   font-weight: 600;
   font-size: 0.875rem;
-  text-transform: capitalize; /* Padronizar labels */
+  text-transform: capitalize;
+  /* Padronizar labels */
 }
 
 /* Modal Actions */
@@ -172,16 +203,37 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .form-col-span-2 {
     grid-column: span 1;
   }
-  
+
   .users-table-container {
     border-radius: 8px;
   }
 
   .action-buttons {
-      flex-direction: column;
+    flex-direction: column;
   }
+}
+
+/* Perfil Badge */
+.perfil-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.perfil-badge.admin {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+}
+
+.perfil-badge.user {
+  background: #e0e7ff;
+  color: #3730a3;
 }

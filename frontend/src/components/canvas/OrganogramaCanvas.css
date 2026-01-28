@@ -88,21 +88,48 @@
     stroke-width: 3;
 }
 
-/* Controles */
+/* Controles - Reposicionados para Direita (Mais Ergonômico) */
 .react-flow__controls {
+    left: auto !important;
+    right: 20px !important;
+    bottom: 20px !important;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
 }
 
 .react-flow__controls-button {
     border: none;
     background: white;
     border-bottom: 1px solid #e2e8f0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.react-flow__controls-button:last-child {
+    border-bottom: none;
 }
 
 .react-flow__controls-button:hover {
     background: #f7fafc;
+    color: #3b82f6;
+}
+
+.react-flow__controls-button:active {
+    background: #edf2f7;
+    transform: scale(0.95);
+}
+
+.react-flow__controls-button svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* MiniMap */

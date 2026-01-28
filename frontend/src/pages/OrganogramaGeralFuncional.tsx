@@ -32,14 +32,19 @@ function OrganogramaGeralFuncional() {
         loadOrganogramaGeralFuncional();
     }, []);
 
-    const loadOrganogramaGeralFuncional = async () => {
+    const loadOrganogramaGeralFuncional = async (forceRefresh = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            logger.info('OrganogramaGeralFuncional', 'Carregando organograma geral de funções');
+            logger.info('OrganogramaGeralFuncional', 'Carregando organograma geral de funções', { forceRefresh });
 
-            const response = await api.get('/organogramas/geral-funcional');
+            // Adiciona timestamp se for forceRefresh para evitar cache
+            const url = forceRefresh
+                ? `/organogramas/geral-funcional?t=${Date.now()}`
+                : '/organogramas/geral-funcional';
+
+            const response = await api.get(url);
 
             // Adaptar estrutura para o formato esperado pelo OrganogramaCanvas
             const adaptedData = {
@@ -49,6 +54,13 @@ function OrganogramaGeralFuncional() {
 
             logger.success('OrganogramaGeralFuncional', 'Organograma geral de funções carregado', adaptedData);
             setOrganogramaData(adaptedData);
+
+            if (forceRefresh) {
+                // Feedback visual de sucesso apenas na atualização manual
+                // toast.success('Dados atualizados com sucesso!'); 
+                // Como não tem toast configurado, podemos apenas logar ou usar alert temporário se user quiser
+                logger.success('OrganogramaGeralFuncional', 'Dados atualizados manualmente');
+            }
         } catch (err: any) {
             logger.error('OrganogramaGeralFuncional', 'Erro ao carregar organograma geral de funções', err);
             setError(err.response?.data?.message || 'Erro ao carregar organograma geral de funções');
@@ -61,7 +73,8 @@ function OrganogramaGeralFuncional() {
     const flowDataRef = React.useRef({ nodes: [], edges: [] });
 
     // Callback para manter a ref atualizada
-    const handleFlowDataChange = React.useCallback((data) => {
+    // Callback para manter a ref atualizada
+    const handleFlowDataChange = React.useCallback((data: any) => {
         flowDataRef.current = data;
     }, []);
 
@@ -121,7 +134,7 @@ function OrganogramaGeralFuncional() {
             await api.post('/organogramas/geral-funcional/ocupantes', { occupants: editData });
 
             // Recarregar dados
-            await loadOrganogramaGeralFuncional();
+            await loadOrganogramaGeralFuncional(true);
             setShowEditModal(false);
             // alert('Ocupantes atualizados com sucesso!'); 
         } catch (error) {
@@ -198,7 +211,7 @@ function OrganogramaGeralFuncional() {
                         <Button
                             className="btn-action btn-refresh"
                             variant="primary"
-                            onClick={loadOrganogramaGeralFuncional}
+                            onClick={() => loadOrganogramaGeralFuncional(true)}
                         >
                             <span className="btn-icon">🔄</span> Atualizar
                         </Button>
@@ -264,19 +277,19 @@ function OrganogramaGeralFuncional() {
                         <div className="stat-item">
                             <span className="stat-label">Tipos de Cargos:</span>
                             <span className="stat-value">
-                                { (organogramaData as any)?.estatisticas?.cargos?.length || 0}
+                                {(organogramaData as any)?.estatisticas?.cargos?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Tipos de Símbolos:</span>
                             <span className="stat-value">
-                                { (organogramaData as any)?.estatisticas?.simbolos?.length || 0}
+                                {(organogramaData as any)?.estatisticas?.simbolos?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">
                             <span className="stat-label">Órgãos com Cargos:</span>
                             <span className="stat-value">
-                                { (organogramaData as any)?.estatisticas?.setores?.length || 0}
+                                {(organogramaData as any)?.estatisticas?.setores?.length || 0}
                             </span>
                         </div>
                         <div className="stat-item">

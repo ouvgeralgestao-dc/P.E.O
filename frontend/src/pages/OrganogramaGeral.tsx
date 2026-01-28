@@ -15,7 +15,7 @@ import './OrganogramaGeral.css';
 
 function OrganogramaGeral() {
     const navigate = useNavigate();
-    const [organogramaData, setOrganogramaData] = useState(null);
+    const [organogramaData, setOrganogramaData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [exporting, setExporting] = useState(false);
@@ -24,18 +24,27 @@ function OrganogramaGeral() {
         loadOrganogramaGeral();
     }, []);
 
-    const loadOrganogramaGeral = async () => {
+    const loadOrganogramaGeral = async (forceRefresh = false) => {
         try {
             setLoading(true);
             setError(null);
 
-            logger.info('OrganogramaGeral', 'Carregando organograma geral');
+            logger.info('OrganogramaGeral', 'Carregando organograma geral', { forceRefresh });
 
-            const response = await api.get('/organogramas/geral');
+            // Adiciona timestamp se for forceRefresh para evitar cache
+            const url = forceRefresh
+                ? `/organogramas/geral?t=${Date.now()}`
+                : '/organogramas/geral';
+
+            const response = await api.get(url);
 
             logger.success('OrganogramaGeral', 'Organograma geral carregado', response.data);
             setOrganogramaData(response.data.data);
-        } catch (err) {
+
+            if (forceRefresh) {
+                logger.success('OrganogramaGeral', 'Dados atualizados manualmente');
+            }
+        } catch (err: any) {
             logger.error('OrganogramaGeral', 'Erro ao carregar organograma geral', err);
             setError(err.response?.data?.message || 'Erro ao carregar organograma geral');
         } finally {
@@ -48,7 +57,7 @@ function OrganogramaGeral() {
     const flowDataRef = React.useRef({ nodes: [], edges: [] });
 
     // Callback para manter a ref atualizada
-    const handleFlowDataChange = React.useCallback((data) => {
+    const handleFlowDataChange = React.useCallback((data: any) => {
         flowDataRef.current = data;
     }, []);
 
@@ -95,7 +104,7 @@ function OrganogramaGeral() {
             <div className="organograma-geral">
                 <div className="container">
                     <Card title="Erro">
-                        <p className="error-message">{error}</p>
+                        <p className="error-message">{error as any}</p>
                         <Button onClick={() => navigate('/')}>
                             ← Voltar para Dashboard
                         </Button>
@@ -129,7 +138,7 @@ function OrganogramaGeral() {
                         <Button
                             className="btn-action btn-refresh"
                             variant="primary"
-                            onClick={loadOrganogramaGeral}
+                            onClick={() => loadOrganogramaGeral(true)}
                         >
                             <span className="btn-icon">🔄</span> Atualizar
                         </Button>
@@ -183,9 +192,9 @@ function OrganogramaGeral() {
                             <span className="stat-label">Total de Setores:</span>
                             <span className="stat-value">
                                 {(() => {
-                                    const setores = organogramaData?.organogramaEstrutural?.setores || [];
+                                    const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
                                     // Excluir "Prefeito Municipal" da contagem
-                                    const setoresSemPrefeito = setores.filter(s =>
+                                    const setoresSemPrefeito = setores.filter((s: any) =>
                                         !s.nomeSetor?.toLowerCase().includes('prefeito municipal')
                                     );
                                     return setoresSemPrefeito.length;
@@ -196,12 +205,12 @@ function OrganogramaGeral() {
                             <span className="stat-label">Secretarias/Procuradoria:</span>
                             <span className="stat-value">
                                 {(() => {
-                                    const setores = organogramaData?.organogramaEstrutural?.setores || [];
-                                    const secretarias = setores.filter(s =>
+                                    const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
+                                    const secretarias = setores.filter((s: any) =>
                                         s.tipoSetor?.toLowerCase().includes('secretaria') &&
                                         !s.tipoSetor?.toLowerCase().includes('subsecretaria')
                                     ).length;
-                                    const procuradoria = setores.filter(s =>
+                                    const procuradoria = setores.filter((s: any) =>
                                         s.tipoSetor?.toLowerCase().includes('procuradoria') &&
                                         !s.tipoSetor?.toLowerCase().includes('subprocuradoria')
                                     ).length;
@@ -217,8 +226,8 @@ function OrganogramaGeral() {
                             <span className="stat-label">Superintendências:</span>
                             <span className="stat-value">
                                 {(() => {
-                                    const setores = organogramaData?.organogramaEstrutural?.setores || [];
-                                    return setores.filter(s =>
+                                    const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
+                                    return setores.filter((s: any) =>
                                         s.tipoSetor?.toLowerCase().includes('superintendência') ||
                                         s.tipoSetor?.toLowerCase().includes('superintendencia')
                                     ).length;
@@ -229,11 +238,11 @@ function OrganogramaGeral() {
                             <span className="stat-label">Subsecretarias/Subprocuradorias:</span>
                             <span className="stat-value">
                                 {(() => {
-                                    const setores = organogramaData?.organogramaEstrutural?.setores || [];
-                                    const subsecretarias = setores.filter(s =>
+                                    const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
+                                    const subsecretarias = setores.filter((s: any) =>
                                         s.tipoSetor?.toLowerCase().includes('subsecretaria')
                                     ).length;
-                                    const subprocuradorias = setores.filter(s =>
+                                    const subprocuradorias = setores.filter((s: any) =>
                                         s.tipoSetor?.toLowerCase().includes('subprocuradoria')
                                     ).length;
                                     return subsecretarias + subprocuradorias;
@@ -243,8 +252,8 @@ function OrganogramaGeral() {
                         <div className="stat-item">
                             <span className="stat-label">Última Atualização:</span>
                             <span className="stat-value">
-                                {organogramaData?.updatedAt ?
-                                    new Date(organogramaData.updatedAt).toLocaleDateString('pt-BR') :
+                                {(organogramaData as any)?.updatedAt ?
+                                    new Date((organogramaData as any).updatedAt).toLocaleDateString('pt-BR') :
                                     'N/A'}
                             </span>
                         </div>
@@ -266,33 +275,33 @@ function OrganogramaGeral() {
                                     </thead>
                                     <tbody>
                                         {(() => {
-                                            const setores = organogramaData?.organogramaEstrutural?.setores || [];
+                                            const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
                                             // Filtrar Prefeito Municipal
-                                            const setoresFiltrados = setores.filter(s =>
+                                            const setoresFiltrados = setores.filter((s: any) =>
                                                 !s.nomeSetor?.toLowerCase().includes('prefeito municipal')
                                             );
 
                                             // Contar por tipo de setor
-                                            const tiposCount = {};
-                                            setoresFiltrados.forEach(setor => {
+                                            const tiposCount: any = {};
+                                            setoresFiltrados.forEach((setor: any) => {
                                                 const tipo = setor.tipoSetor || 'Outros';
                                                 tiposCount[tipo] = (tiposCount[tipo] || 0) + 1;
                                             });
 
                                             // Ordenar por quantidade (decrescente)
                                             const tiposOrdenados = Object.entries(tiposCount)
-                                                .sort((a, b) => b[1] - a[1]);
+                                                .sort((a: any, b: any) => b[1] - a[1]);
 
                                             return tiposOrdenados.length > 0 ? (
                                                 tiposOrdenados.map(([tipo, quantidade]) => (
                                                     <tr key={tipo}>
                                                         <td className="setor-name">{tipo}</td>
-                                                        <td className="setor-count">{quantidade}</td>
+                                                        <td className="setor-count">{quantidade as React.ReactNode}</td>
                                                     </tr>
                                                 ))
                                             ) : (
                                                 <tr>
-                                                    <td colSpan="2" className="no-data">Nenhum setor encontrado</td>
+                                                    <td colSpan={2} className="no-data">Nenhum setor encontrado</td>
                                                 </tr>
                                             );
                                         })()}
@@ -314,13 +323,13 @@ function OrganogramaGeral() {
                                     </thead>
                                     <tbody>
                                         {(() => {
-                                            const setores = organogramaData?.organogramaEstrutural?.setores || [];
-                                            const simbolosCount = {};
+                                            const setores = (organogramaData as any)?.organogramaEstrutural?.setores || [];
+                                            const simbolosCount: any = {};
 
                                             // Contar símbolos de todos os setores
-                                            setores.forEach(setor => {
+                                            setores.forEach((setor: any) => {
                                                 if (setor.cargos && Array.isArray(setor.cargos)) {
-                                                    setor.cargos.forEach(cargo => {
+                                                    setor.cargos.forEach((cargo: any) => {
                                                         if (cargo.tipo && cargo.quantidade > 0) {
                                                             simbolosCount[cargo.tipo] = (simbolosCount[cargo.tipo] || 0) + cargo.quantidade;
                                                         }
@@ -348,12 +357,12 @@ function OrganogramaGeral() {
                                                 simbolosOrdenados.map(([simbolo, quantidade]) => (
                                                     <tr key={simbolo}>
                                                         <td className="simbolo-name">{simbolo}</td>
-                                                        <td className="simbolo-count">{quantidade}</td>
+                                                        <td className="simbolo-count">{quantidade as React.ReactNode}</td>
                                                     </tr>
                                                 ))
                                             ) : (
                                                 <tr>
-                                                    <td colSpan="2" className="no-data">Nenhum símbolo encontrado</td>
+                                                    <td colSpan={2} className="no-data">Nenhum símbolo encontrado</td>
                                                 </tr>
                                             );
                                         })()}
@@ -375,8 +384,8 @@ function OrganogramaGeral() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {organogramaData?.estatisticas?.cargos && organogramaData.estatisticas.cargos.length > 0 ? (
-                                        organogramaData.estatisticas.cargos.map((cargo, index) => (
+                                    {(organogramaData as any)?.estatisticas?.cargos && (organogramaData as any).estatisticas.cargos.length > 0 ? (
+                                        (organogramaData as any).estatisticas.cargos.map((cargo: any, index: any) => (
                                             <tr key={index}>
                                                 <td className="setor-name">{cargo.nome}</td>
                                                 <td className="setor-count">{cargo.quantidade}</td>
@@ -384,7 +393,7 @@ function OrganogramaGeral() {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="2" className="no-data">Nenhum cargo funcional encontrado.</td>
+                                            <td colSpan={2} className="no-data">Nenhum cargo funcional encontrado.</td>
                                         </tr>
                                     )}
                                 </tbody>

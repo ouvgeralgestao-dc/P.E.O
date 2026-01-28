@@ -48,13 +48,16 @@ const OrganogramaCanvasInner = ({
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
     // Callback para abrir/fechar editor de um nó
-    const onEditClick = useCallback((nodeId) => {
-        console.log('🎨 [onEditClick] Chamado com nodeId:', nodeId, '| editable:', editable, '| activeEditorId atual:', activeEditorId);
+    const onEditClick = useCallback((nodeId, forceOpen) => {
+        console.log('🎨 [onEditClick] Chamado com nodeId:', nodeId, '| editable:', editable, '| forceOpen:', forceOpen);
         if (!editable) {
             console.log('🚫 [OrganogramaCanvas] Edição desativada (Modo Visualização)');
             return;
         }
         setActiveEditorId(prev => {
+            if (forceOpen === true) return nodeId;
+            if (forceOpen === false) return null;
+            // Toggle se undefined
             const newValue = prev === nodeId ? null : nodeId;
             console.log('🎨 [onEditClick] setActiveEditorId: prev=', prev, ' -> next=', newValue);
             return newValue;
@@ -299,18 +302,18 @@ const OrganogramaCanvasInner = ({
 
                     // Lógica de Handles baseada no lado
                     let sourceHandle, targetHandle;
-                    let edgeType = 'smoothstep'; // Default
+                    let edgeType = 'customEdge'; // Default
 
                     if (isVerticalAssessoria) {
                         sourceHandle = 'bottom';
                         targetHandle = 'top';
-                        edgeType = 'smoothstep';
+                        edgeType = 'customEdge';
                         /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> VERTICAL ASSESSORIA`); */
                     } else if (isNestedEdge) {
                         // FILHOS DE ASSESSORIA: Sempre vertical (L shape)
                         sourceHandle = 'bottom';
                         targetHandle = 'top';
-                        edgeType = 'smoothstep';
+                        edgeType = 'customEdge';
                         /* console.log(`[EDGE DECISION] ${setor.nomeSetor} -> NESTED`); */
                     } else if (isLeftAssessoria) {
                         // ASSESSORIA DA ESQUERDA CONECTANDO AO PAI CENTRAL: Lateral
@@ -327,7 +330,7 @@ const OrganogramaCanvasInner = ({
                     } else {
                         sourceHandle = 'bottom';
                         targetHandle = 'top';
-                        edgeType = 'smoothstep';
+                        edgeType = 'customEdge';
                         if (isAssessoriaNode) {
                             console.warn(`[EDGE DECISION WARNING] ${setor.nomeSetor} é Assessoria mas caiu no Default Vertical!`, {
                                 isVerticalAssessoria,
@@ -511,12 +514,12 @@ const OrganogramaCanvasInner = ({
                         if (isVerticalAssessoria) {
                             sourceHandle = 'bottom';
                             targetHandle = 'top';
-                            edgeType = 'smoothstep';
+                            edgeType = 'customEdge';
                         } else if (cargo._isNested) {
                             // FILHOS DE ASSESSORIA: Sempre vertical (L shape)
                             sourceHandle = 'bottom';
                             targetHandle = 'top';
-                            edgeType = 'smoothstep';
+                            edgeType = 'customEdge';
                         } else if (isLeftAssessoria) {
                             sourceHandle = 'left-source';
                             targetHandle = 'right-target';
@@ -528,7 +531,7 @@ const OrganogramaCanvasInner = ({
                         } else {
                             sourceHandle = 'bottom';
                             targetHandle = 'top';
-                            edgeType = 'smoothstep';
+                            edgeType = 'customEdge';
                         }
 
                         edges.push({
@@ -575,12 +578,12 @@ const OrganogramaCanvasInner = ({
                     const isBeingEdited = currentNode.data.isEditing;
                     const hasLocalStyle = (currentNode.style && Object.keys(currentNode.style).length > 0) || (currentNode.data.customStyle && Object.keys(currentNode.data.customStyle).length > 0);
                     const hasIncomingStyle = (newNode.style && Object.keys(newNode.style).length > 0) || (newNode.data.customStyle && Object.keys(newNode.data.customStyle).length > 0);
-                    
+
                     // Priorizar o estilo local se:
                     // 1. Está sendo editado agora
                     // 2. Temos estilo local mas o que veio das props está vazio (evita piscar azul ao confirmar no banco)
                     const shouldKeepLocalStyle = isBeingEdited || (hasLocalStyle && !hasIncomingStyle);
-                    
+
                     return {
                         ...newNode,
                         // Se estiver sendo editado ou selecionado, preferir o estilo que já está na tela

@@ -196,6 +196,12 @@ function CriarOrganograma() {
         });
     }, []);
 
+    // Dados iniciais memorizados para evitar resets no WizardForm
+    // IMPORTANTE: Definido antes do early return para respeitar Rules of Hooks
+    const wizardInitialData = React.useMemo(() => ({
+        nomeOrgao: prefilledOrgao
+    }), [prefilledOrgao]);
+
     // Renderizar seleção de tipo
     if (!tipoOrganograma) {
         return (
@@ -226,7 +232,8 @@ function CriarOrganograma() {
         );
     }
 
-    // Renderizar wizard
+
+
     return (
         <div className="criar-organograma">
             {showSuccess && (
@@ -257,7 +264,7 @@ function CriarOrganograma() {
                                 onComplete={tipoOrganograma === 'estrutural' ? handleCreateEstrutural : handleCreateFuncoes}
                                 onCancel={handleBack}
                                 onDataChange={handleDataChange}
-                                initialData={{ nomeOrgao: prefilledOrgao }}
+                                initialData={wizardInitialData}
                             />
                         </div>
                         <div className="preview-panel">
