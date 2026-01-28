@@ -8,19 +8,6 @@ const router = Router();
 router.use(authenticateToken);
 
 // ========================================
-// GERENCIAMENTO DE ÓRGÃOS SANDBOX
-// ========================================
-
-// Listar órgãos sandbox do usuário
-router.get('/orgaos', sandboxController.listSandboxOrgaos);
-
-// Criar novo órgão sandbox
-router.post('/orgaos', sandboxController.createSandboxOrgao);
-
-// Deletar órgão sandbox
-router.delete('/orgaos/:id', sandboxController.deleteSandboxOrgao);
-
-// ========================================
 // ORGANOGRAMA ESTRUTURAL SANDBOX
 // ========================================
 

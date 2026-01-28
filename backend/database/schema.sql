@@ -116,23 +116,11 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_tipo ON usuarios(tipo);
 
--- TABELA 11: SANDBOX_ORGAOS (Espelho de orgaos - para rascunhos/testes)
-CREATE TABLE IF NOT EXISTS sandbox_orgaos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,              -- Dono do rascunho
-    nome TEXT NOT NULL,
-    categoria TEXT DEFAULT 'OUTROS',
-    ordem INTEGER DEFAULT 999,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
-
--- TABELA 12: SANDBOX_SETORES (Espelho de setores - para organogramas estruturais sandbox)
+-- TABELA 11: SANDBOX_SETORES (Organogramas estruturais sandbox - referencia órgãos institucionais)
 CREATE TABLE IF NOT EXISTS sandbox_setores (
     id TEXT PRIMARY KEY,                   -- UUID
     user_id INTEGER NOT NULL,
-    orgao_id INTEGER NOT NULL,             -- Referência a sandbox_orgaos
+    orgao_id INTEGER NOT NULL,             -- Referência a orgaos INSTITUCIONAL
     nome_setor TEXT NOT NULL,
     tipo_setor TEXT NOT NULL,
     hierarquia REAL NOT NULL,
@@ -143,15 +131,15 @@ CREATE TABLE IF NOT EXISTS sandbox_setores (
     cargos TEXT,                           -- JSON de cargos DAS
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (orgao_id) REFERENCES sandbox_orgaos(id) ON DELETE CASCADE,
+    FOREIGN KEY (orgao_id) REFERENCES orgaos(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES sandbox_setores(id) ON DELETE SET NULL
 );
 
--- TABELA 13: SANDBOX_CARGOS_FUNCIONAIS (Espelho de cargos_funcionais - para organogramas funcionais sandbox)
+-- TABELA 12: SANDBOX_CARGOS_FUNCIONAIS (Organogramas funcionais sandbox - referencia órgãos institucionais)
 CREATE TABLE IF NOT EXISTS sandbox_cargos_funcionais (
     id TEXT PRIMARY KEY,                   -- UUID
     user_id INTEGER NOT NULL,
-    orgao_id INTEGER NOT NULL,
+    orgao_id INTEGER NOT NULL,             -- Referência a orgaos INSTITUCIONAL
     nome_cargo TEXT NOT NULL,
     ocupante TEXT,
     hierarquia REAL,
@@ -164,12 +152,11 @@ CREATE TABLE IF NOT EXISTS sandbox_cargos_funcionais (
     setor_ref TEXT,                        -- Referência cruzada com setores
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (orgao_id) REFERENCES sandbox_orgaos(id) ON DELETE CASCADE,
+    FOREIGN KEY (orgao_id) REFERENCES orgaos(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES sandbox_cargos_funcionais(id) ON DELETE SET NULL
 );
 
 -- Índices para Sandbox (Performance)
-CREATE INDEX IF NOT EXISTS idx_sandbox_orgaos_user ON sandbox_orgaos(user_id);
 CREATE INDEX IF NOT EXISTS idx_sandbox_setores_user ON sandbox_setores(user_id);
 CREATE INDEX IF NOT EXISTS idx_sandbox_setores_orgao ON sandbox_setores(orgao_id);
 CREATE INDEX IF NOT EXISTS idx_sandbox_cargos_user ON sandbox_cargos_funcionais(user_id);

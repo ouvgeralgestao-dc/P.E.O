@@ -1,31 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import Modal from '../components/common/Modal';
-import Input from '../components/common/Input';
 import Select from '../components/common/Select';
+import Button from '../components/common/Button';
 import { logger } from '../utils/logger';
-import './SandboxList.css';
+import api from '../services/api';
+import './CriarOrganograma.css';
 
-interface SandboxOrgao {
+interface Orgao {
     id: number;
     nome: string;
     categoria: string;
-    created_at: string;
-    updated_at: string;
 }
 
-const SandboxList: React.FC = () => {
+function SandboxList() {
     const navigate = useNavigate();
-    const [orgaos, setOrgaos] = useState<SandboxOrgao[]>([]);
+    const [orgaos, setOrgaos] = useState<Orgao[]>([]);
+    const [selectedOrgao, setSelectedOrgao] = useState<string>('');
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    // Form state
-    const [newOrgaoNome, setNewOrgaoNome] = useState('');
-    const [newOrgaoCategoria, setNewOrgaoCategoria] = useState('OUTROS');
 
     useEffect(() => {
         loadOrgaos();
@@ -34,173 +26,119 @@ const SandboxList: React.FC = () => {
     const loadOrgaos = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/sandbox/orgaos');
-            setOrgaos(response.data);
-            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.length });
+            const response = await api.get('/orgaos');
+            setOrgaos(response.data.orgaos || []);
+            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.orgaos?.length });
         } catch (error) {
             logger.error('SandboxList', 'Erro ao carregar órgãos', error);
-            alert('Erro ao carregar órgãos sandbox.');
+            alert('Erro ao carregar lista de órgãos.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreateOrgao = async () => {
-        if (!newOrgaoNome.trim()) {
-            alert('Por favor, preencha o nome do órgão.');
+    const handleCreateEstrutura = () => {
+        if (!selectedOrgao) {
+            alert('Selecione um órgão para criar o organograma.');
             return;
         }
 
-        try {
-            const response = await api.post('/sandbox/orgaos', {
-                nome: newOrgaoNome,
-                categoria: newOrgaoCategoria,
-            });
-            
-            setOrgaos([response.data, ...orgaos]);
-            closeModal();
-            logger.success('SandboxList', 'Órgão criado com sucesso', response.data);
-            
-            // Navegar para o órgão criado
-            navigate(`/criacao-livre/${encodeURIComponent(response.data.nome)}`);
-        } catch (error: any) {
-            logger.error('SandboxList', 'Erro ao criar órgão', error);
-            const errorMsg = error.response?.data?.message || 'Erro ao criar órgão.';
-            alert(errorMsg);
-        }
-    };
+        const orgao = orgaos.find(o => o.id === parseInt(selectedOrgao));
+        if (!orgao) return;
 
-    const handleDeleteOrgao = async (orgaoId: number, orgaoNome: string) => {
-        if (!window.confirm(`Tem certeza que deseja excluir "${orgaoNome}"? Todos os organogramas serão perdidos.`)) {
-            return;
-        }
-
-        try {
-            await api.delete(`/sandbox/orgaos/${orgaoId}`);
-            setOrgaos(orgaos.filter((o) => o.id !== orgaoId));
-            logger.success('SandboxList', 'Órgão excluído com sucesso', { orgaoId });
-        } catch (error) {
-            logger.error('SandboxList', 'Erro ao excluir órgão', { orgaoId, error });
-            alert('Erro ao excluir órgão.');
-        }
-    };
-
-    const openModal = () => {
-        setNewOrgaoNome('');
-        setNewOrgaoCategoria('OUTROS');
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
+        navigate(`/criacao-livre/${encodeURIComponent(orgao.nome)}/criar-estrutural`);
     };
 
     if (loading) {
-        return <div className="loading">Carregando órgãos sandbox...</div>;
+        return <div className="loading-state"><div className="spinner"></div>Carregando...</div>;
     }
 
     return (
-        <div className="sandbox-list-container">
-            <div className="sandbox-header">
-                <div>
-                    <h1>🎨 Criação Livre de Organogramas</h1>
+        <div className="criar-organograma">
+            <div className="container">
+                <div className="header-section" style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                        Criar Novo Organograma Livre
+                    </h1>
                     <p className="subtitle">
-                        Crie e edite organogramas de teste sem afetar os dados institucionais
+                        Selecione o órgão e crie organogramas de teste sem afetar dados institucionais
                     </p>
                 </div>
-                <Button variant="primary" onClick={openModal}>
-                    + Novo Órgão Sandbox
-                </Button>
-            </div>
 
-            {orgaos.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-icon">📋</div>
-                    <h3>Nenhum órgão sandbox criado</h3>
-                    <p>Comece criando seu primeiro órgão de teste</p>
-                    <Button onClick={openModal}>Criar Primeiro Órgão</Button>
-                </div>
-            ) : (
-                <div className="orgaos-grid">
-                    {orgaos.map((orgao) => (
-                        <Card key={orgao.id} className="orgao-card">
-                            <div className="card-header">
-                                <h3>{orgao.nome}</h3>
-                                <span className="categoria-badge">{orgao.categoria}</span>
+                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                    <Card>
+                        <div style={{ padding: '2rem' }}>
+                            <div className="icon-section" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏢</div>
+                                <h3 style={{ color: '#2563eb', marginBottom: '0.5rem' }}>Estrutura Organizacional</h3>
+                                <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                                    Crie a hierarquia de setores do órgão, definindo a estrutura organizacional completa com níveis hierárquicos ajustados.
+                                </p>
                             </div>
-                            <div className="card-meta">
-                                <span>Criado em: {formatDate(orgao.created_at)}</span>
-                                <span>Atualizado: {formatDate(orgao.updated_at)}</span>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ 
+                                    display: 'block', 
+                                    marginBottom: '0.5rem', 
+                                    fontWeight: 600,
+                                    color: '#1e293b'
+                                }}>
+                                    Selecione o Órgão *
+                                </label>
+                                <Select
+                                    value={selectedOrgao}
+                                    onChange={(e) => setSelectedOrgao(e.target.value)}
+                                    options={[
+                                        { value: '', label: 'Selecione um órgão' },
+                                        ...orgaos.map(o => ({
+                                            value: o.id.toString(),
+                                            label: o.nome
+                                        }))
+                                    ]}
+                                />
                             </div>
-                            <div className="card-actions">
-                                <Button
-                                    variant="primary"
-                                    fullWidth
-                                    onClick={() => navigate(`/criacao-livre/${encodeURIComponent(orgao.nome)}`)}
+
+                            <div style={{ 
+                                padding: '1rem', 
+                                background: '#fef3c7', 
+                                border: '1px solid #fbbf24',
+                                borderRadius: '8px',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'start' }}>
+                                    <span style={{ fontSize: '1.25rem' }}>🎨</span>
+                                    <div>
+                                        <strong style={{ color: '#92400e', display: 'block', marginBottom: '0.25rem' }}>
+                                            Modo Teste
+                                        </strong>
+                                        <p style={{ color: '#92400e', fontSize: '0.9rem', margin: 0 }}>
+                                            Organogramas criados aqui não afetam os dados institucionais. Use para testes e rascunhos.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => navigate('/dashboard')}
                                 >
-                                    Abrir Organogramas
+                                    Cancelar
                                 </Button>
-                                <Button
-                                    variant="danger"
-                                    fullWidth
-                                    onClick={() => handleDeleteOrgao(orgao.id, orgao.nome)}
+                                <Button 
+                                    variant="primary" 
+                                    onClick={handleCreateEstrutura}
+                                    disabled={!selectedOrgao}
                                 >
-                                    Excluir
+                                    Criar Organograma Estrutural
                                 </Button>
                             </div>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
-            {/* Modal de Criação */}
-            {isModalOpen && (
-                <Modal onClose={closeModal} title="Criar Novo Órgão Sandbox">
-                    <div className="modal-form">
-                        <Input
-                            label="Nome do Órgão"
-                            name="nome"
-                            value={newOrgaoNome}
-                            onChange={(e) => setNewOrgaoNome(e.target.value)}
-                            required
-                            helperText="Ex: Secretaria de Teste, Departamento Exemplo"
-                        />
-
-                        <Select
-                            label="Categoria"
-                            name="categoria"
-                            value={newOrgaoCategoria}
-                            onChange={(e) => setNewOrgaoCategoria(e.target.value)}
-                            options={[
-                                { value: 'OUTROS', label: 'Outros' },
-                                { value: 'ADMINISTRACAO', label: 'Administração' },
-                                { value: 'FAZENDA', label: 'Fazenda' },
-                                { value: 'SAUDE', label: 'Saúde' },
-                                { value: 'EDUCACAO', label: 'Educação' },
-                            ]}
-                        />
-
-                        <div className="modal-actions">
-                            <Button variant="outline" onClick={closeModal}>
-                                Cancelar
-                            </Button>
-                            <Button variant="primary" onClick={handleCreateOrgao}>
-                                Criar Órgão
-                            </Button>
                         </div>
-                    </div>
-                </Modal>
-            )}
+                    </Card>
+                </div>
+            </div>
         </div>
     );
-};
+}
 
 export default SandboxList;

@@ -27,6 +27,8 @@ import SandboxList from "./pages/SandboxList";
 import SandboxOrgao from "./pages/SandboxOrgao";
 import SandboxEstrutural from "./pages/SandboxEstrutural";
 import SandboxFuncional from "./pages/SandboxFuncional";
+import CriarSandboxEstrutural from "./pages/CriarSandboxEstrutural";
+import CriarSandboxFuncional from "./pages/CriarSandboxFuncional";
 import "./App.css";
 
 function AppContent() {
@@ -103,6 +105,22 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <SandboxFuncional />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre/:nomeOrgao/criar-estrutural"
+              element={
+                <ProtectedRoute>
+                  <CriarSandboxEstrutural />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre/:nomeOrgao/criar-funcional"
+              element={
+                <ProtectedRoute>
+                  <CriarSandboxFuncional />
                 </ProtectedRoute>
               }
             />

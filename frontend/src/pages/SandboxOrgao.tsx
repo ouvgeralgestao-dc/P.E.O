@@ -8,7 +8,8 @@ import api from '../services/api';
 function SandboxOrgao() {
     const { nomeOrgao } = useParams<{ nomeOrgao: string }>();
     const navigate = useNavigate();
-    const [orgaoData, setOrgaoData] = useState<any>(null);
+    const [orgaoId, setOrgaoId] = useState<number | null>(null);
+    const [organogramaData, setOrganogramaData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -19,22 +20,24 @@ function SandboxOrgao() {
     const loadOrgao = async () => {
         try {
             setLoading(true);
-            // Buscar órgão sandbox por nome
-            const orgaosResponse = await api.get('/sandbox/orgaos');
-            const orgao = orgaosResponse.data.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
+            // Buscar órgão institucional por nome
+            const orgaosResponse = await api.get('/orgaos');
+            const orgao = orgaosResponse.data.orgaos?.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
             
             if (!orgao) {
-                setError('Órgão sandbox não encontrado.');
+                setError('Órgão não encontrado.');
                 return;
             }
 
-            // Buscar organogramas estrutural e funcional
+            setOrgaoId(orgao.id);
+
+            // Buscar organogramas sandbox (estrutural e funcional)
             const [estruturalRes, funcionalRes] = await Promise.all([
                 api.get(`/sandbox/estrutural/${orgao.id}`).catch(() => null),
                 api.get(`/sandbox/funcional/${orgao.id}`).catch(() => null),
             ]);
 
-            setOrgaoData({
+            setOrganogramaData({
                 id: orgao.id,
                 orgao: orgao.nome,
                 categoria: orgao.categoria,
@@ -44,7 +47,7 @@ function SandboxOrgao() {
 
             logger.info('SandboxOrgao', 'Órgão carregado', { orgao: orgao.nome });
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Erro ao carregar órgão sandbox');
+            setError(err.response?.data?.message || 'Erro ao carregar órgão');
             logger.error('SandboxOrgao', 'Erro', err);
         } finally {
             setLoading(false);
@@ -52,26 +55,31 @@ function SandboxOrgao() {
     };
 
     const handleOpenEstrutura = () => {
-        if (!nomeOrgao || !orgaoData?.id) return;
+        if (!nomeOrgao || !organogramaData?.id) return;
         navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/estrutural`);
     };
 
     const handleOpenFuncional = () => {
-        if (!nomeOrgao || !orgaoData?.id) return;
+        if (!nomeOrgao || !organogramaData?.id) return;
         navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/funcional`);
     };
 
     const handleCreateEstrutura = () => {
-        if (!nomeOrgao || !orgaoData?.id) return;
-        navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/estrutural`);
+        if (!nomeOrgao || !orgaoId) return;
+        navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/criar-estrutural`);
     };
 
     const handleCreateFuncional = () => {
-        if (!nomeOrgao || !orgaoData?.id) return;
-        navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/funcional`);
+        if (!nomeOrgao || !orgaoId) return;
+        // Só pode criar funcional se já tiver estrutural
+        if (!hasEstrutural) {
+            alert('Crie primeiro o organograma estrutural antes de criar o funcional.');
+            return;
+        }
+        navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao)}/criar-funcional`);
     };
 
-    if (loading) return <div className="loading-state"><div className="spinner"></div>Carregando órgão sandbox...</div>;
+    if (loading) return <div className="loading-state"><div className="spinner"></div>Carregando...</div>;
 
     if (error) return (
         <div className="container" style={{ marginTop: '2rem' }}>
@@ -79,16 +87,16 @@ function SandboxOrgao() {
         </div>
     );
 
-    const hasEstrutural = orgaoData?.organogramaEstrutural?.setores?.length > 0;
-    const hasFuncional = orgaoData?.organogramaFuncional?.cargos?.length > 0;
+    const hasEstrutural = organogramaData?.organogramaEstrutural?.setores?.length > 0;
+    const hasFuncional = organogramaData?.organogramaFuncional?.cargos?.length > 0;
 
     return (
         <div className="pasta-orgao">
             <div className="container">
                 <div className="header-section">
                     <Button variant="outline" onClick={() => navigate('/criacao-livre')}>← Voltar</Button>
-                    <h1>🎨 {orgaoData?.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
-                    <p className="subtitle">Área de testes - Organogramas não afetam dados institucionais</p>
+                    <h1>🎨 {organogramaData?.orgao} <span className="sandbox-badge">MODO TESTE</span></h1>
+                    <p className="subtitle">Organogramas criados aqui não afetam os dados institucionais</p>
                 </div>
 
                 <div className="items-grid">
@@ -103,7 +111,7 @@ function SandboxOrgao() {
                             <h3>Estrutura Organizacional</h3>
                             <p>Organograma hierárquico de setores</p>
                             <div className="meta">
-                                <span>Setores: {orgaoData.organogramaEstrutural.setores?.length || 0}</span>
+                                <span>Setores: {organogramaData.organogramaEstrutural.setores?.length || 0}</span>
                                 <span className="status-badge success">Criado</span>
                             </div>
                         </Card>
@@ -122,7 +130,7 @@ function SandboxOrgao() {
                     {/* Organograma Funcional */}
                     {hasFuncional ? (
                         <Card
-                            hoverable
+                            hoverable={true}
                             className="item-card"
                             onClick={handleOpenFuncional}
                         >
@@ -130,19 +138,24 @@ function SandboxOrgao() {
                             <h3>Funções e Cargos</h3>
                             <p>Detalhamento de cargos e funções</p>
                             <div className="meta">
-                                <span>Cargos: {orgaoData.organogramaFuncional.cargos?.length || 0}</span>
+                                <span>Cargos: {organogramaData.organogramaFuncional.cargos?.length || 0}</span>
                                 <span className="status-badge success">Criado</span>
                             </div>
                         </Card>
                     ) : (
                         <Card
-                            hoverable
+                            hoverable={true}
                             className="item-card add-card functional-add-card"
                             onClick={handleCreateFuncional}
                         >
                             <div className="icon">👥</div>
                             <h3>CRIAR ORGANOGRAMA FUNCIONAL</h3>
                             <p>Detalhe cargos e funções</p>
+                            {!hasEstrutural && (
+                                <div className="warning-badge">
+                                    ⚠️ Crie primeiro o estrutural
+                                </div>
+                            )}
                         </Card>
                     )}
                 </div>
@@ -198,6 +211,15 @@ function SandboxOrgao() {
                     box-shadow: 0 12px 24px rgba(16, 185, 129, 0.15);
                 }
                 .functional-add-card h3 { color: #059669; font-weight: 800; font-size: 1.1rem; }
+                .warning-badge {
+                    margin-top: 1rem;
+                    padding: 0.5rem;
+                    background: #fef3c7;
+                    color: #92400e;
+                    border-radius: 4px;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                }
             `}</style>
         </div>
     );

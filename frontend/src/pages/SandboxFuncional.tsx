@@ -113,12 +113,15 @@ function SandboxFuncional() {
                         <div style={{ textAlign: 'center', padding: '3rem' }}>
                             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👥</div>
                             <h2>Nenhum organograma funcional criado</h2>
-                            <p style={{ color: '#64748b', marginBottom: '1rem' }}>
-                                Para criar organogramas sandbox, use a API ou importe dados existentes.
+                            <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+                                Comece criando os cargos e funções do órgão
                             </p>
-                            <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-                                <strong>Nota:</strong> A integração completa com o formulário de criação será implementada em breve.
-                            </p>
+                            <Button 
+                                variant="primary" 
+                                onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-funcional`)}
+                            >
+                                Criar Organograma Funcional
+                            </Button>
                         </div>
                     </Card>
                 </div>
