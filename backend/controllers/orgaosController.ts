@@ -17,19 +17,35 @@ export const getAllOrgaos = async (req, res, next) => {
             updatedAt: new Date().toISOString()
         }));
 
-        // Aplicar filtro por setor para usuários comuns
+        // Aplicar filtro por órgão para usuários comuns
         const isFiltered = req.user && req.user.tipo !== 'admin';
         
         if (isFiltered) {
-            const userSector = req.user.setor.toUpperCase();
-            
-            // Filtrar órgãos que pertencem ao setor do usuário
-            mapped = mapped.filter(orgao => {
-                const orgaoCategoria = orgao.categoria.toUpperCase();
-                return orgaoCategoria === userSector || 
-                       orgaoCategoria.includes(userSector) ||
-                       userSector.includes(orgaoCategoria);
+            const userOrgaoId = req.user.orgao_id;
+            console.log('[DEBUG] Filtrando órgãos para usuário:', { 
+                orgao_id: userOrgaoId, 
+                tipo: req.user.tipo,
+                totalOrgaos: mapped.length 
             });
+            
+            if (userOrgaoId) {
+                // Filtrar apenas o órgão ao qual o usuário pertence
+                mapped = mapped.filter(orgao => {
+                    const match = orgao.id === userOrgaoId;
+                    
+                    if (!match) {
+                        console.log('[DEBUG] Órgão filtrado:', { id: orgao.id, nome: orgao.nome });
+                    }
+                    
+                    return match;
+                });
+            } else {
+                // Se usuário não tem órgão definido, não mostra nenhum
+                console.log('[DEBUG] Usuário sem orgao_id definido - lista vazia');
+                mapped = [];
+            }
+            
+            console.log('[DEBUG] Órgãos após filtro:', mapped.length);
         }
 
         res.json({

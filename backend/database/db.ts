@@ -32,7 +32,10 @@ function runMigrations() {
         { table: 'orgaos', column: 'ordem', type: 'INTEGER', default: '999' },
         // 2026-01-21: Adicionar setor_ref para correlacionar cargos funcionais com setores estruturais
         { table: 'cargos_funcionais', column: 'setor_ref', type: 'TEXT', default: 'NULL' },
-        // 2026-01-23: Tabela usuarios já é criada via schema.sql, mas verificamos colunas aqui se necessário
+        // 2026-01-28: Adicionar colunas faltantes na tabela usuarios
+        { table: 'usuarios', column: 'nome', type: 'TEXT', default: 'NULL' },
+        { table: 'usuarios', column: 'orgao_id', type: 'TEXT', default: 'NULL' },
+        { table: 'usuarios', column: 'ativo', type: 'INTEGER', default: '1' },
     ];
 
     for (const m of migrations) {

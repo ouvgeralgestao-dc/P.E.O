@@ -88,13 +88,11 @@ function SandboxList() {
                                 <Select
                                     value={selectedOrgao}
                                     onChange={(e) => setSelectedOrgao(e.target.value)}
-                                    options={[
-                                        { value: '', label: 'Selecione um órgão' },
-                                        ...orgaos.map(o => ({
-                                            value: o.id.toString(),
-                                            label: o.nome
-                                        }))
-                                    ]}
+                                    placeholder="Selecione um órgão"
+                                    options={orgaos.map(o => ({
+                                        value: o.id.toString(),
+                                        label: o.nome
+                                    }))}
                                 />
                             </div>
 

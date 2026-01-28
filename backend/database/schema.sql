@@ -102,13 +102,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tipos_setor_nome ON tipos_setor(nome);
 CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     matricula TEXT NOT NULL UNIQUE,
+    nome TEXT,
     email TEXT NOT NULL UNIQUE,
     senha TEXT NOT NULL,
+    orgao_id TEXT,                          -- Órgão ao qual o usuário pertence
     setor TEXT,
     cargo TEXT,
     tipo TEXT NOT NULL DEFAULT 'user' CHECK (tipo IN ('admin', 'user')),
+    ativo INTEGER DEFAULT 1,                -- 1 = ativo, 0 = inativo
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (orgao_id) REFERENCES orgaos(id) ON DELETE SET NULL
 );
 
 -- Índices para performance
