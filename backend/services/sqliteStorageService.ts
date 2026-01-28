@@ -1698,3 +1698,16 @@ export const deletePrefixo = async (id) => {
         throw error;
     }
 };
+
+/**
+ * Busca órgão por ID.
+ */
+export const getOrgaoById = async (id) => {
+    try {
+        const orgao = await dbAsync.get('SELECT * FROM orgaos WHERE id = ?', [id]);
+        return orgao;
+    } catch (error) {
+        console.error('Erro ao buscar órgão por ID:', error);
+        return null; // Retornar null em caso de erro para não quebrar fluxo
+    }
+};

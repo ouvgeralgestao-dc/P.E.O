@@ -8,30 +8,79 @@ import api from '../services/api';
 import './CriarOrganograma.css';
 
 interface Orgao {
-    id: number;
+    id: string;
     nome: string;
     categoria: string;
+}
+
+interface SandboxItem {
+    orgaoId: string;
+    nome: string;
+    categoria: string;
+    hasEstrutural: boolean;
+    hasFuncional: boolean;
 }
 
 function SandboxList() {
     const navigate = useNavigate();
     const [orgaos, setOrgaos] = useState<Orgao[]>([]);
+    const [existingSandboxes, setExistingSandboxes] = useState<SandboxItem[]>([]);
     const [selectedOrgao, setSelectedOrgao] = useState<string>('');
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
+    const [userOrgaoId, setUserOrgaoId] = useState<string | null>(null);
 
     useEffect(() => {
-        loadOrgaos();
+        loadData();
     }, []);
 
-    const loadOrgaos = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/orgaos');
-            setOrgaos(response.data.data || []);
-            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.data?.length });
+            
+            // Carregar lista de órgãos gerais
+            const orgaosRes = await api.get('/orgaos');
+            const orgaosList = orgaosRes.data.data || [];
+            setOrgaos(orgaosList);
+
+            // Carregar sandboxes existentes do usuário
+            const sandboxesRes = await api.get('/sandbox/list');
+            const sandboxes = sandboxesRes.data || [];
+            setExistingSandboxes(sandboxes);
+
+            // Tentar identificar órgão do usuário (simples match por enquanto)
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                // Lógica simples: se o user.setor corresponder a um órgão, usar ele
+                if (user.setor) {
+                    const match = orgaosList.find((o: Orgao) => 
+                        user.setor.toLowerCase().includes(o.nome.toLowerCase()) || 
+                        o.nome.toLowerCase().includes(user.setor.toLowerCase())
+                    );
+                    if (match) {
+                        setUserOrgaoId(match.id);
+                        setSelectedOrgao(match.id); // Auto-select para criação
+                    }
+                }
+            }
+
+            // Se não houver sandboxes, ir direto para criação
+            if (sandboxes.length === 0) {
+                setViewMode('create');
+            } else {
+                setViewMode('list');
+            }
+
+            logger.info('SandboxList', 'Dados carregados', { 
+                orgaos: orgaosList.length, 
+                sandboxes: sandboxes.length 
+            });
+
         } catch (error) {
-            logger.error('SandboxList', 'Erro ao carregar órgãos', error);
-            alert('Erro ao carregar lista de órgãos.');
+            logger.error('SandboxList', 'Erro ao carregar dados', error);
+            // Fallback
+            setViewMode('create');
         } finally {
             setLoading(false);
         }
@@ -42,17 +91,143 @@ function SandboxList() {
             alert('Selecione um órgão para criar o organograma.');
             return;
         }
+        const orgao = orgaos.find(o => o.id === selectedOrgao);
+        if (orgao) {
+            navigate(`/criacao-livre/${encodeURIComponent(orgao.nome)}/criar-estrutural`);
+        }
+    };
 
-        const orgao = orgaos.find(o => o.id === parseInt(selectedOrgao));
-        if (!orgao) return;
-
-        navigate(`/criacao-livre/${encodeURIComponent(orgao.nome)}/criar-estrutural`);
+    const handleDelete = async (orgaoId: string, tipo: 'estrutural' | 'funcional') => {
+        if (!confirm(`Tem certeza que deseja excluir o organograma ${tipo}?`)) return;
+        try {
+            await api.delete(`/sandbox/${tipo}/${orgaoId}`);
+            logger.success('SandboxList', `Organograma ${tipo} excluído`);
+            loadData(); // Recarregar lista
+        } catch (error) {
+            logger.error('SandboxList', 'Erro ao excluir', error);
+            alert('Erro ao excluir organograma.');
+        }
     };
 
     if (loading) {
         return <div className="loading-state"><div className="spinner"></div>Carregando...</div>;
     }
 
+    // Modo LISTA: Mostrar cards dos órgãos que já têm sandbox
+    if (viewMode === 'list') {
+        return (
+            <div className="criar-organograma">
+                <div className="container">
+                    <div className="header-section" style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#ffffff' }}>
+                            Meus Rascunhos de Organograma
+                        </h1>
+                        <p className="subtitle" style={{ color: '#e0e7ff' }}>
+                            Gerencie seus organogramas em modo rascunho (Sandbox)
+                        </p>
+                    </div>
+
+                    <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {/* Botão para Criar Novo */}
+                        <div 
+                            className="card-new-sandbox"
+                            onClick={() => setViewMode('create')}
+                            style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                border: '2px dashed rgba(255,255,255,0.3)',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                minHeight: '200px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>➕</div>
+                            <h3 style={{ color: 'white' }}>Novo Rascunho</h3>
+                        </div>
+
+                        {existingSandboxes.map(sb => (
+                            <Card key={sb.orgaoId} className="sandbox-card">
+                                <div style={{ padding: '1.5rem' }}>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>{sb.nome}</h3>
+                                    <span style={{ 
+                                        display: 'inline-block', 
+                                        padding: '0.25rem 0.75rem', 
+                                        borderRadius: '999px',
+                                        background: '#e0f2fe',
+                                        color: '#0369a1',
+                                        fontSize: '0.8rem',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        {sb.categoria}
+                                    </span>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {sb.hasEstrutural ? (
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <Button 
+                                                    style={{ flex: 1, fontSize: '0.9rem' }}
+                                                    onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/estrutural`)}
+                                                >
+                                                    Estrutural
+                                                </Button>
+                                                <Button 
+                                                    variant="danger"
+                                                    style={{ padding: '0.5rem' }}
+                                                    onClick={() => handleDelete(sb.orgaoId, 'estrutural')}
+                                                >
+                                                    🗑️
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button 
+                                                variant="outline"
+                                                style={{ width: '100%', fontSize: '0.9rem', borderStyle: 'dashed' }}
+                                                onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/criar-estrutural`)}
+                                            >
+                                                + Criar Estrutural
+                                            </Button>
+                                        )}
+
+                                        {sb.hasFuncional ? (
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <Button 
+                                                    style={{ flex: 1, fontSize: '0.9rem', background: '#ec4899', borderColor: '#ec4899' }}
+                                                    onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/funcional`)}
+                                                >
+                                                    Funcional
+                                                </Button>
+                                                <Button 
+                                                    variant="danger"
+                                                    style={{ padding: '0.5rem' }}
+                                                    onClick={() => handleDelete(sb.orgaoId, 'funcional')}
+                                                >
+                                                    🗑️
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button 
+                                                variant="outline"
+                                                style={{ width: '100%', fontSize: '0.9rem', borderStyle: 'dashed' }}
+                                                onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/criar-funcional`)}
+                                            >
+                                                + Criar Funcional
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Modo CRIAÇÃO (Original)
     return (
         <div className="criar-organograma">
             <div className="container">
@@ -90,10 +265,19 @@ function SandboxList() {
                                     onChange={(e) => setSelectedOrgao(e.target.value)}
                                     placeholder="Selecione um órgão"
                                     options={orgaos.map(o => ({
-                                        value: o.id.toString(),
+                                        value: o.id,
                                         label: o.nome
                                     }))}
+                                    disabled={!!userOrgaoId} // Desabilita se detectou auto-seleção? Ou deixa livre?
+                                    // Usuário disse "n tem pq eu selecionar". Vamos deixar livre mas aviso.
+                                    // Se userOrgaoId setado, talvez travar?
+                                    // Vamos deixar habilitado para "Free Mode" (Sandbox real), mas pré-selecionado.
                                 />
+                                {userOrgaoId && (
+                                    <small style={{ color: '#666' }}>
+                                        * Pré-selecionado com base no seu setor.
+                                    </small>
+                                )}
                             </div>
 
                             <div style={{ 
@@ -119,7 +303,13 @@ function SandboxList() {
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                                 <Button 
                                     variant="outline" 
-                                    onClick={() => navigate('/dashboard')}
+                                    onClick={() => {
+                                        if (existingSandboxes.length > 0) {
+                                            setViewMode('list');
+                                        } else {
+                                            navigate('/dashboard');
+                                        }
+                                    }}
                                 >
                                     Cancelar
                                 </Button>

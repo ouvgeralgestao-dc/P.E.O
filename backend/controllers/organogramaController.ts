@@ -135,9 +135,27 @@ export const updateOrganogramaEstrutural = async (req, res, next) => {
         }
 
         const orgaoIdSlug = fileSystem.normalizeOrgaoId(decodedName);
-        const orgaoId = (await storageService.getOrgaoIdByName(decodedName)) || orgaoIdSlug;
+        
+        let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+        
+        // CORREÇÃO ID vs NOME: Se não achou por nome, verifica se decodedName é o ID direto
+        if (!orgaoId) {
+            const maybeOrgao = await storageService.getOrgaoById(decodedName);
+            if (maybeOrgao) orgaoId = maybeOrgao.id;
+        }
+        
+        if (!orgaoId) orgaoId = orgaoIdSlug;
 
         // HEURÍSTICA DE PROTEÇÃO DE NOME (Auto-Save Fix)
+        if (req.user && req.user.tipo !== 'admin') {
+            const userOrgaoId = String(req.user.orgao_id || '').trim();
+            const targetOrgaoId = String(orgaoId || '').trim();
+
+            if (userOrgaoId !== targetOrgaoId) {
+                console.warn(`[AUTH] Update Estrutural Negado: User '${userOrgaoId}' vs Target '${targetOrgaoId}'`);
+                return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode editar o organograma do seu próprio órgão.' });
+            }
+        }
         // O frontend envia o slug na URL durante o auto-save.
         // Se o nome do banco for "Rico" e o da URL for "Pobre (Slug)", preservamos o do banco.
         let finalName = decodedName;
@@ -415,7 +433,32 @@ export async function createOrganogramaFuncoes(req, res, next) {
             nomeOrgao = decodeURIComponent(req.params.nomeOrgao);
         }
 
-        const orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
+        // CORREÇÃO FK: Buscar ID real do órgão no banco antes de normalizar
+        let orgaoId = await storageService.getOrgaoIdByName(nomeOrgao);
+        
+        // CORREÇÃO ID vs NOME: Se não achou por nome, verifica se nomeOrgao é o ID direto
+        if (!orgaoId) {
+            const maybeOrgao = await storageService.getOrgaoById(nomeOrgao);
+            if (maybeOrgao) orgaoId = maybeOrgao.id;
+        }
+        
+        if (!orgaoId) {
+            console.warn(`[CREATE FUNCIONAL] ID não encontrado por nome/id para '${nomeOrgao}'. Tentando normalização.`);
+            orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
+        } else {
+            console.log(`[CREATE FUNCIONAL] ID resolvido com sucesso: '${nomeOrgao}' -> '${orgaoId}'`);
+        }
+
+        // AUTH CHECK: Usuário comum só pode editar seu órgão
+        if (req.user && req.user.tipo !== 'admin') {
+            const userOrgaoId = String(req.user.orgao_id || '').trim();
+            const targetOrgaoId = String(orgaoId || '').trim();
+
+            if (userOrgaoId !== targetOrgaoId) {
+                console.warn(`[AUTH] Update Funcional Negado: User '${userOrgaoId}' vs Target '${targetOrgaoId}'`);
+                return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode editar o organograma do seu próprio órgão.' });
+            }
+        }
 
         // Validação de Duplicidade CORRETA (Funcional): Verificar se já existe organograma FUNCIONAL
         // Um órgão pode ter organograma estrutural sem ter funcional, então verificamos especificamente
@@ -558,8 +601,26 @@ export const deleteOrganogramaEstrutural = async (req, res, next) => {
         const decodedName = decodeURIComponent(nomeOrgao);
 
         let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+        
+        // CORREÇÃO ID vs NOME
+        if (!orgaoId) {
+            const maybeOrgao = await storageService.getOrgaoById(decodedName);
+            if (maybeOrgao) orgaoId = maybeOrgao.id;
+        }
+
         if (!orgaoId) {
             orgaoId = fileSystem.normalizeOrgaoId(decodedName);
+        }
+
+        // AUTH CHECK: Usuário comum só pode deletar seu órgão
+        if (req.user && req.user.tipo !== 'admin') {
+            const userOrgaoId = String(req.user.orgao_id || '').trim();
+            const targetOrgaoId = String(orgaoId || '').trim();
+
+            if (userOrgaoId !== targetOrgaoId) {
+                console.warn(`[AUTH] Delete Estrutural Negado: User '${userOrgaoId}' vs Target '${targetOrgaoId}'`);
+                return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode gerenciar o seu próprio órgão.' });
+            }
         }
 
         console.log(`[DELETE] Deletando organograma ESTRUTURAL (e funcional) de ${decodedName}`);
@@ -577,8 +638,26 @@ export const deleteOrganogramaFuncional = async (req, res, next) => {
         const decodedName = decodeURIComponent(nomeOrgao);
 
         let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+
+        // CORREÇÃO ID vs NOME
+        if (!orgaoId) {
+            const maybeOrgao = await storageService.getOrgaoById(decodedName);
+            if (maybeOrgao) orgaoId = maybeOrgao.id;
+        }
+
         if (!orgaoId) {
             orgaoId = fileSystem.normalizeOrgaoId(decodedName);
+        }
+
+        // AUTH CHECK: Usuário comum só pode deletar seu órgão
+        if (req.user && req.user.tipo !== 'admin') {
+            const userOrgaoId = String(req.user.orgao_id || '').trim();
+            const targetOrgaoId = String(orgaoId || '').trim();
+
+            if (userOrgaoId !== targetOrgaoId) {
+                console.warn(`[AUTH] Delete Funcional Negado: User '${userOrgaoId}' vs Target '${targetOrgaoId}'`);
+                return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode gerenciar o seu próprio órgão.' });
+            }
         }
 
         console.log(`[DELETE] Deletando APENAS organograma FUNCIONAL de ${decodedName}`);

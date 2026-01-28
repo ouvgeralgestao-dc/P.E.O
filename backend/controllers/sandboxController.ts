@@ -47,8 +47,7 @@ export const getSandboxEstrutural = async (req: AuthenticatedRequest, res: Respo
                 tipoSetor: s.tipo_setor,
                 hierarquia: s.hierarquia,
                 parentId: s.parent_id,
-                positionX: s.position_x,
-                positionY: s.position_y,
+                position: { x: s.position_x, y: s.position_y }, // Unificado para objeto position
                 customStyle: s.custom_style ? JSON.parse(s.custom_style) : null,
                 cargos: s.cargos ? JSON.parse(s.cargos) : []
             }))
@@ -82,10 +81,11 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
             [userId, orgaoId]
         );
 
-        // Inserir novos setores recursivamente
-        const insertSetor = async (setor: any, parentId: string | null = null) => {
+        // Inserir todos os setores (Array Plano)
+        for (const setor of setores) {
             const id = setor.id || uuidv4();
-            
+            const parentId = setor.parentId || null;
+
             await dbAsync.run(
                 `INSERT INTO sandbox_setores (
                     id, user_id, orgao_id, nome_setor, tipo_setor, hierarquia, parent_id,
@@ -105,18 +105,6 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
                     setor.cargos ? JSON.stringify(setor.cargos) : null
                 ]
             );
-
-            // Inserir filhos recursivamente
-            if (setor.children && Array.isArray(setor.children)) {
-                for (const child of setor.children) {
-                    await insertSetor(child, id);
-                }
-            }
-        };
-
-        // Inserir todos os setores
-        for (const setor of setores) {
-            await insertSetor(setor);
         }
 
         console.log(`[Sandbox] Organograma estrutural salvo para órgão ${orgaoId} (user ${userId})`);
@@ -124,6 +112,32 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
     } catch (error) {
         console.error('[Sandbox] Erro ao salvar estrutural:', error);
         res.status(500).json({ message: 'Erro ao salvar organograma estrutural sandbox.' });
+    }
+};
+
+/**
+ * Deleta organograma estrutural sandbox
+ */
+export const deleteSandboxEstrutural = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        const { orgaoId } = req.params;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Usuário não autenticado.' });
+        }
+
+        // Deletar setores do usuário para este órgão
+        await dbAsync.run(
+            'DELETE FROM sandbox_setores WHERE user_id = ? AND orgao_id = ?',
+            [userId, orgaoId]
+        );
+
+        console.log(`[Sandbox] Organograma estrutural deletado para órgão ${orgaoId} (user ${userId})`);
+        res.json({ message: 'Organograma estrutural sandbox excluído com sucesso.' });
+    } catch (error) {
+        console.error('[Sandbox] Erro ao deletar estrutural:', error);
+        res.status(500).json({ message: 'Erro ao excluir organograma estrutural sandbox.' });
     }
 };
 
@@ -161,8 +175,7 @@ export const getSandboxFuncional = async (req: AuthenticatedRequest, res: Respon
                 hierarquia: c.hierarquia,
                 nivel: c.nivel,
                 parentId: c.parent_id,
-                positionX: c.position_x,
-                positionY: c.position_y,
+                position: { x: c.position_x, y: c.position_y }, // Unificado para objeto position
                 customStyle: c.custom_style ? JSON.parse(c.custom_style) : null,
                 simbolos: c.simbolos ? JSON.parse(c.simbolos) : [],
                 setorRef: c.setor_ref
@@ -197,10 +210,11 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
             [userId, orgaoId]
         );
 
-        // Inserir novos cargos recursivamente
-        const insertCargo = async (cargo: any, parentId: string | null = null) => {
+        // Inserir todos os cargos (Array Plano)
+        for (const cargo of cargos) {
             const id = cargo.id || uuidv4();
-            
+            const parentId = cargo.parentId || null;
+
             await dbAsync.run(
                 `INSERT INTO sandbox_cargos_funcionais (
                     id, user_id, orgao_id, nome_cargo, ocupante, hierarquia, nivel, parent_id,
@@ -222,18 +236,6 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
                     cargo.setorRef || null
                 ]
             );
-
-            // Inserir filhos recursivamente
-            if (cargo.children && Array.isArray(cargo.children)) {
-                for (const child of cargo.children) {
-                    await insertCargo(child, id);
-                }
-            }
-        };
-
-        // Inserir todos os cargos
-        for (const cargo of cargos) {
-            await insertCargo(cargo);
         }
 
         console.log(`[Sandbox] Organograma funcional salvo para órgão ${orgaoId} (user ${userId})`);
@@ -241,6 +243,98 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
     } catch (error) {
         console.error('[Sandbox] Erro ao salvar funcional:', error);
         res.status(500).json({ message: 'Erro ao salvar organograma funcional sandbox.' });
+    }
+};
+
+/**
+ * Deleta organograma funcional sandbox
+ */
+export const deleteSandboxFuncional = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        const { orgaoId } = req.params;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Usuário não autenticado.' });
+        }
+
+        // Deletar cargos funcionais do usuário para este órgão
+        await dbAsync.run(
+            'DELETE FROM sandbox_cargos_funcionais WHERE user_id = ? AND orgao_id = ?',
+            [userId, orgaoId]
+        );
+
+        console.log(`[Sandbox] Organograma funcional deletado para órgão ${orgaoId} (user ${userId})`);
+        res.json({ message: 'Organograma funcional sandbox excluído com sucesso.' });
+    } catch (error) {
+        console.error('[Sandbox] Erro ao deletar funcional:', error);
+        res.status(500).json({ message: 'Erro ao excluir organograma funcional sandbox.' });
+    }
+};
+
+// ========================================
+// LISTAGEM DE SANDBOXES
+// ========================================
+
+/**
+ * Lista todos os órgãos que possuem sandbox criado pelo usuário
+ */
+export const listSandboxes = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Usuário não autenticado.' });
+        }
+
+        // Buscar IDs de órgãos com estrutural
+        const structuralRows = await dbAsync.all(
+            'SELECT DISTINCT orgao_id FROM sandbox_setores WHERE user_id = ?',
+            [userId]
+        );
+        const structuralIds = new Set(structuralRows.map((r: any) => r.orgao_id));
+
+        // Buscar IDs de órgãos com funcional
+        const functionalRows = await dbAsync.all(
+            'SELECT DISTINCT orgao_id FROM sandbox_cargos_funcionais WHERE user_id = ?',
+            [userId]
+        );
+        const functionalIds = new Set(functionalRows.map((r: any) => r.orgao_id));
+
+        // Unir todos os IDs
+        const allIds = new Set([...structuralIds, ...functionalIds]);
+
+        if (allIds.size === 0) {
+            return res.json([]);
+        }
+
+        // Buscar detalhes dos órgãos
+        // SQLite não suporta array binding nativo facilmente em node-sqlite3 antigo,
+        // mas podemos construir a query dinamicamente pois os IDs vieram do banco (seguro-ish, mas ideal limpar)
+        // Como orgao_id é string (slug) ou int, vamos usar placeholders.
+        
+        const idsArray = Array.from(allIds);
+        const placeholders = idsArray.map(() => '?').join(',');
+        
+        const orgaos = await dbAsync.all(
+            `SELECT id, nome, categoria FROM orgaos WHERE id IN (${placeholders})`,
+            idsArray
+        );
+
+        // Montar resposta
+        const result = orgaos.map((o: any) => ({
+            orgaoId: o.id,
+            nome: o.nome,
+            categoria: o.categoria,
+            hasEstrutural: structuralIds.has(o.id.toString()), // Garantir string comparison
+            hasFuncional: functionalIds.has(o.id.toString())
+        }));
+
+        res.json(result);
+
+    } catch (error) {
+        console.error('[Sandbox] Erro ao listar sandboxes:', error);
+        res.status(500).json({ message: 'Erro ao listar sandboxes.' });
     }
 };
 
@@ -267,12 +361,51 @@ export const saveSandboxPositions = async (req: AuthenticatedRequest, res: Respo
 
         const table = tipo === 'estrutural' ? 'sandbox_setores' : 'sandbox_cargos_funcionais';
 
-        // Atualizar posições
-        for (const [id, pos] of Object.entries(positions as Record<string, any>)) {
-            await dbAsync.run(
-                `UPDATE ${table} SET position_x = ?, position_y = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
-                [pos.x, pos.y, id, userId, orgaoId]
-            );
+        // Atualizar posições e estilos
+        // O frontend envia um Array de { id, position: { x, y }, customStyle?: any }
+        if (Array.isArray(positions)) {
+            for (const item of positions) {
+                const id = item.id;
+                const pos = item.position;
+                const style = item.customStyle;
+
+                if (id) {
+                    if (pos && style) {
+                        await dbAsync.run(
+                            `UPDATE ${table} SET position_x = ?, position_y = ?, custom_style = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
+                            [pos.x, pos.y, JSON.stringify(style), id, userId, orgaoId]
+                        );
+                    } else if (pos) {
+                        await dbAsync.run(
+                            `UPDATE ${table} SET position_x = ?, position_y = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
+                            [pos.x, pos.y, id, userId, orgaoId]
+                        );
+                    } else if (style) {
+                        await dbAsync.run(
+                            `UPDATE ${table} SET custom_style = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
+                            [JSON.stringify(style), id, userId, orgaoId]
+                        );
+                    }
+                }
+            }
+        } else {
+            // Fallback para Objeto (para compatibilidade legada se houver)
+            for (const [id, posData] of Object.entries(positions as Record<string, any>)) {
+                const pos = posData.position || posData;
+                const style = posData.customStyle;
+
+                if (pos && style) {
+                    await dbAsync.run(
+                        `UPDATE ${table} SET position_x = ?, position_y = ?, custom_style = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
+                        [pos.x, pos.y, JSON.stringify(style), id, userId, orgaoId]
+                    );
+                } else if (pos) {
+                    await dbAsync.run(
+                        `UPDATE ${table} SET position_x = ?, position_y = ? WHERE id = ? AND user_id = ? AND orgao_id = ?`,
+                        [pos.x || 0, pos.y || 0, id, userId, orgaoId]
+                    );
+                }
+            }
         }
 
         console.log(`[Sandbox] Posições salvas para ${tipo} do órgão ${orgaoId}`);

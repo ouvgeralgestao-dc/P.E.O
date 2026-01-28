@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import WizardForm from '../components/forms/WizardForm';
 import FuncoesForm from '../components/forms/FuncoesForm';
@@ -20,6 +20,8 @@ function CriarSandboxFuncional() {
     const [previewData, setPreviewData] = useState({ cargos: [] });
     const [pendingNavigate, setPendingNavigate] = useState<string | null>(null);
 
+    const [initialData, setInitialData] = useState<any>({});
+
     useEffect(() => {
         loadOrgao();
     }, [nomeOrgao]);
@@ -36,6 +38,18 @@ function CriarSandboxFuncional() {
             }
 
             setOrgaoId(orgao.id);
+
+            // Tentar carregar dados existentes para edição
+            try {
+                const existingDataResponse = await api.get(`/sandbox/funcional/${orgao.id}`);
+                if (existingDataResponse.data && existingDataResponse.data.cargos && existingDataResponse.data.cargos.length > 0) {
+                    setInitialData({ cargos: existingDataResponse.data.cargos });
+                    setPreviewData({ cargos: existingDataResponse.data.cargos });
+                    logger.info('CriarSandboxFuncional', 'Dados existentes carregados para edição');
+                }
+            } catch (ignore) {
+                // Se der 404, ignora (novo)
+            }
         } catch (error) {
             logger.error('CriarSandboxFuncional', 'Erro ao carregar órgão', error);
             alert('Erro ao carregar órgão.');
@@ -43,7 +57,7 @@ function CriarSandboxFuncional() {
         }
     };
 
-    const handleCreateFuncional = async (formData: any) => {
+    const handleCreateFuncional = useCallback(async (formData: any) => {
         if (!orgaoId) return;
 
         try {
@@ -66,10 +80,10 @@ function CriarSandboxFuncional() {
         } finally {
             setIsCreating(false);
         }
-    };
+    }, [orgaoId, nomeOrgao]);
 
     const handleCancel = () => {
-        navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`);
+        navigate(`/criacao-livre`);
     };
 
     const handleDataChange = useCallback((data: any) => {
@@ -82,11 +96,16 @@ function CriarSandboxFuncional() {
         }
     };
 
-    const steps = [
+    const steps = useMemo(() => [
         {
             id: 'funcoes',
             title: 'Funções e Cargos',
             component: FuncoesForm,
+            props: { 
+                disableOrgaoSelection: true,
+                isSandbox: true,
+                orgaoId: orgaoId
+            },
             validate: (data: any) => {
                 const errors: any = {};
                 if (!data.cargos || data.cargos.length === 0) {
@@ -98,7 +117,25 @@ function CriarSandboxFuncional() {
                 };
             }
         }
-    ];
+    ], [orgaoId]); // Agora reage a mudanças no orgaoId
+
+    // Memoizar initialData para evitar disparos desnecessários do formulário
+    const memoizedInitialData = useMemo(() => ({
+        ...initialData,
+        nomeOrgao: nomeOrgao, // Sincroniza o nome do órgão (slug/id)
+        cargos: initialData.cargos || []
+    }), [initialData, nomeOrgao]);
+
+    // Renderizar o WizardForm de forma estável para evitar loops (Memoizado no topo p/ evitar violação de Hooks)
+    const wizardForm = useMemo(() => (
+        <WizardForm
+            steps={steps}
+            onComplete={handleCreateFuncional}
+            onCancel={handleCancel}
+            onDataChange={handleDataChange}
+            initialData={memoizedInitialData}
+        />
+    ), [steps, handleCreateFuncional, handleCancel, handleDataChange, memoizedInitialData]);
 
     if (!orgaoId) {
         return <div className="loading-state"><div className="spinner"></div>Carregando...</div>;
@@ -113,25 +150,19 @@ function CriarSandboxFuncional() {
                     <p className="subtitle">Defina os cargos e funções do órgão</p>
                 </div>
 
-                <div className="wizard-container">
-                    <div className="wizard-form-section">
+                <div className="split-layout">
+                    <div className="form-panel">
                         <Card>
-                            <WizardForm
-                                steps={steps}
-                                onComplete={handleCreateFuncional}
-                                onCancel={handleCancel}
-                                onDataChange={handleDataChange}
-                                initialData={{}}
-                            />
+                            {wizardForm}
                         </Card>
                     </div>
 
-                    <div className="preview-section">
+                    <div className="preview-panel">
                         <Card title="Preview em Tempo Real">
                             <LivePreviewCanvas
-                                tipo="funcional"
-                                data={previewData}
-                                orgao={nomeOrgao || 'Órgão Sandbox'}
+                                cargos={previewData.cargos || []}
+                                setores={[]}
+                                isFuncional={true}
                             />
                         </Card>
                     </div>

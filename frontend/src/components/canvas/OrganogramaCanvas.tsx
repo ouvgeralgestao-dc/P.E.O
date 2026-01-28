@@ -160,7 +160,7 @@ const OrganogramaCanvasInner = ({
 
             console.log(`[OrganogramaCanvas] Validação de Layout: InvalidNodes=${hasInvalidNodes}, UniqueY=${uniqueYValues.size}, HasHierarchy=${hasHierarchy}`);
 
-            if (hasInvalidNodes || !hasHierarchy) {
+            if (hasInvalidNodes || (positionsWithY.length > 2 && !hasHierarchy)) {
                 console.warn('[OrganogramaCanvas] 🚨 LAYOUT CORROMPIDO OU INCOMPLETO DETECTADO! 🚨');
                 console.warn('Motivo:', hasInvalidNodes ? 'Nós com coordenadas NaN/Inválidas' : 'Layout plano/sem hierarquia');
 
@@ -255,6 +255,7 @@ const OrganogramaCanvasInner = ({
                 nodes.push({
                     id: setor.id,
                     type: 'setorNode',
+                    style: savedStyle, // Adicionar no nível raiz para persistência no React Flow
                     // Sanitização: Fallback para 0,0 se vier NaN para não quebrar ReactFlow
                     position: {
                         x: (setor.position && !isNaN(setor.position.x)) ? setor.position.x : 0,
@@ -272,26 +273,14 @@ const OrganogramaCanvasInner = ({
                         onStyleChange: onStyleChange, // Passar callback estável
                         onEditClick: onEditClick, // Passar callback estável
                         handleY: (() => {
-                            // CRÍTICO: handleY DEVE ser EXATAMENTE height / 2
-                            // Para setas horizontais: Parent.Y + Parent.handleY = Child.Y + Child.handleY
-                            // O layoutHelpers.ts calcula: Child.Y = Parent.Y + (parentH/2 - childH/2)
-                            // Então: Parent.Y + parentH/2 = Child.Y + childH/2 (centros alinhados)
-                            // Se handleY = height/2 em ambos, as setas serão HORIZONTAIS
-
                             const h = isAssessoriaNode ? 0 : parseInt(setor.hierarquia || 0);
-
-                            // Nível 1 (Prefeito/Secretaria): H=110 -> handleY=55
                             if (h === 1 || setor.tipoSetor === 'Prefeito') return 55;
-                            // Nível 2: H=100 -> handleY=50
                             if (h === 2) return 50;
-                            // Nível 3: H=90 -> handleY=45
                             if (h === 3) return 45;
-                            // Nível 4+ e Assessorias (H=80) -> handleY=40
                             return 40;
                         })(),
                         _wasAutoLayouted: setor._wasAutoLayouted, // Flag para disparar auto-save
-                        parentId: setor.parentId
-
+                        parentId: setor.parentId || setor.originalParentId // Busca ID do pai
                     },
                     // Definir handles (pontos de conexão) baseado no tipo e lado
                     sourcePosition: sourcePos,
@@ -302,7 +291,8 @@ const OrganogramaCanvasInner = ({
                 });
 
                 // Criar edge se tiver pai
-                if (setor.parentId) {
+                const pId = setor.parentId || setor.originalParentId;
+                if (pId) {
                     // Detecção robusta para definir estilo da edge
                     const isAssessoriaEdge = isAssessoriaNode; // Simplificado pois já calculamos isAssessoriaNode antes
                     const isNestedEdge = setor._isNested; // Nova flag
@@ -468,6 +458,7 @@ const OrganogramaCanvasInner = ({
                     nodes.push({
                         id: cargo.id,
                         type: 'setorNode',
+                        style: savedStyle, // Adicionar no nível raiz para persistência no React Flow
                         // Sanitização: Se NaN escapar, fallback para 0,0 para não quebrar renderer
                         position: {
                             x: (cargo.position && !isNaN(cargo.position.x)) ? cargo.position.x : 0,
@@ -567,10 +558,48 @@ const OrganogramaCanvasInner = ({
         return { nodes, edges: uniqueEdges };
     }, [organogramaData, onStyleChange, onEditClick]);
 
-    // -- INICIALIZAÇÃO DE ESTADO --
+    // Efeito para sincronizar nós iniciais prevenindo perda de estado de UI (Transiência)
     useEffect(() => {
         if (initialNodes.length > 0) {
-            setNodes(initialNodes);
+            setNodes((currentNodes) => {
+                // Se for a primeira carga ou reset completo
+                if (currentNodes.length === 0) return initialNodes;
+
+                // Caso contrário, mesclar preservando estados de UI (selected, position se mudou manual, isEditing)
+                return initialNodes.map(newNode => {
+                    const currentNode = currentNodes.find(n => n.id === newNode.id);
+                    if (!currentNode) return newNode;
+
+                    // Lógica Crítica: Se o usuário estiver editando o estilo agora, não sobrescrever com o estilo vindo do "initialNodes"
+                    // (que pode ser um dado antigo recém-confirmado pelo backend após auto-save anterior)
+                    const isBeingEdited = currentNode.data.isEditing;
+                    const hasLocalStyle = (currentNode.style && Object.keys(currentNode.style).length > 0) || (currentNode.data.customStyle && Object.keys(currentNode.data.customStyle).length > 0);
+                    const hasIncomingStyle = (newNode.style && Object.keys(newNode.style).length > 0) || (newNode.data.customStyle && Object.keys(newNode.data.customStyle).length > 0);
+                    
+                    // Priorizar o estilo local se:
+                    // 1. Está sendo editado agora
+                    // 2. Temos estilo local mas o que veio das props está vazio (evita piscar azul ao confirmar no banco)
+                    const shouldKeepLocalStyle = isBeingEdited || (hasLocalStyle && !hasIncomingStyle);
+                    
+                    return {
+                        ...newNode,
+                        // Se estiver sendo editado ou selecionado, preferir o estilo que já está na tela
+                        style: shouldKeepLocalStyle ? (currentNode.style || currentNode.data.customStyle || newNode.style) : newNode.style,
+                        // Preservar estado de seleção e arrasto do React Flow
+                        selected: currentNode.selected,
+                        dragging: currentNode.dragging,
+                        // Preservar data.isEditing e callbacks (evita fechar cor ao salvar)
+                        data: {
+                            ...newNode.data,
+                            // Mesclar customStyle se houver, preferindo o local se necessário
+                            customStyle: shouldKeepLocalStyle ? (currentNode.data.customStyle || currentNode.style || newNode.data.style || newNode.data.customStyle) : (newNode.data.customStyle || currentNode.data.customStyle),
+                            isEditing: isBeingEdited,
+                            onEditClick: currentNode.data.onEditClick,
+                            onStyleChange: currentNode.data.onStyleChange
+                        }
+                    };
+                });
+            });
             setEdges(initialEdges);
         }
     }, [initialNodes, initialEdges]);
@@ -610,7 +639,7 @@ const OrganogramaCanvasInner = ({
             const baseData = {
                 id: node.id,
                 position: node.position,
-                style: node.data.style || node.data.customStyle,
+                customStyle: node.data.style || node.data.customStyle,
                 hierarquia: node.data.hierarquia,
                 isAssessoria: node.data.isAssessoria,
                 parentId: node.data.parentId
@@ -899,7 +928,7 @@ const OrganogramaCanvasInner = ({
                     const base = {
                         id: node.id,
                         position: node.position,
-                        style: {},
+                        customStyle: {},
                         hierarquia: node.data.hierarquia,
                         isAssessoria: node.data.isAssessoria,
                         parentId: node.data.parentId // CRÍTICO: Preservar hierarquia no reset

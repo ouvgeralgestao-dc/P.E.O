@@ -16,6 +16,25 @@ const WizardForm = ({
     const [formData, setFormData] = useState(initialData);
     const [errors, setErrors] = useState({});
 
+    // Sincronizar dados iniciais quando carregados assincronamente (ex: API)
+    useEffect(() => {
+        if (initialData && Object.keys(initialData).length > 0) {
+            setFormData(prev => {
+                // Se prev tem setores mas initialData também tem, decidimos qual manter.
+                // Para edição de Sandbox, se o initialData (do banco) chegou, ele deve preencher o formulário.
+                // Usamos um merge onde prev (mudanças locais) tem precedência, mas initialData preenche o resto.
+                return {
+                    ...prev,
+                    ...initialData,
+                    // Especial: se o usuário já adicionou setores no prev, mantemos o que for mais completo ou os do usuário?
+                    // No caso de carregamento inicial lento, queremos o initialData.
+                    setores: (prev.setores && prev.setores.length > 0) ? prev.setores : (initialData.setores || []),
+                    cargos: (prev.cargos && prev.cargos.length > 0) ? prev.cargos : (initialData.cargos || [])
+                };
+            });
+        }
+    }, [initialData]);
+
     const currentStepConfig = steps[currentStep];
     const isFirstStep = currentStep === 0;
     const isLastStep = currentStep === steps.length - 1;
@@ -28,10 +47,15 @@ const WizardForm = ({
         }));
     };
 
-    // Notificar mudanças de dados para o preview
+    // Notificar mudanças de dados para o preview (com proteção contra loops)
+    const lastNotifiedData = React.useRef<string | null>(null);
     useEffect(() => {
         if (onDataChange) {
-            onDataChange(formData);
+            const dataStr = JSON.stringify(formData);
+            if (lastNotifiedData.current !== dataStr) {
+                onDataChange(formData);
+                lastNotifiedData.current = dataStr;
+            }
         }
     }, [formData, onDataChange]);
 
@@ -126,6 +150,7 @@ const WizardForm = ({
                         data={formData}
                         updateData={updateFormData}
                         errors={errors}
+                        {...(currentStepConfig.props || {})}
                     />
                 </div>
             </div>

@@ -14,7 +14,7 @@ import { validateCargo } from '../../utils/validators';
 import api from '../../services/api';
 import './FuncoesForm.css';
 
-const FuncoesForm = ({ data, updateData, errors }) => {
+const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, isSandbox = false, orgaoId = null }) => {
     const [currentCargo, setCurrentCargo] = useState({
         prefixo: '',
         complementoNome: '',
@@ -109,22 +109,34 @@ const FuncoesForm = ({ data, updateData, errors }) => {
     // Verificar se o órgão existe e carregar setores estruturais
     React.useEffect(() => {
         const checkOrgao = async () => {
-            if (!nomeOrgao) {
+            // Em modo Sandbox, orgaoId é mais importante que nomeOrgao
+            if (!nomeOrgao && !(isSandbox && orgaoId)) {
                 setSetoresOptions([]);
                 return;
             }
 
             try {
-                // Resolver nome real se for um ID conhecido
-                const orgaoInfo = getOrgaoById(nomeOrgao);
-                const nomeParaChecar = orgaoInfo ? orgaoInfo.nome : nomeOrgao;
+                let setores = [];
+                
+                // Se for Modo Sandbox, buscar na API de Sandbox
+                if (isSandbox && orgaoId) {
+                    console.log(`[FuncoesForm] Buscando setores SANDBOX para orgaoId: ${orgaoId}`);
+                    const sandboxResponse = await api.get(`/sandbox/estrutural/${orgaoId}`);
+                    setores = sandboxResponse.data?.setores || [];
+                } else {
+                    // Senão, buscar na API Institucional
+                    console.log(`[FuncoesForm] Buscando setores INSTITUCIONAIS para nomeOrgao: ${nomeOrgao}`);
+                    const orgaoInfo = getOrgaoById(nomeOrgao);
+                    const nomeParaChecar = orgaoInfo ? orgaoInfo.nome : nomeOrgao;
+                    const response = await api.get(`/organogramas/${encodeURIComponent(nomeParaChecar)}`);
+                    setores = response.data?.data?.organogramaEstrutural?.setores || [];
+                }
 
-                const response = await api.get(`/organogramas/${encodeURIComponent(nomeParaChecar)}`);
-                const data = response.data?.data;
+                console.log(`[FuncoesForm] Setores encontrados: ${setores.length}`);
 
                 // Carregar setores estruturais para referência
-                if (data?.organogramaEstrutural?.setores) {
-                    const flatSetores = flattenSetoresForOptions(data.organogramaEstrutural.setores);
+                if (setores && setores.length > 0) {
+                    const flatSetores = flattenSetoresForOptions(setores);
                     // Ordenar alfabeticamente para facilitar busca
                     flatSetores.sort((a, b) => a.label.localeCompare(b.label));
                     setSetoresOptions(flatSetores);
@@ -133,6 +145,7 @@ const FuncoesForm = ({ data, updateData, errors }) => {
                 }
 
             } catch (error: any) {
+                console.error('[FuncoesForm] Erro ao carregar setores:', error);
                 if (error.response && error.response.status === 404) {
                     setSetoresOptions([]);
                 }
@@ -148,7 +161,7 @@ const FuncoesForm = ({ data, updateData, errors }) => {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [nomeOrgao]);
+    }, [nomeOrgao, isSandbox, orgaoId]);
 
     // Atualizar nome do órgão
     const handleNomeOrgaoChange = (e) => {
@@ -365,9 +378,9 @@ const FuncoesForm = ({ data, updateData, errors }) => {
                         options={orgaosOptions}
                         placeholder="Selecione o órgão"
                         required
-                        disabled={orgaoTravado}
+                        disabled={orgaoTravado || disableOrgaoSelection}
                         error={errors.nomeOrgao}
-                        helperText={orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional"}
+                        helperText={disableOrgaoSelection ? "Órgão fixado pelo modo Sandbox" : (orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional")}
                     />
                 </div>
 

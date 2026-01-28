@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
@@ -14,6 +14,7 @@ function SandboxEstrutural() {
     const [organogramaData, setOrganogramaData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentData, setCurrentData] = useState<any>(null);
 
     useEffect(() => {
         loadOrganograma();
@@ -24,9 +25,10 @@ function SandboxEstrutural() {
             setLoading(true);
             setError(null);
 
-            // Buscar órgão sandbox por nome
-            const orgaosResponse = await api.get('/sandbox/orgaos');
-            const orgao = orgaosResponse.data.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
+            // Buscar órgão sandbox por nome (usando lista geral de órgãos)
+            const orgaosResponse = await api.get('/orgaos');
+            const listaOrgaos = orgaosResponse.data.data || [];
+            const orgao = listaOrgaos.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
             
             if (!orgao) {
                 setError('Órgão sandbox não encontrado.');
@@ -59,7 +61,7 @@ function SandboxEstrutural() {
         }
     };
 
-    const handleSavePositions = async (positions: any) => {
+    const handleSavePositions = useCallback(async (positions: any) => {
         if (!orgaoId) return;
 
         try {
@@ -67,12 +69,38 @@ function SandboxEstrutural() {
                 tipo: 'estrutural',
                 positions
             });
-            logger.success('SandboxEstrutural', 'Posições salvas');
+            logger.success('SandboxEstrutural', 'Posições e estilos salvos');
+
+            // Atualizar estado local para refletir as novas posições/estilos e evitar loop de validação do Canvas
+            setOrganogramaData((prev: any) => {
+                if (!prev || !prev.organogramaEstrutural) return prev;
+                
+                const updatedSetores = prev.organogramaEstrutural.setores.map((s: any) => {
+                    const updateInfo = positions.find((p: any) => p.id === s.id);
+                    if (updateInfo) {
+                        return { 
+                            ...s, 
+                            position: updateInfo.position || s.position,
+                            customStyle: updateInfo.customStyle || s.customStyle 
+                        };
+                    }
+                    return s;
+                });
+
+                return {
+                    ...prev,
+                    organogramaEstrutural: {
+                        ...prev.organogramaEstrutural,
+                        setores: updatedSetores
+                    }
+                };
+            });
+
         } catch (error) {
             logger.error('SandboxEstrutural', 'Erro ao salvar posições', error);
             alert('Erro ao salvar posições.');
         }
-    };
+    }, [orgaoId]);
 
     if (loading) {
         return <div className="loading-state"><div className="spinner"></div>Carregando organograma...</div>;
@@ -83,7 +111,7 @@ function SandboxEstrutural() {
             <div className="container" style={{ marginTop: '2rem' }}>
                 <Card title="Erro">
                     <p>{error}</p>
-                    <Button onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}>
+                    <Button onClick={() => navigate(`/criacao-livre`)}>
                         Voltar
                     </Button>
                 </Card>
@@ -99,7 +127,7 @@ function SandboxEstrutural() {
                     <div className="header-section">
                         <Button 
                             variant="outline" 
-                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}
+                            onClick={() => navigate(`/criacao-livre`)}
                         >
                             ← Voltar
                         </Button>
@@ -126,17 +154,69 @@ function SandboxEstrutural() {
         );
     }
 
+    const handlePrint = () => {
+        if (!currentData || !currentData.nodes || currentData.nodes.length === 0) {
+            alert('Aguarde o carregamento do organograma para imprimir.');
+            return;
+        }
+
+        const printData = {
+            nodes: currentData.nodes,
+            edges: currentData.edges,
+            title: `Organograma Estrutural - ${organogramaData.orgao} (SANDBOX)`
+        };
+
+        localStorage.setItem('printData', JSON.stringify(printData));
+        navigate('/imprimir'); // Navega para a rota de impressão que lê do localStorage
+    };
+
+    const handleDelete = async () => {
+        if (!orgaoId || !window.confirm('Tem certeza que deseja excluir este organograma sandbox?')) return;
+
+        try {
+            await api.delete(`/sandbox/estrutural/${orgaoId}`);
+            logger.success('SandboxEstrutural', 'Organograma excluído');
+            navigate(`/criacao-livre`);
+        } catch (error) {
+            logger.error('SandboxEstrutural', 'Erro ao excluir', error);
+            alert('Erro ao excluir organograma.');
+        }
+    };
+
     return (
         <div className="visualizar-organograma">
             <div className="container">
                 <div className="header-section">
-                    <Button 
-                        variant="outline" 
-                        onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}
-                    >
-                        ← Voltar
-                    </Button>
-                    <h1>🏢 Organograma Estrutural - {organogramaData.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => navigate(`/criacao-livre`)}
+                        >
+                            ← Voltar
+                        </Button>
+                        <h1 style={{ margin: 0 }}>🏢 Organograma Estrutural - {organogramaData.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Button 
+                            variant="outline" 
+                            onClick={handlePrint}
+                        >
+                            🖨️ Imprimir
+                        </Button>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-estrutural`)}
+                        >
+                            ✏️ Editar
+                        </Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={handleDelete}
+                        >
+                            🗑️ Excluir
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="canvas-container">
@@ -144,6 +224,7 @@ function SandboxEstrutural() {
                         organogramaData={organogramaData}
                         onSavePositions={handleSavePositions}
                         editable={true}
+                        onDataChange={setCurrentData}
                     />
                 </div>
             </div>

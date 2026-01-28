@@ -85,14 +85,6 @@ function AppContent() {
               }
             />
             <Route
-              path="/criacao-livre/:nomeOrgao"
-              element={
-                <ProtectedRoute>
-                  <SandboxOrgao />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/criacao-livre/:nomeOrgao/estrutural"
               element={
                 <ProtectedRoute>
@@ -143,7 +135,7 @@ function AppContent() {
             <Route
               path="/editar/:nomeOrgao"
               element={
-                <ProtectedRoute requireAdmin>
+                <ProtectedRoute>
                   <EditarOrganograma />
                 </ProtectedRoute>
               }

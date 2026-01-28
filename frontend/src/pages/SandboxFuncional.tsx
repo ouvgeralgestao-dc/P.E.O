@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
@@ -15,6 +15,8 @@ function SandboxFuncional() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [currentData, setCurrentData] = useState<any>(null);
+
     useEffect(() => {
         loadOrganograma();
     }, [nomeOrgao]);
@@ -25,8 +27,9 @@ function SandboxFuncional() {
             setError(null);
 
             // Buscar órgão sandbox por nome
-            const orgaosResponse = await api.get('/sandbox/orgaos');
-            const orgao = orgaosResponse.data.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
+            const orgaosResponse = await api.get('/orgaos');
+            const listaOrgaos = orgaosResponse.data.data || [];
+            const orgao = listaOrgaos.find((o: any) => o.nome === decodeURIComponent(nomeOrgao || ''));
             
             if (!orgao) {
                 setError('Órgão sandbox não encontrado.');
@@ -60,7 +63,7 @@ function SandboxFuncional() {
         }
     };
 
-    const handleSavePositions = async (positions: any) => {
+    const handleSavePositions = useCallback(async (positions: any) => {
         if (!orgaoId) return;
 
         try {
@@ -68,10 +71,64 @@ function SandboxFuncional() {
                 tipo: 'funcional',
                 positions
             });
-            logger.success('SandboxFuncional', 'Posições salvas');
+            logger.success('SandboxFuncional', 'Dados salvos com sucesso');
+
+            // Atualizar estado local para evitar loops (Proativo)
+            setOrganogramaData((prev: any) => {
+                if (!prev || !prev.organogramasFuncoes?.[0]) return prev;
+                
+                const updatedCargos = prev.organogramasFuncoes[0].cargos.map((c: any) => {
+                    const updateInfo = positions.find((p: any) => p.id === c.id);
+                    if (updateInfo) {
+                        return { 
+                            ...c, 
+                            position: updateInfo.position || c.position,
+                            customStyle: updateInfo.customStyle || c.customStyle
+                        };
+                    }
+                    return c;
+                });
+
+                return {
+                    ...prev,
+                    organogramasFuncoes: [{
+                        ...prev.organogramasFuncoes[0],
+                        cargos: updatedCargos
+                    }]
+                };
+            });
         } catch (error) {
             logger.error('SandboxFuncional', 'Erro ao salvar posições', error);
             alert('Erro ao salvar posições.');
+        }
+    }, [orgaoId]);
+
+    const handlePrint = () => {
+        if (!currentData || !currentData.nodes || currentData.nodes.length === 0) {
+            alert('Aguarde o carregamento do organograma para imprimir.');
+            return;
+        }
+
+        const printData = {
+            nodes: currentData.nodes,
+            edges: currentData.edges,
+            title: `Organograma Funcional - ${organogramaData.orgao} (SANDBOX)`
+        };
+
+        localStorage.setItem('printData', JSON.stringify(printData));
+        navigate('/imprimir');
+    };
+
+    const handleDelete = async () => {
+        if (!orgaoId || !window.confirm('Tem certeza que deseja excluir este organograma sandbox?')) return;
+
+        try {
+            await api.delete(`/sandbox/funcional/${orgaoId}`);
+            logger.success('SandboxFuncional', 'Organograma excluído');
+            navigate(`/criacao-livre`);
+        } catch (error) {
+            logger.error('SandboxFuncional', 'Erro ao excluir', error);
+            alert('Erro ao excluir organograma.');
         }
     };
 
@@ -84,7 +141,7 @@ function SandboxFuncional() {
             <div className="container" style={{ marginTop: '2rem' }}>
                 <Card title="Erro">
                     <p>{error}</p>
-                    <Button onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}>
+                    <Button onClick={() => navigate(`/criacao-livre`)}>
                         Voltar
                     </Button>
                 </Card>
@@ -102,7 +159,7 @@ function SandboxFuncional() {
                     <div className="header-section">
                         <Button 
                             variant="outline" 
-                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}
+                            onClick={() => navigate(`/criacao-livre`)}
                         >
                             ← Voltar
                         </Button>
@@ -133,13 +190,36 @@ function SandboxFuncional() {
         <div className="visualizar-organograma">
             <div className="container">
                 <div className="header-section">
-                    <Button 
-                        variant="outline" 
-                        onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}`)}
-                    >
-                        ← Voltar
-                    </Button>
-                    <h1>👥 Organograma Funcional - {organogramaData.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => navigate(`/criacao-livre`)}
+                        >
+                            ← Voltar
+                        </Button>
+                        <h1 style={{ margin: 0 }}>👥 Organograma Funcional - {organogramaData.orgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Button 
+                            variant="outline" 
+                            onClick={handlePrint}
+                        >
+                            🖨️ Imprimir
+                        </Button>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-funcional`)}
+                        >
+                            ✏️ Editar
+                        </Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={handleDelete}
+                        >
+                            🗑️ Excluir
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="canvas-container">
@@ -147,6 +227,7 @@ function SandboxFuncional() {
                         organogramaData={organogramaData}
                         onSavePositions={handleSavePositions}
                         editable={true}
+                        onDataChange={setCurrentData}
                     />
                 </div>
             </div>

@@ -17,7 +17,7 @@ import { ORGAOS_OPTIONS, SUBPREFEITURAS, SUBPREFEITURAS_IDS, getOrgaoById } from
 import { validateSetor, validateNome } from '../../utils/validators';
 import './EstruturaForm.css';
 
-const EstruturaForm = ({ data, updateData, errors }) => {
+const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false }) => {
     const [currentSetor, setCurrentSetor] = useState({
         tipoSetor: '',
         nomeSetor: '',
@@ -385,9 +385,9 @@ const EstruturaForm = ({ data, updateData, errors }) => {
                         options={orgaosOptions}
                         placeholder="Selecione o órgão"
                         required
-                        disabled={orgaoTravado}
+                        disabled={orgaoTravado || disableOrgaoSelection}
                         error={errors.nomeOrgao}
-                        helperText={orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : ""}
+                        helperText={disableOrgaoSelection ? "Órgão fixado pelo modo Sandbox" : (orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : "")}
                     />
                 </div>
 

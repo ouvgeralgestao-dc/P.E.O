@@ -4,6 +4,7 @@ import 'reactflow/dist/style.css';
 import SetorNode from '../components/canvas/SetorNode';
 import CustomEdge from '../components/canvas/CustomEdge';
 import { logger } from '../utils/logger';
+import { useNavigate } from 'react-router-dom';
 
 // Tipos de nó customizados
 const nodeTypes = {
@@ -24,6 +25,7 @@ const PAPER_SIZES = {
 };
 
 function PrintPreviewContent() {
+    const navigate = useNavigate();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [title, setTitle] = useState('');
@@ -151,7 +153,7 @@ function PrintPreviewContent() {
     };
 
     const handleBack = () => {
-        window.close();
+        navigate(-1);
     };
 
     return (

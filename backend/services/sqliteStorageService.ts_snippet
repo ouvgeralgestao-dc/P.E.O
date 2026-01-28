@@ -1,0 +1,10 @@
+
+export const getOrgaoById = async (id) => {
+    try {
+        const orgao = await dbAsync.get('SELECT * FROM orgaos WHERE id = ?', [id]);
+        return orgao;
+    } catch (error) {
+        console.error('Erro ao buscar órgão por ID:', error);
+        return null;
+    }
+};

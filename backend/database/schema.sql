@@ -124,7 +124,7 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_tipo ON usuarios(tipo);
 CREATE TABLE IF NOT EXISTS sandbox_setores (
     id TEXT PRIMARY KEY,                   -- UUID
     user_id INTEGER NOT NULL,
-    orgao_id INTEGER NOT NULL,             -- Referência a orgaos INSTITUCIONAL
+    orgao_id TEXT NOT NULL,             -- Referência a orgaos INSTITUCIONAL
     nome_setor TEXT NOT NULL,
     tipo_setor TEXT NOT NULL,
     hierarquia REAL NOT NULL,
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS sandbox_setores (
 CREATE TABLE IF NOT EXISTS sandbox_cargos_funcionais (
     id TEXT PRIMARY KEY,                   -- UUID
     user_id INTEGER NOT NULL,
-    orgao_id INTEGER NOT NULL,             -- Referência a orgaos INSTITUCIONAL
+    orgao_id TEXT NOT NULL,             -- Referência a orgaos INSTITUCIONAL
     nome_cargo TEXT NOT NULL,
     ocupante TEXT,
     hierarquia REAL,

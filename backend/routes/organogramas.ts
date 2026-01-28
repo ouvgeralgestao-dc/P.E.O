@@ -30,17 +30,17 @@ router.post('/estrutural', validateOrganogramaEstrutural, organogramaController.
 // Criar organograma de funções (usuários autenticados podem criar para seu setor)
 router.post('/funcoes', validateOrganogramaFuncoes, organogramaController.createOrganogramaFuncoes);
 
-// Editar organograma estrutural (apenas admin)
-router.put('/:nomeOrgao/estrutura', requireAdmin, validateUpdateOrganogramaEstrutural, organogramaController.updateOrganogramaEstrutural);
+// Editar organograma estrutural (usuários do setor ou admin)
+router.put('/:nomeOrgao/estrutura', validateUpdateOrganogramaEstrutural, organogramaController.updateOrganogramaEstrutural);
 
-// Editar organograma de funções (apenas admin)
-router.put('/:nomeOrgao/funcoes', requireAdmin, validateUpdateOrganogramaFuncoes, organogramaController.updateOrganogramaFuncoes);
+// Editar organograma de funções (usuários do setor ou admin)
+router.put('/:nomeOrgao/funcoes', validateUpdateOrganogramaFuncoes, organogramaController.updateOrganogramaFuncoes);
 
-// Deletar organograma ESTRUTURAL (deleta estrutural + funcional, mantém órgão na config)
-router.delete('/:nomeOrgao/estrutura', requireAdmin, organogramaController.deleteOrganogramaEstrutural);
+// Deletar organograma ESTRUTURAL (usuários do setor ou admin - deleta estrutural + funcional)
+router.delete('/:nomeOrgao/estrutura', organogramaController.deleteOrganogramaEstrutural);
 
-// Deletar organograma FUNCIONAL (só deleta funcional, mantém estrutural e config)
-router.delete('/:nomeOrgao/funcoes', requireAdmin, organogramaController.deleteOrganogramaFuncional);
+// Deletar organograma FUNCIONAL (usuários do setor ou admin - só deleta funcional)
+router.delete('/:nomeOrgao/funcoes', organogramaController.deleteOrganogramaFuncional);
 
 // Deletar organograma (rota legada - mesmo comportamento que estrutural)
 router.delete('/:nomeOrgao', requireAdmin, organogramaController.deleteOrganograma);

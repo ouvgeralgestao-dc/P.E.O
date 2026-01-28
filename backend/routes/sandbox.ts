@@ -8,6 +8,11 @@ const router = Router();
 router.use(authenticateToken);
 
 // ========================================
+// LISTAGEM
+// ========================================
+router.get('/list', sandboxController.listSandboxes);
+
+// ========================================
 // ORGANOGRAMA ESTRUTURAL SANDBOX
 // ========================================
 
@@ -16,6 +21,9 @@ router.get('/estrutural/:orgaoId', sandboxController.getSandboxEstrutural);
 
 // Salvar organograma estrutural sandbox
 router.post('/estrutural/:orgaoId', sandboxController.saveSandboxEstrutural);
+
+// Deletar organograma estrutural sandbox
+router.delete('/estrutural/:orgaoId', sandboxController.deleteSandboxEstrutural);
 
 // ========================================
 // ORGANOGRAMA FUNCIONAL SANDBOX
@@ -26,6 +34,9 @@ router.get('/funcional/:orgaoId', sandboxController.getSandboxFuncional);
 
 // Salvar organograma funcional sandbox
 router.post('/funcional/:orgaoId', sandboxController.saveSandboxFuncional);
+
+// Deletar organograma funcional sandbox
+router.delete('/funcional/:orgaoId', sandboxController.deleteSandboxFuncional);
 
 // ========================================
 // POSIÇÕES CUSTOMIZADAS

@@ -160,8 +160,9 @@ const SetorNode = ({ data, selected }) => {
                 }}
                 title="Editar Estilo (clique único ou duplo-clique no nó)"
                 style={{
-                    opacity: selected ? 1 : 0,
-                    pointerEvents: selected ? 'auto' : 'none'
+                    opacity: selected || showEditor ? 1 : 0,
+                    pointerEvents: 'auto', // Sempre permitir clique se estiver visível
+                    visibility: selected || showEditor ? 'visible' : 'hidden'
                 }}
             >
                 🎨
