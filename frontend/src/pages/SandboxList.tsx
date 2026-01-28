@@ -57,10 +57,10 @@ function SandboxList() {
         <div className="criar-organograma">
             <div className="container">
                 <div className="header-section" style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#ffffff' }}>
                         Criar Novo Organograma Livre
                     </h1>
-                    <p className="subtitle">
+                    <p className="subtitle" style={{ color: '#e0e7ff' }}>
                         Selecione o órgão e crie organogramas de teste sem afetar dados institucionais
                     </p>
                 </div>
