@@ -1,186 +1,203 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import Card from '../components/common/Card';
+import Modal from '../components/common/Modal';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import { logger } from '../utils/logger';
 import './SandboxList.css';
 
-interface Project {
-    id: string;
+interface SandboxOrgao {
+    id: number;
     nome: string;
-    descricao: string;
-    tipo: 'orgao' | 'setor';
+    categoria: string;
+    created_at: string;
     updated_at: string;
 }
 
 const SandboxList: React.FC = () => {
     const navigate = useNavigate();
-    const [projects, setProjects] = useState<Project[]>([]);
+    const [orgaos, setOrgaos] = useState<SandboxOrgao[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newProject, setNewProject] = useState({
-        nome: '',
-        descricao: '',
-        tipo: 'orgao'
-    });
+    
+    // Form state
+    const [newOrgaoNome, setNewOrgaoNome] = useState('');
+    const [newOrgaoCategoria, setNewOrgaoCategoria] = useState('OUTROS');
 
     useEffect(() => {
-        loadProjects();
+        loadOrgaos();
     }, []);
 
-    const loadProjects = async () => {
+    const loadOrgaos = async () => {
         try {
-            const response = await api.get('/sandbox');
-            setProjects(response.data);
-            logger.info('SandboxList', 'Projetos carregados', { count: response.data.length });
+            setLoading(true);
+            const response = await api.get('/sandbox/orgaos');
+            setOrgaos(response.data);
+            logger.info('SandboxList', 'Órgãos carregados', { count: response.data.length });
         } catch (error) {
-            logger.error('SandboxList', 'Erro ao carregar projetos', error);
+            logger.error('SandboxList', 'Erro ao carregar órgãos', error);
+            alert('Erro ao carregar órgãos sandbox.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleCreateOrgao = async () => {
+        if (!newOrgaoNome.trim()) {
+            alert('Por favor, preencha o nome do órgão.');
+            return;
+        }
+
         try {
-            const response = await api.post('/sandbox', newProject);
-            setProjects([response.data, ...projects]);
-            setIsModalOpen(false);
-            setNewProject({ nome: '', descricao: '', tipo: 'orgao' });
-            logger.success('SandboxList', 'Projeto criado', response.data);
-        } catch (error) {
-            logger.error('SandboxList', 'Erro ao criar projeto', error);
-            alert('Erro ao criar projeto.');
+            const response = await api.post('/sandbox/orgaos', {
+                nome: newOrgaoNome,
+                categoria: newOrgaoCategoria,
+            });
+            
+            setOrgaos([response.data, ...orgaos]);
+            closeModal();
+            logger.success('SandboxList', 'Órgão criado com sucesso', response.data);
+            
+            // Navegar para o órgão criado
+            navigate(`/criacao-livre/${encodeURIComponent(response.data.nome)}`);
+        } catch (error: any) {
+            logger.error('SandboxList', 'Erro ao criar órgão', error);
+            const errorMsg = error.response?.data?.message || 'Erro ao criar órgão.';
+            alert(errorMsg);
         }
     };
 
-    const handleDelete = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Evitar navegar
-        if (!window.confirm('Tem certeza que deseja excluir este projeto?')) return;
-        
+    const handleDeleteOrgao = async (orgaoId: number, orgaoNome: string) => {
+        if (!window.confirm(`Tem certeza que deseja excluir "${orgaoNome}"? Todos os organogramas serão perdidos.`)) {
+            return;
+        }
+
         try {
-            await api.delete(`/sandbox/${id}`);
-            setProjects(projects.filter(p => p.id !== id));
-            logger.success('SandboxList', 'Projeto excluído', { id });
+            await api.delete(`/sandbox/orgaos/${orgaoId}`);
+            setOrgaos(orgaos.filter((o) => o.id !== orgaoId));
+            logger.success('SandboxList', 'Órgão excluído com sucesso', { orgaoId });
         } catch (error) {
-            logger.error('SandboxList', 'Erro ao excluir projeto', error);
+            logger.error('SandboxList', 'Erro ao excluir órgão', { orgaoId, error });
+            alert('Erro ao excluir órgão.');
         }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setNewProject((prev: any) => ({ ...prev, [name]: value }));
+    const openModal = () => {
+        setNewOrgaoNome('');
+        setNewOrgaoCategoria('OUTROS');
+        setIsModalOpen(true);
     };
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setNewProject((prev: any) => ({ ...prev, [name]: value }));
+    const closeModal = () => {
+        setIsModalOpen(false);
     };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    };
+
+    if (loading) {
+        return <div className="loading">Carregando órgãos sandbox...</div>;
+    }
 
     return (
-        <div className="sandbox-container">
-           {/* Header and list same as before but wrapped correctly if needed */}
+        <div className="sandbox-list-container">
             <div className="sandbox-header">
                 <div>
-                    <h1>Criação Livre de Organograma</h1>
-                    <p>Ambiente isolado para rascunhos e planejamentos.</p>
+                    <h1>🎨 Criação Livre de Organogramas</h1>
+                    <p className="subtitle">
+                        Crie e edite organogramas de teste sem afetar os dados institucionais
+                    </p>
                 </div>
-                <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-                    + Novo Projeto
+                <Button variant="primary" onClick={openModal}>
+                    + Novo Órgão Sandbox
                 </Button>
             </div>
 
-            {loading ? (
-                <div className="loading">Carregando...</div>
+            {orgaos.length === 0 ? (
+                <div className="empty-state">
+                    <div className="empty-icon">📋</div>
+                    <h3>Nenhum órgão sandbox criado</h3>
+                    <p>Comece criando seu primeiro órgão de teste</p>
+                    <Button onClick={openModal}>Criar Primeiro Órgão</Button>
+                </div>
             ) : (
-                <div className="projects-grid">
-                    {projects.length === 0 ? (
-                        <div className="empty-state">
-                            <h3>Nenhum projeto encontrado</h3>
-                            <p>Crie seu primeiro organograma livre clicando em "Novo Projeto".</p>
-                        </div>
-                    ) : (
-                        projects.map(project => (
-                            <div 
-                                key={project.id} 
-                                className="project-card-wrapper"
-                                onClick={() => navigate(`/criacao-livre/editor/${project.id}`)}
-                            >
-                                <Card title={project.nome} className="project-card">
-                                    <div className="project-info">
-                                        <span className={`project-type ${project.tipo}`}>
-                                            {project.tipo === 'orgao' ? '🏛️ Órgão' : '📂 Setor'}
-                                        </span>
-                                        <p className="project-desc">{project.descricao || 'Sem descrição'}</p>
-                                        <p className="project-date">
-                                            Atualizado em: {new Date(project.updated_at).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div className="project-actions">
-                                        <button 
-                                            className="btn-delete"
-                                            onClick={(e) => handleDelete(project.id, e)}
-                                            title="Excluir"
-                                        >
-                                            🗑️
-                                        </button>
-                                    </div>
-                                </Card>
+                <div className="orgaos-grid">
+                    {orgaos.map((orgao) => (
+                        <Card key={orgao.id} className="orgao-card">
+                            <div className="card-header">
+                                <h3>{orgao.nome}</h3>
+                                <span className="categoria-badge">{orgao.categoria}</span>
                             </div>
-                        ))
-                    )}
+                            <div className="card-meta">
+                                <span>Criado em: {formatDate(orgao.created_at)}</span>
+                                <span>Atualizado: {formatDate(orgao.updated_at)}</span>
+                            </div>
+                            <div className="card-actions">
+                                <Button
+                                    variant="primary"
+                                    fullWidth
+                                    onClick={() => navigate(`/criacao-livre/${encodeURIComponent(orgao.nome)}`)}
+                                >
+                                    Abrir Organogramas
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    fullWidth
+                                    onClick={() => handleDeleteOrgao(orgao.id, orgao.nome)}
+                                >
+                                    Excluir
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
                 </div>
             )}
 
             {/* Modal de Criação */}
             {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h2>Novo Organograma Livre</h2>
-                        <form onSubmit={handleCreate}>
-                            <Input
-                                id="nome"
-                                name="nome"
-                                label="Nome do Projeto"
-                                value={newProject.nome}
-                                onChange={handleInputChange}
-                                required
-                            />
-                            
-                            <Input
-                                id="descricao"
-                                name="descricao"
-                                label="Descrição (Opcional)"
-                                value={newProject.descricao}
-                                onChange={handleInputChange}
-                            />
+                <Modal onClose={closeModal} title="Criar Novo Órgão Sandbox">
+                    <div className="modal-form">
+                        <Input
+                            label="Nome do Órgão"
+                            name="nome"
+                            value={newOrgaoNome}
+                            onChange={(e) => setNewOrgaoNome(e.target.value)}
+                            required
+                            helperText="Ex: Secretaria de Teste, Departamento Exemplo"
+                        />
 
-                            <Select
-                                id="tipo"
-                                name="tipo"
-                                label="Tipo de Organograma"
-                                value={newProject.tipo}
-                                onChange={handleSelectChange}
-                                options={[
-                                    { value: 'orgao', label: 'Organograma de Órgão' },
-                                    { value: 'setor', label: 'Organograma de Setor' }
-                                ]}
-                            />
+                        <Select
+                            label="Categoria"
+                            name="categoria"
+                            value={newOrgaoCategoria}
+                            onChange={(e) => setNewOrgaoCategoria(e.target.value)}
+                            options={[
+                                { value: 'OUTROS', label: 'Outros' },
+                                { value: 'ADMINISTRACAO', label: 'Administração' },
+                                { value: 'FAZENDA', label: 'Fazenda' },
+                                { value: 'SAUDE', label: 'Saúde' },
+                                { value: 'EDUCACAO', label: 'Educação' },
+                            ]}
+                        />
 
-                            <div className="modal-actions">
-                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
-                                    Cancelar
-                                </Button>
-                                <Button type="submit" variant="primary">
-                                    Criar Projeto
-                                </Button>
-                            </div>
-                        </form>
+                        <div className="modal-actions">
+                            <Button variant="outline" onClick={closeModal}>
+                                Cancelar
+                            </Button>
+                            <Button variant="primary" onClick={handleCreateOrgao}>
+                                Criar Órgão
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                </Modal>
             )}
         </div>
     );

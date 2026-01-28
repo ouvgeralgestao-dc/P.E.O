@@ -116,27 +116,61 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_matricula ON usuarios(matricula);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE INDEX IF NOT EXISTS idx_usuarios_tipo ON usuarios(tipo);
 
--- TABELA 11: SANDBOX_PROJETOS (Projetos de criação livre)
-CREATE TABLE IF NOT EXISTS sandbox_projects (
-    id TEXT PRIMARY KEY,           -- UUID
-    user_id INTEGER NOT NULL,      -- Dono do projeto (referência a usuarios)
+-- TABELA 11: SANDBOX_ORGAOS (Espelho de orgaos - para rascunhos/testes)
+CREATE TABLE IF NOT EXISTS sandbox_orgaos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,              -- Dono do rascunho
     nome TEXT NOT NULL,
-    descricao TEXT,
-    tipo TEXT NOT NULL,            -- 'orgao' ou 'setor'
+    categoria TEXT DEFAULT 'OUTROS',
+    ordem INTEGER DEFAULT 999,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- TABELA 12: SANDBOX_ITENS (Nós e Arestas dos projetos livres)
-CREATE TABLE IF NOT EXISTS sandbox_items (
-    id TEXT PRIMARY KEY,           -- UUID do item
-    project_id TEXT NOT NULL,
-    type TEXT NOT NULL,            -- 'node' ou 'edge'
-    data_json TEXT NOT NULL,       -- Posição, Estilo, Texto, Parents, etc.
-    FOREIGN KEY (project_id) REFERENCES sandbox_projects(id) ON DELETE CASCADE
+-- TABELA 12: SANDBOX_SETORES (Espelho de setores - para organogramas estruturais sandbox)
+CREATE TABLE IF NOT EXISTS sandbox_setores (
+    id TEXT PRIMARY KEY,                   -- UUID
+    user_id INTEGER NOT NULL,
+    orgao_id INTEGER NOT NULL,             -- Referência a sandbox_orgaos
+    nome_setor TEXT NOT NULL,
+    tipo_setor TEXT NOT NULL,
+    hierarquia REAL NOT NULL,
+    parent_id TEXT,                        -- Hierarquia de setores
+    position_x REAL DEFAULT 0,
+    position_y REAL DEFAULT 0,
+    custom_style TEXT,                     -- JSON de estilos customizados
+    cargos TEXT,                           -- JSON de cargos DAS
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (orgao_id) REFERENCES sandbox_orgaos(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES sandbox_setores(id) ON DELETE SET NULL
 );
 
--- Índices para Sandbox
-CREATE INDEX IF NOT EXISTS idx_sandbox_projects_user ON sandbox_projects(user_id);
-CREATE INDEX IF NOT EXISTS idx_sandbox_items_project ON sandbox_items(project_id);
+-- TABELA 13: SANDBOX_CARGOS_FUNCIONAIS (Espelho de cargos_funcionais - para organogramas funcionais sandbox)
+CREATE TABLE IF NOT EXISTS sandbox_cargos_funcionais (
+    id TEXT PRIMARY KEY,                   -- UUID
+    user_id INTEGER NOT NULL,
+    orgao_id INTEGER NOT NULL,
+    nome_cargo TEXT NOT NULL,
+    ocupante TEXT,
+    hierarquia REAL,
+    nivel REAL,
+    parent_id TEXT,
+    position_x REAL DEFAULT 0,
+    position_y REAL DEFAULT 0,
+    custom_style TEXT,                     -- JSON de estilos
+    simbolos TEXT,                         -- JSON de símbolos
+    setor_ref TEXT,                        -- Referência cruzada com setores
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (orgao_id) REFERENCES sandbox_orgaos(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES sandbox_cargos_funcionais(id) ON DELETE SET NULL
+);
+
+-- Índices para Sandbox (Performance)
+CREATE INDEX IF NOT EXISTS idx_sandbox_orgaos_user ON sandbox_orgaos(user_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_setores_user ON sandbox_setores(user_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_setores_orgao ON sandbox_setores(orgao_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_cargos_user ON sandbox_cargos_funcionais(user_id);
+CREATE INDEX IF NOT EXISTS idx_sandbox_cargos_orgao ON sandbox_cargos_funcionais(orgao_id);

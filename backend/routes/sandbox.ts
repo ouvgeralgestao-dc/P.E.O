@@ -1,20 +1,50 @@
-import express from 'express';
-import * as sandboxController from '../controllers/sandboxController.js';
+import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import * as sandboxController from '../controllers/sandboxController.js';
 
-const router = express.Router();
+const router = Router();
 
-// Middleware de autenticação para todas as rotas
+// Todas as rotas protegidas por autenticação
 router.use(authenticateToken);
 
-// CRUD de Projetos
-router.get('/', sandboxController.listProjects);
-router.post('/', sandboxController.createProject);
-router.get('/:id', sandboxController.getProject);
-router.put('/:id', sandboxController.updateProject);
-router.delete('/:id', sandboxController.deleteProject);
+// ========================================
+// GERENCIAMENTO DE ÓRGÃOS SANDBOX
+// ========================================
 
-// Sincronização de Itens (Save Canvas)
-router.post('/:id/items', sandboxController.syncItems);
+// Listar órgãos sandbox do usuário
+router.get('/orgaos', sandboxController.listSandboxOrgaos);
+
+// Criar novo órgão sandbox
+router.post('/orgaos', sandboxController.createSandboxOrgao);
+
+// Deletar órgão sandbox
+router.delete('/orgaos/:id', sandboxController.deleteSandboxOrgao);
+
+// ========================================
+// ORGANOGRAMA ESTRUTURAL SANDBOX
+// ========================================
+
+// Buscar organograma estrutural sandbox
+router.get('/estrutural/:orgaoId', sandboxController.getSandboxEstrutural);
+
+// Salvar organograma estrutural sandbox
+router.post('/estrutural/:orgaoId', sandboxController.saveSandboxEstrutural);
+
+// ========================================
+// ORGANOGRAMA FUNCIONAL SANDBOX
+// ========================================
+
+// Buscar organograma funcional sandbox
+router.get('/funcional/:orgaoId', sandboxController.getSandboxFuncional);
+
+// Salvar organograma funcional sandbox
+router.post('/funcional/:orgaoId', sandboxController.saveSandboxFuncional);
+
+// ========================================
+// POSIÇÕES CUSTOMIZADAS
+// ========================================
+
+// Salvar posições customizadas
+router.post('/positions/:orgaoId', sandboxController.saveSandboxPositions);
 
 export default router;

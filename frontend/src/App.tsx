@@ -24,7 +24,9 @@ import PrintPreview from "./pages/PrintPreview";
 import Sidebar from "./components/layout/Sidebar";
 import Footer from "./components/layout/Footer";
 import SandboxList from "./pages/SandboxList";
-import SandboxEditor from "./pages/SandboxEditor";
+import SandboxOrgao from "./pages/SandboxOrgao";
+import SandboxEstrutural from "./pages/SandboxEstrutural";
+import SandboxFuncional from "./pages/SandboxFuncional";
 import "./App.css";
 
 function AppContent() {
@@ -81,10 +83,26 @@ function AppContent() {
               }
             />
             <Route
-              path="/criacao-livre/editor/:id"
+              path="/criacao-livre/:nomeOrgao"
               element={
                 <ProtectedRoute>
-                  <SandboxEditor />
+                  <SandboxOrgao />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre/:nomeOrgao/estrutural"
+              element={
+                <ProtectedRoute>
+                  <SandboxEstrutural />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/criacao-livre/:nomeOrgao/funcional"
+              element={
+                <ProtectedRoute>
+                  <SandboxFuncional />
                 </ProtectedRoute>
               }
             />
