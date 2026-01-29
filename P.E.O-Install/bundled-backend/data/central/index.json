@@ -1,0 +1,43 @@
+{
+  "orgaos": [
+    {
+      "id": "secretaria_municipal_de_governo",
+      "nome": "secretaria_municipal_de_governo",
+      "path": "orgaos/secretaria_municipal_de_governo",
+      "hasAuth": true,
+      "updatedAt": "2026-01-09T19:54:34.644Z"
+    },
+    {
+      "id": "secretaria_municipal_de_comunicacao_social",
+      "nome": "Secretaria Municipal de Comunicação Social",
+      "path": "orgaos/secretaria_municipal_de_comunicacao_social",
+      "hasAuth": true,
+      "createdAt": "2026-01-08T19:17:51.708Z",
+      "updatedAt": "2026-01-09T17:02:07.964Z"
+    },
+    {
+      "id": "secretaria_municipal_de_controle_interno",
+      "nome": "Secretaria Municipal de Controle Interno",
+      "path": "orgaos/secretaria_municipal_de_controle_interno",
+      "hasAuth": true,
+      "createdAt": "2026-01-09T00:57:10.767Z",
+      "updatedAt": "2026-01-09T17:02:13.501Z"
+    },
+    {
+      "id": "secretaria_municipal_de_articulacao_institucional",
+      "nome": "secretaria_municipal_de_articulacao_institucional",
+      "path": "orgaos/secretaria_municipal_de_articulacao_institucional",
+      "hasAuth": true,
+      "createdAt": "2026-01-09T02:03:20.371Z",
+      "updatedAt": "2026-01-09T17:04:29.107Z"
+    },
+    {
+      "id": "secretariamunicipaldearticulacaoinstitucional",
+      "nome": "secretaria_municipal_de_articulacao_institucional",
+      "path": "orgaos/secretariamunicipaldearticulacaoinstitucional",
+      "hasAuth": false,
+      "createdAt": "2026-01-09T13:08:56.049Z",
+      "updatedAt": "2026-01-09T14:27:14.664Z"
+    }
+  ]
+}

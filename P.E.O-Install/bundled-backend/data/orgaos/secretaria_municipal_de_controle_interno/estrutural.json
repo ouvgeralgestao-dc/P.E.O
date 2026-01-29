@@ -1,0 +1,146 @@
+{
+  "tipo": "estrutura",
+  "tamanhoFolha": "A3",
+  "setores": [
+    {
+      "tipoSetor": "Secretaria",
+      "nomeSetor": "Secretaria de Controle Interno",
+      "hierarquia": "1",
+      "isAssessoria": false,
+      "parentId": null,
+      "cargos": [
+        {
+          "tipo": "DAS-S",
+          "quantidade": 1
+        }
+      ],
+      "id": "77419718-07de-4750-958b-1c62718e3520",
+      "children": [
+        {
+          "tipoSetor": "Superintendência",
+          "nomeSetor": "Superintendência de Auditoria Interna",
+          "hierarquia": "2",
+          "isAssessoria": false,
+          "parentId": "77419718-07de-4750-958b-1c62718e3520",
+          "cargos": [
+            {
+              "tipo": "DAS-9",
+              "quantidade": 1
+            }
+          ],
+          "id": "38ba990b-8949-421c-b37d-34f1cfa53846",
+          "children": [
+            {
+              "tipoSetor": "Subsecretaria",
+              "nomeSetor": "Subsecretaria de Auditoria de Contas",
+              "hierarquia": "3",
+              "isAssessoria": false,
+              "parentId": "38ba990b-8949-421c-b37d-34f1cfa53846",
+              "cargos": [
+                {
+                  "tipo": "DAS-8",
+                  "quantidade": 1
+                }
+              ],
+              "id": "0f2ec079-5275-4ac5-92f2-fe78403ef786",
+              "children": [
+                {
+                  "tipoSetor": "Diretoria",
+                  "nomeSetor": "Diretoria de Auditoria de Contas",
+                  "hierarquia": "4",
+                  "isAssessoria": false,
+                  "parentId": "0f2ec079-5275-4ac5-92f2-fe78403ef786",
+                  "cargos": [
+                    {
+                      "tipo": "DAS-7",
+                      "quantidade": 1
+                    },
+                    {
+                      "tipo": "DAS-6",
+                      "quantidade": 3
+                    },
+                    {
+                      "tipo": "DAS-5",
+                      "quantidade": 3
+                    }
+                  ],
+                  "id": "4b164d57-317f-4d9a-a497-7b9ad59d9420",
+                  "children": [],
+                  "position": {
+                    "x": -150,
+                    "y": 570
+                  },
+                  "style": {}
+                }
+              ],
+              "position": {
+                "x": -150,
+                "y": 380
+              },
+              "style": {}
+            },
+            {
+              "tipoSetor": "Subsecretaria",
+              "nomeSetor": "Subsecretaria de Transparência",
+              "hierarquia": "3",
+              "isAssessoria": false,
+              "parentId": "38ba990b-8949-421c-b37d-34f1cfa53846",
+              "cargos": [
+                {
+                  "tipo": "DAS-8",
+                  "quantidade": 1
+                }
+              ],
+              "id": "024e40bb-823f-4c1d-8b7b-5215a2b37e12",
+              "children": [
+                {
+                  "tipoSetor": "Diretoria",
+                  "nomeSetor": "Diretoria de Transparência",
+                  "hierarquia": "4",
+                  "isAssessoria": false,
+                  "parentId": "024e40bb-823f-4c1d-8b7b-5215a2b37e12",
+                  "cargos": [
+                    {
+                      "tipo": "DAS-7",
+                      "quantidade": 1
+                    },
+                    {
+                      "tipo": "DAS-6",
+                      "quantidade": 3
+                    },
+                    {
+                      "tipo": "DAS-5",
+                      "quantidade": 2
+                    }
+                  ],
+                  "id": "2f3f0817-08ea-4daa-9fb7-adfddb64f977",
+                  "children": [],
+                  "position": {
+                    "x": 150,
+                    "y": 570
+                  },
+                  "style": {}
+                }
+              ],
+              "position": {
+                "x": 150,
+                "y": 380
+              },
+              "style": {}
+            }
+          ],
+          "position": {
+            "x": 0,
+            "y": 190
+          },
+          "style": {}
+        }
+      ],
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {}
+    }
+  ]
+}
