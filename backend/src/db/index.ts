@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // Garantir que o diretório de dados existe
 // __dirname = backend/src/db/, então ../../data/ = backend/data/
-const DB_PATH = path.resolve(__dirname, '..', '..', 'data', 'organograma.sqlite');
+const DB_PATH = process.env.DB_PATH || path.resolve(__dirname, '..', '..', 'data', 'organograma.sqlite');
 console.log(`📁 [DB] Caminho do banco: ${DB_PATH}`);
 const dataDir = path.dirname(DB_PATH);
 

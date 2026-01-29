@@ -1,107 +1,85 @@
-# Relatório de Auditoria de Segurança - Projeto P.E.O
+# Relatório Técnico de Segurança: Tipagem e Integridade de Dados
+## 1. A Importância de Tipos Explícitos em Requisições API
+O uso de tipagem estrita no TypeScript (evitando o any) é a primeira linha de defesa no desenvolvimento seguro de software. Embora o TypeScript seja transpilado para JavaScript (perdendo os tipos em tempo de execução), a definição de tipos durante o desenvolvimento oferece camadas vitais de segurança:
 
-Este relatório detalha as vulnerabilidades de segurança encontradas no código fonte do projeto P.E.O, classificadas por nível de severidade. A análise cobriu arquivos do backend e frontend.
+- Previsibilidade de Contrato: Ao definir que uma função recebe (orgaoId: number), você garante que o desenvolvedor não passe acidentalmente um objeto ou uma string mal formatada. Isso reduz bugs lógicos que podem abrir brechas de segurança.
 
-## Resumo das Vulnerabilidades
+- Sanitização Indireta: Forçar um tipo ajuda a garantir que os dados trafeguem no formato esperado antes mesmo de chegarem ao banco de dados.
 
-| Nível | Vulnerabilidade | Localização | Descrição |
-| :--- | :--- | :--- | :--- |
-| 🔴 **Crítico** | Senha Padrão Hardcoded | `backend/database/db.ts` | Credenciais administrativas padrão expostas no código de seed. |
-| 🟠 **Alto** | Algoritmo de Hashing Fraco | `backend/routes/auth.ts`, `backend/database/db.ts` | Uso de SHA-256 sem salt para armazenamento de senhas. |
-| 🟠 **Alto** | Cross-Site Scripting (XSS) Armazenado | `frontend/src/components/preview/LivePreviewCanvas.tsx` | Renderização de HTML não sanitizado via `dangerouslySetInnerHTML`. |
-| 🟡 **Médio** | Segredo JWT Padrão Fraco | `backend/routes/auth.ts` | Fallback para string previsível se variável de ambiente falhar. |
-| 🔵 **Baixo** | Configuração CORS Permissiva | `backend/server.ts` | Permite requisições de qualquer origem (`*`). |
-| ⚪ **Info** | Integridade de Dados (FK) | `backend/services/sqliteStorageService.ts` | Desativação temporária de Foreign Keys. |
+- Manutenibilidade Segura: Em equipes, tipos explícitos funcionam como documentação viva. Se alguém tentar alterar a estrutura do dado de uma forma que quebraria a segurança ou a lógica, o compilador bloqueará o erro imediatamente.
 
----
+- Nota de Segurança: O TypeScript valida em tempo de compilação. Para segurança total em APIs, recomenda-se usar bibliotecas de validação de esquema (como Zod ou Joi) para garantir que os dados vindos do frontend (tempo de execução) realmente correspondem aos tipos definidos.
 
-## Detalhes Técnicos
+## 2. A Proteção contra SQL Injection (?):
 
-### 1. Senha Padrão Hardcoded (Crítico)
-**Arquivo:** `backend/database/db.ts` (Linhas 124-140)
+- Note o ponto de interrogação na query: WHERE orgao_id = ?.
 
-O código de inicialização do banco de dados cria um usuário administrador padrão com uma senha fixa e fraca sempre que a tabela de usuários está vazia.
+- Isso se chama Prepared Statement (ou consulta parametrizada).
+
+- Por que é seguro? O banco de dados trata o comando SQL (SELECT...) separadamente do dado (orgaoId). Se um hacker tentar enviar um código malicioso no lugar do ID (como 1 OR 1=1), o banco de dados vai tratar aquilo estritamente como um texto literal, e não como um comando executável. O ? é o "escudo" do seu código.
+
+- Nota de Segurança: Sempre que possível, use Prepared Statements ao invés de concatenação de strings para montar queries SQL.
 
 ```typescript
-const senhaAdmin = 'admin123'; // ⚠️ SENHA EXPOSTA
-const hash = crypto.createHash('sha256').update(senhaAdmin).digest('hex');
-// ...
-insertStmt.run('000001', 'admin@peo.gov.br', hash, ...);
+export const getTamanhoFolha = async (orgaoId) => {
+    try {
+        const row = await dbAsync.get('SELECT tamanho_folha FROM organogramas_estruturais WHERE orgao_id = ?', [orgaoId]); // <--------- aqui é onde acontece a mágica
+        return row ? row.tamanho_folha : 'A4';
+    } catch (error) {
+        console.error('Erro ao buscar tamanho da folha:', error);
+        return 'A4';
+    }
+};
 ```
 
-**Risco:** Se este código for para produção e o banco for reiniciado ou implantado do zero, qualquer pessoa com acesso ao repositório conhece a credencial de admin.
+[Link para leitura sobre o tema](https://medium.com/@kittikawin_ball/full-stack-security-101-common-mistakes-and-how-to-avoid-them-4fc7ca80d81d)
 
-**Correção Recomendada:**
-*   Nunca hardcodar senhas.
-*   Gerar uma senha aleatória forte no primeiro setup e imprimi-la no console apenas uma vez.
-*   Forçar a alteração de senha no primeiro login.
+[Mais um](https://impalaintech.com/blog/risks-of-ai-software-development/#:~:text=2.,authentication%20mechanisms%20and%20authorization%20controls)
 
-### 2. Algoritmo de Hashing Fraco (Alto)
-**Arquivos:** `backend/routes/auth.ts` (Linha 42), `backend/database/db.ts` (Linha 125)
+[Neste Site](https://www.hirefullstackdeveloperindia.com/the-growing-importance-of-cybersecurity-in-full-stack-development)
 
-O sistema utiliza SHA-256 simples (`crypto.createHash('sha256')`) sem *salt* aleatório por usuário.
+## Diz que:
+### 3. Common Cybersecurity Risks in Full-Stack Development
 
-```typescript
-const hashSha256 = crypto.createHash('sha256').update(senha).digest('hex');
-```
+Let’s talk about how hackers usually get in. Here are some common traps that developers fall into:
 
-**Risco:** Suscetível a ataques de tabela arco-íris (Rainbow Tables). Se o banco de dados vazar, todas as senhas comuns serão descobertas instantaneamente. Embora haja código para `bcrypt` (comentado ou condicional), o padrão ativo é inseguro.
+- Cross-Site Scripting (XSS): This happens when someone sneaks in malicious code on your website. If a hacker tricks your app into displaying this code, it could steal user info or redirect them to dangerous sites. Always clean up user input!
 
-**Correção Recomendada:**
-*   Migrar totalmente para **Bcrypt** ou **Argon2**.
-*   Remover o fallback para SHA-256 assim que possível ou implementar uma estratégia de re-hash automática no login.
+- SQL Injection: This is when a hacker inserts harmful SQL code into your database through a user input field, like a login form. With this, they can access or delete data. Scary, right? The fix? Use prepared statements and sanitize inputs.
 
-### 3. Cross-Site Scripting (XSS) (Alto)
-**Arquivo:** `frontend/src/components/preview/LivePreviewCanvas.tsx` (Linha 24)
+- Cross-Site Request Forgery (CSRF): This attack tricks a user into doing something they didn’t intend to, like transferring money or changing account settings. CSRF tokens can help prevent this.
 
-O componente renderiza labels de nós (cargos/setores) diretamente no DOM usando `dangerouslySetInnerHTML`.
+- Weak APIs: APIs let apps talk to each other, but if they’re not secure, hackers can sneak in. Always authenticate API calls and never expose sensitive data.
 
-```javascript
-<div dangerouslySetInnerHTML={{ __html: data.labelHTML }} />
-```
+- Poor Authentication: Weak passwords, no two-factor authentication, and improper user access can let attackers easily break in. Always use strong, secure authentication methods.
 
-A propriedade `labelHTML` é construída concatenando entradas do usuário (nome do cargo, ocupante) sem sanitização prévia.
+## e depois complementa com as medidas de segurança:
 
-**Risco:** Um atacante (com permissão de edição) pode inserir um script malicioso no nome de um setor ou cargo (ex: `<img src=x onerror=alert(1)>` ou scripts de roubo de cookie/token). Quando outro usuário (ou admin) visualizar o organograma, o script será executado.
+### 4. Best Practices for Ensuring Cybersecurity in Full-Stack Development
+Now that you know the risks, how can you protect your apps? Let’s break it down:
 
-**Correção Recomendada:**
-*   Usar uma biblioteca de sanitização como `dompurify` antes de passar o HTML para o React.
-    ```javascript
-    import DOMPurify from 'dompurify';
-    // ...
-    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.labelHTML) }} />
-    ```
-*   Ou evitar `dangerouslySetInnerHTML` e usar componentes React para renderizar a estrutura visual.
+- Use HTTPS Everywhere: HTTPS encrypts data between the user and your app. It’s like sending a locked letter instead of a postcard. Always use it!
 
-### 4. Segredo JWT Fraco (Médio)
-**Arquivo:** `backend/routes/auth.ts` (Linha 9)
+- Validate and Sanitize Inputs: Never trust user input. Clean it up before using it in your code. This stops XSS and SQL injection attacks.
 
-```typescript
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_aqui';
-```
+- Strong Authentication: Use strong passwords and implement multi-factor authentication (MFA). Password managers and OAuth are great tools.
 
-**Risco:** Se a variável de ambiente não estiver configurada (comum em dev ou deploys rápidos), o sistema usa uma string conhecida publicamente. Isso permite que qualquer um forje tokens de autenticação (assinando seus próprios tokens com essa string) e ganhe acesso root.
+- Keep Everything Updated: Outdated software is a hacker’s best friend. Regularly update your frameworks, libraries, and tools.
 
-**Correção Recomendada:**
-*   Lançar um erro fatal e não iniciar o servidor se `JWT_SECRET` não estiver definido em produção.
+- Secure APIs: Use authentication (like OAuth), encrypt sensitive data, and limit API access to what’s necessary.
 
-### 5. CORS Permissivo (Baixo)
-**Arquivo:** `backend/server.ts` (Linha 20)
+- Role-Based Access Control (RBAC): Not every user needs admin rights. Limit what users can do based on their role.
 
-```typescript
-app.use(cors());
-```
+- Encrypt Sensitive Data: Store passwords and personal data in encrypted form. Use hashing algorithms like bcrypt for passwords.
 
-**Risco:** Permite que qualquer site na internet faça requisições AJAX para sua API (se o usuário estiver logado e a autenticação permitir, ou para endpoints públicos). Facilita ataques de CSRF ou uso indevido da API.
+## E por fim, ele conclui dizendo qual nosso papel:
 
-**Correção Recomendada:**
-*   Restringir para domínios confiáveis: `app.use(cors({ origin: 'https://seu-frontend.com' }));`
+### 5. The Role of Full-Stack Developers in Cybersecurity
+Here’s the truth: as a full-stack developer, you are the first line of defense.
 
-### 6. Integridade de Dados / Pragma FK (Info)
-**Arquivo:** `backend/services/sqliteStorageService.ts`
+- Think Security from the Start: Don’t wait until the end to “add security.” Build it into every stage of your project.
+- Keep Learning: Cyber threats are always changing. Stay updated with security blogs, forums, and online courses.
+- Collaborate with Security Experts: Don’t be afraid to ask for help. Security specialists can catch things you might miss.
+- Your job isn’t just to make things work—it’s to make them safe. 
 
-O código desativa verificação de chaves estrangeiras (`PRAGMA foreign_keys = OFF`) para realizar operações. Embora facilite saves complexos, pode levar a dados órfãos se a transação falhar de forma inesperada ou lógica.
-
----
-
-**Nota Final:** O código está protegido contra **SQL Injection** na maioria das chamadas de banco de dados verificadas, pois utiliza *parameterized queries* (`?` placeholders) corretamente com o driver do SQLite.
+Note: Companies aiming for secure and high-performing apps should Hire full-stack developers from a professional full-stack development company with proven cybersecurity expertise

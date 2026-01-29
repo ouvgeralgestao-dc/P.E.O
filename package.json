@@ -1,16 +1,75 @@
 {
-  "name": "criador_organograma_2",
+  "name": "criador_organograma_pmdc",
   "version": "1.0.0",
   "description": "Sistema profissional para criação, visualização e exportação de organogramas da Prefeitura Municipal de Duque de Caxias.",
-  "main": "start-server.ts",
-  "type": "module",
+  "main": "electron/main.js",
+  "author": "CodeCat",
   "scripts": {
-    "start": "npx tsx start-server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron .",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on tcp:6002 && electron .\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && tsc -p tsconfig.build.json && echo {\"type\": \"module\"} > dist/package.json",
+    "build:frontend": "cd frontend && npm run build",
+    "prepack": "npm run build:backend && npm run build:frontend",
+    "pack": "npm run prepack && electron-builder --dir",
+    "dist": "npm run prepack && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.pmdc.organogramas",
+    "productName": "Organogramas PMDC",
+    "asar": true,
+    "asarUnpack": [
+      "backend/dist/**/*",
+      "data/**/*"
+    ],
+    "directories": {
+      "output": "dist-app"
+    },
+    "files": [
+      "electron/**/*",
+      "backend/dist/**/*",
+      "backend/data/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "frontend/dist",
+        "to": "frontend"
+      }
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "backend/dc-logo.png",
+      "sign": null,
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^170.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^7.0.12",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^25.0.8",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "concurrently": "^8.2.2",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.3",
+    "wait-on": "^7.2.0"
   }
 }

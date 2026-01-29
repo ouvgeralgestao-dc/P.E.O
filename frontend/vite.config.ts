@@ -20,6 +20,6 @@ export default defineConfig({
     // Usa caminhos relativos para funcionar quando servido pelo backend
     // em producao (instalador)
   },
-  // Base relativa para producao (quando servido pelo Express)
-  base: "./",
+  // Base absoluta para garantir carregamento correto de assets em rotas profundas
+  base: "/",
 });

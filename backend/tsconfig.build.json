@@ -1,0 +1,20 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "noEmit": false,
+        "allowImportingTsExtensions": false,
+        "moduleResolution": "node",
+        /* Ensure we output standard JS that Node can run */
+        "target": "ES2020",
+        "module": "ESNext",
+        "rootDir": "."
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.test.ts"
+    ]
+}

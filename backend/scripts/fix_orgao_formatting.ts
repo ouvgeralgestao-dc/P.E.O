@@ -1,6 +1,6 @@
 
 import { client } from '../src/db/index.js';
-import { formatTitleCase } from '../src/utils/formatters.js';
+import { formatTitleCase } from '../utils/formatters.js';
 
 console.log('--- Iniciando Correção de Nomes dos Órgãos ---');
 
@@ -23,7 +23,7 @@ client.transaction(() => {
             console.log(`[Correção] ID: ${o.id}`);
             console.log(`   De:   "${o.nome}"`);
             console.log(`   Para: "${formattedName}"`);
-            
+
             updateStmt.run(formattedName, o.id);
             count++;
         }

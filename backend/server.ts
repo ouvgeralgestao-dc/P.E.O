@@ -16,7 +16,7 @@ import errorHandler from "./middleware/errorHandler.js";
 // Carregar variáveis de ambiente (já feito via import 'dotenv/config')
 
 const app = express();
-const PORT = 6001; // Porta fixa - Backend conforme regra rules.mdc
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 6001; // Porta configurável
 
 // Middlewares
 app.use(cors());
