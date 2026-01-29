@@ -78,15 +78,7 @@ export const calculateHierarchicalLayout = (setores) => {
         const hirarqNum = typeof c.hierarquia === 'string' ? parseFloat(c.hierarquia) : (c.hierarquia || 0);
         if (hirarqNum === 0) return true;
 
-        const name = (c.nomeCargo || c.nomeSetor || '').toLowerCase().trim();
-        const type = (c.tipoSetor || '').toLowerCase().trim();
-
-        return name.includes('assessor') ||
-            name.includes('gabinete') ||
-            name.includes('consultoria') ||
-            (type && type.includes('assessoria')) ||
-            (type && type.includes('gabinete')) ||
-            (type && type.includes('consultoria'));
+        return false;
     };
 
     /**

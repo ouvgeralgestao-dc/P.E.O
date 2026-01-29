@@ -191,14 +191,7 @@ const OrganogramaCanvasInner = ({
                 // Normalizar hierarquia para número
                 const hirarqNum = typeof setor.hierarquia === 'string' ? parseFloat(setor.hierarquia) : (setor.hierarquia || 0);
                 const isAssessoriaNode = setor.isAssessoria ||
-                    hirarqNum === 0 ||
-                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('assessoria')) ||
-                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('gabinete')) ||
-                    (setor.tipoSetor && setor.tipoSetor.toLowerCase().includes('consultoria')) ||
-                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('assessor')) ||
-                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('gabinete')) ||
-                    (setor.nomeSetor && setor.nomeSetor.toLowerCase().includes('consultoria')) ||
-                    (setor.nomeCargo && setor.nomeCargo.toLowerCase().includes('assessor'));
+                    hirarqNum === 0;
 
                 if ((setor.nomeSetor || '').toLowerCase().includes('gabinete') ||
                     (setor.nomeSetor || '').toLowerCase().includes('consultoria')) {
@@ -227,10 +220,7 @@ const OrganogramaCanvasInner = ({
                     parent.isAssessoria ||
                     parent.data?.isAssessoria || // Se parent vier do nó ReactFlow
                     parseFloat(parent.hierarquia) === 0 ||
-                    parseFloat(parent.hierarquia) === 0.5 || // CORREÇÃO: Subprefeituras (0.5) também devem ter filhos verticais
-                    (parent.nomeSetor || '').toLowerCase().includes('consultoria') ||
-                    (parent.nomeSetor || '').toLowerCase().includes('gabinete') ||
-                    (parent.tipoSetor || '').toLowerCase().includes('subprefeitura') // Reforço
+                    parseFloat(parent.hierarquia) === 0.5 // CORREÇÃO: Subprefeituras (0.5) também devem ter filhos verticais
                 );
 
                 // Se for assessoria, mas o pai é nível 3+ OU o pai já é uma assessoria -> Vertical
@@ -284,7 +274,8 @@ const OrganogramaCanvasInner = ({
                         })(),
                         _wasAutoLayouted: setor._wasAutoLayouted, // Flag para disparar auto-save
                         parentId: setor.parentId || setor.originalParentId, // Busca ID do pai
-                        editable: editable // Passar estado de edição para o nó
+                        editable: editable // Passar estad
+                        // o de edição para o nó
                     },
                     // Definir handles (pontos de conexão) baseado no tipo e lado
                     sourcePosition: sourcePos,
@@ -414,12 +405,7 @@ const OrganogramaCanvasInner = ({
                     const nameLower = (cargo.nomeCargo || '').toLowerCase();
                     const typeLower = (cargo.tipoSetor || '').toLowerCase();
 
-                    const isAssessoriaNode = cargo.isAssessoria || hirarqNum === 0 ||
-                        nameLower.includes('assessor') ||
-                        nameLower.includes('gabinete') ||
-                        nameLower.includes('consultoria') ||
-                        typeLower.includes('assessoria') ||
-                        typeLower.includes('gabinete');
+                    const isAssessoriaNode = cargo.isAssessoria || hirarqNum === 0;
 
                     if (nameLower.includes('gabinete') || nameLower.includes('consultoria')) {
                         console.log(`[DEBUG EDGE] Cargo: ${cargo.nomeCargo}`, {
@@ -787,11 +773,7 @@ const OrganogramaCanvasInner = ({
         // 4. Converter para Nodes do React Flow (idêntico ao mapeamento inicial)
         const newNodes = itemsLayouted.map(item => {
             // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual) - Reset Layout
-            const isAssessoriaNode = item.isAssessoria ||
-                (item.tipoSetor && item.tipoSetor.toLowerCase().includes('assessoria')) ||
-                (item.tipoSetor && item.tipoSetor.toLowerCase().includes('gabinete')) ||
-                (item.nomeSetor && item.nomeSetor.toLowerCase().includes('assessor')) ||
-                (item.nomeCargo && item.nomeCargo.toLowerCase().includes('assessor'));
+            const isAssessoriaNode = item.isAssessoria;
 
             // Helper para detectar lado (Left/Right) - Baseado no _side que vem do layoutHelpers
             const isLeftAssessoria = item._side === 'left' ||

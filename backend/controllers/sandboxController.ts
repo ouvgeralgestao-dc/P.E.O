@@ -4,6 +4,31 @@ import { v4 as uuidv4 } from 'uuid';
 import * as customPositionsService from '../services/customPositionsService.js';
 import * as layoutService from '../services/layoutService.js';
 
+// Helper: Ordenar nós topologicamente (Pais antes dos filhos) para satisfazer Foreign Keys
+// Se A é pai de B, A deve vir antes de B.
+const sortNodesTopologically = (nodes: any[]) => {
+    // Clonar para não mutar original
+    const items = [...nodes];
+    const itemMap = new Map(items.map(n => [n.id, n]));
+    const visited = new Set<string>();
+    const sorted: any[] = [];
+
+    const visit = (node: any) => {
+        if (!node || visited.has(node.id)) return;
+
+        // Se tiver pai e o pai estiver na lista, visita ele primeiro (garante existência no insert)
+        if (node.parentId && itemMap.has(node.parentId)) {
+            visit(itemMap.get(node.parentId));
+        }
+
+        visited.add(node.id);
+        sorted.push(node);
+    };
+
+    items.forEach(node => visit(node));
+    return sorted;
+};
+
 // Interface para Request com User
 interface AuthenticatedRequest extends Request {
     user?: {
@@ -49,7 +74,8 @@ export const getSandboxEstrutural = async (req: AuthenticatedRequest, res: Respo
                 parentId: s.parent_id,
                 position: { x: s.position_x, y: s.position_y }, // Unificado para objeto position
                 customStyle: s.custom_style ? JSON.parse(s.custom_style) : null,
-                cargos: s.cargos ? JSON.parse(s.cargos) : []
+                cargos: s.cargos ? JSON.parse(s.cargos) : [],
+                isAssessoria: s.is_assessoria === 1
             }))
         });
     } catch (error) {
@@ -81,16 +107,19 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
             [userId, orgaoId]
         );
 
+        // Ordenar topologicamente para evitar erro de FK (Foreign Key constraint failed)
+        const sortedSetores = sortNodesTopologically(setores);
+
         // Inserir todos os setores (Array Plano)
-        for (const setor of setores) {
+        for (const setor of sortedSetores) {
             const id = setor.id || uuidv4();
             const parentId = setor.parentId || null;
 
             await dbAsync.run(
                 `INSERT INTO sandbox_setores (
                     id, user_id, orgao_id, nome_setor, tipo_setor, hierarquia, parent_id,
-                    position_x, position_y, custom_style, cargos
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    position_x, position_y, custom_style, cargos, is_assessoria
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     id,
                     userId,
@@ -102,7 +131,8 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
                     setor.positionX || 0,
                     setor.positionY || 0,
                     setor.customStyle ? JSON.stringify(setor.customStyle) : null,
-                    setor.cargos ? JSON.stringify(setor.cargos) : null
+                    setor.cargos ? JSON.stringify(setor.cargos) : null,
+                    setor.isAssessoria ? 1 : 0
                 ]
             );
         }
@@ -178,7 +208,8 @@ export const getSandboxFuncional = async (req: AuthenticatedRequest, res: Respon
                 position: { x: c.position_x, y: c.position_y }, // Unificado para objeto position
                 customStyle: c.custom_style ? JSON.parse(c.custom_style) : null,
                 simbolos: c.simbolos ? JSON.parse(c.simbolos) : [],
-                setorRef: c.setor_ref
+                setorRef: c.setor_ref,
+                isAssessoria: c.is_assessoria === 1
             }))
         });
     } catch (error) {
@@ -210,16 +241,19 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
             [userId, orgaoId]
         );
 
+        // Ordenar topologicamente
+        const sortedCargos = sortNodesTopologically(cargos);
+
         // Inserir todos os cargos (Array Plano)
-        for (const cargo of cargos) {
+        for (const cargo of sortedCargos) {
             const id = cargo.id || uuidv4();
             const parentId = cargo.parentId || null;
 
             await dbAsync.run(
                 `INSERT INTO sandbox_cargos_funcionais (
                     id, user_id, orgao_id, nome_cargo, ocupante, hierarquia, nivel, parent_id,
-                    position_x, position_y, custom_style, simbolos, setor_ref
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    position_x, position_y, custom_style, simbolos, setor_ref, is_assessoria
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     id,
                     userId,
@@ -233,7 +267,8 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
                     cargo.positionY || 0,
                     cargo.customStyle ? JSON.stringify(cargo.customStyle) : null,
                     cargo.simbolos ? JSON.stringify(cargo.simbolos) : null,
-                    cargo.setorRef || null
+                    cargo.setorRef || null,
+                    cargo.isAssessoria ? 1 : 0
                 ]
             );
         }
@@ -312,10 +347,10 @@ export const listSandboxes = async (req: AuthenticatedRequest, res: Response) =>
         // SQLite não suporta array binding nativo facilmente em node-sqlite3 antigo,
         // mas podemos construir a query dinamicamente pois os IDs vieram do banco (seguro-ish, mas ideal limpar)
         // Como orgao_id é string (slug) ou int, vamos usar placeholders.
-        
+
         const idsArray = Array.from(allIds);
         const placeholders = idsArray.map(() => '?').join(',');
-        
+
         const orgaos = await dbAsync.all(
             `SELECT id, nome, categoria FROM orgaos WHERE id IN (${placeholders})`,
             idsArray
