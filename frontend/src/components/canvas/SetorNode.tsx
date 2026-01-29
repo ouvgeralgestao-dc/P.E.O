@@ -138,24 +138,27 @@ const SetorNode = ({ data, selected }) => {
             }}
             data-hierarquia={hierarquia}
         >
-            <button
-                className="node-edit-button"
-                onPointerDown={(e) => {
-                    // Impede que o clique propague para o ReactFlow (evita selecionar/arrastar o nó)
-                    e.stopPropagation();
-                }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('🖱️ [SetorNode] Botão 🎨 clicado!');
-                    handleNodeClick(e);
-                }}
-                title="Editar Estilo (clique único ou duplo-clique no nó)"
-                style={{
-                    // Visibilidade controlada via CSS (SetorNode.css)
-                }}
-            >
-                🎨
-            </button>
+            {/* Botão de Edição - Só mostrar se for editável */}
+            {data.editable && (
+                <button
+                    className="node-edit-button"
+                    onPointerDown={(e) => {
+                        // Impede que o clique propague para o ReactFlow (evita selecionar/arrastar o nó)
+                        e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('🖱️ [SetorNode] Botão 🎨 clicado!');
+                        handleNodeClick(e);
+                    }}
+                    title="Editar Estilo (clique único ou duplo-clique no nó)"
+                    style={{
+                        // Visibilidade controlada via CSS (SetorNode.css)
+                    }}
+                >
+                    🎨
+                </button>
+            )}
             {showEditor && (
                 <StyleEditor
                     initialStyle={{ backgroundColor: backgroundStyle, borderColor, color: textColor }}

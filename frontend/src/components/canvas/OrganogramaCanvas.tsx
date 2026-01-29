@@ -283,7 +283,8 @@ const OrganogramaCanvasInner = ({
                             return 40;
                         })(),
                         _wasAutoLayouted: setor._wasAutoLayouted, // Flag para disparar auto-save
-                        parentId: setor.parentId || setor.originalParentId // Busca ID do pai
+                        parentId: setor.parentId || setor.originalParentId, // Busca ID do pai
+                        editable: editable // Passar estado de edição para o nó
                     },
                     // Definir handles (pontos de conexão) baseado no tipo e lado
                     sourcePosition: sourcePos,
@@ -494,7 +495,8 @@ const OrganogramaCanvasInner = ({
                                 if (h_calc === 3) return 45;
                                 return 40; // Assessorias e Nível 4+
                             })(),
-                            parentId: cargo.parentId
+                            parentId: cargo.parentId,
+                            editable: editable // Passar estado de edição para o nó
                         },
                         // Sincronizar Positions com Handles do SetorNode
                         sourcePosition: sourcePos,
@@ -597,8 +599,10 @@ const OrganogramaCanvasInner = ({
                             // Mesclar customStyle se houver, preferindo o local se necessário
                             customStyle: shouldKeepLocalStyle ? (currentNode.data.customStyle || currentNode.style || newNode.data.style || newNode.data.customStyle) : (newNode.data.customStyle || currentNode.data.customStyle),
                             isEditing: isBeingEdited,
-                            onEditClick: currentNode.data.onEditClick,
-                            onStyleChange: currentNode.data.onStyleChange
+                            // USAR CALLBACKS FRESCOS: Sempre usar os callbacks do newNode (que vem do useMemo atualizado)
+                            // Evita Stale Closures onde o callback antigo referenciava variaveis antigas via closure
+                            onEditClick: newNode.data.onEditClick,
+                            onStyleChange: newNode.data.onStyleChange
                         }
                     };
                 });
