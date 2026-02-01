@@ -51,6 +51,15 @@
     color: #64748b;
 }
 
+.header-actions-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    width: 100%;
+}
+
 .organograma-geral-funcional .header-actions {
     display: flex;
     gap: 12px;
@@ -186,6 +195,31 @@
     background-color: #059669;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+}
+
+/* Botão de Edição (Estilo Pill Branco) - Consistência Visual */
+.btn-edit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px !important;
+    background: white !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 50px !important;
+    font-weight: 600 !important;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.btn-edit:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #1e293b !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Tabelas em Grid - 2 Colunas */

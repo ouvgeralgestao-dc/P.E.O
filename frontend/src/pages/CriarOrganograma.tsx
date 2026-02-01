@@ -169,24 +169,30 @@ function CriarOrganograma() {
     };
 
     // Steps para organograma estrutural
-    const estruturalSteps = [
+    const estruturalSteps = React.useMemo(() => [
         {
             title: 'Estrutura Organizacional',
             description: 'Defina a hierarquia de setores do órgão',
             component: EstruturaForm,
-            validate: validateEstrutural
+            validate: validateEstrutural,
+            props: {
+                disableOrgaoSelection: !!prefilledOrgao
+            }
         }
-    ];
+    ], [prefilledOrgao]);
 
     // Steps para organograma de funções
-    const funcoesSteps = [
+    const funcoesSteps = React.useMemo(() => [
         {
             title: 'Funções e Cargos',
             description: 'Defina os cargos e suas funções',
             component: FuncoesForm,
-            validate: validateFuncoes
+            validate: validateFuncoes,
+            props: {
+                disableOrgaoSelection: !!prefilledOrgao
+            }
         }
-    ];
+    ], [prefilledOrgao]);
 
     // Callback para atualizar preview (memorizado para evitar loop infinito)
     const handleDataChange = useCallback((data) => {

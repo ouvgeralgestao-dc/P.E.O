@@ -5,6 +5,8 @@ import SetorNode from '../components/canvas/SetorNode';
 import CustomEdge from '../components/canvas/CustomEdge';
 import { logger } from '../utils/logger';
 import { useNavigate } from 'react-router-dom';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 // Tipos de nó customizados
 const nodeTypes = {
@@ -156,6 +158,12 @@ function PrintPreviewContent() {
         navigate(-1);
     };
 
+    const handleSavePDF = async () => {
+        // [INSIGHT] Bibliotecas de captura (html2canvas) falham em renderizar SVGs e arestas do React Flow com 100% de precisão.
+        // A função nativa do navegador (Salvar como PDF) é infinitamente superior em fidelidade e performance.
+        handlePrint(); 
+    };
+
     return (
         <div className="print-preview-page">
             <div className="print-toolbar no-print">
@@ -188,9 +196,12 @@ function PrintPreviewContent() {
 
                 <div className="toolbar-actions">
                     <button className="btn-secondary" onClick={handleBack}>
-                        Fechar
+                        Voltar
                     </button>
-                    <button className="btn-primary" onClick={handlePrint}>
+                    <button className="btn-pdf" onClick={handleSavePDF}>
+                        📄 PDF
+                    </button>
+                    <button className="btn-print" onClick={handlePrint}>
                         🖨️ Imprimir
                     </button>
                 </div>
@@ -283,19 +294,53 @@ function PrintPreviewContent() {
                     border: none;
                 }
 
-                .btn-primary, .btn-secondary {
-                    padding: 8px 16px;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    margin-left: 10px;
+                .toolbar-actions {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
                 }
 
-                .btn-primary { background: #2196F3; color: white; }
-                .btn-secondary { background: #666; color: white; }
-                .btn-primary:hover { background: #1976D2; }
-                .btn-secondary:hover { background: #555; }
+                .btn-print, .btn-pdf, .btn-secondary {
+                    padding: 8px 18px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    margin-left: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    font-size: 14px;
+                }
+                
+                .btn-print { 
+                    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); 
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+                }
+
+                .btn-pdf { 
+                    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); 
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+                }
+
+                .btn-secondary { 
+                    background: #4a4a4a; 
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                }
+
+                .btn-print:hover, .btn-pdf:hover, .btn-secondary:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+                }
+
+                .btn-print:active, .btn-pdf:active, .btn-secondary:active {
+                    transform: translateY(0);
+                }
 
                 .paper-container {
                     flex: 1;

@@ -194,28 +194,30 @@ function OrganogramaGeralFuncional() {
                             <p className="page-subtitle">Prefeitura Municipal de Duque de Caxias</p>
                         </div>
                     </div>
-                    <div className="header-actions">
-                        <Button
-                            className="btn-action"
-                            variant="secondary"
-                            onClick={handleEditClick}
-                        >
-                            <span className="btn-icon">✏️</span> Editar Ocupantes
-                        </Button>
-                        <Button
-                            className="btn-action btn-print"
-                            onClick={handlePrintPreview}
-                        >
-                            <span className="btn-icon">🖨️</span> Imprimir / PDF
-                        </Button>
-                        <Button
-                            className="btn-action btn-refresh"
-                            variant="primary"
-                            onClick={() => loadOrganogramaGeralFuncional(true)}
-                        >
-                            <span className="btn-icon">🔄</span> Atualizar
-                        </Button>
-                    </div>
+                </div>
+
+                {/* Botões de Ação Centralizados */}
+                <div className="header-actions-centered">
+                    <Button
+                        className="btn-action btn-edit"
+                        variant="secondary"
+                        onClick={handleEditClick}
+                    >
+                        <span className="btn-icon">✏️</span> Editar Ocupantes
+                    </Button>
+                    <Button
+                        className="btn-action btn-print"
+                        onClick={handlePrintPreview}
+                    >
+                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                    </Button>
+                    <Button
+                        className="btn-action btn-refresh"
+                        variant="primary"
+                        onClick={() => loadOrganogramaGeralFuncional(true)}
+                    >
+                        <span className="btn-icon">🔄</span> Atualizar
+                    </Button>
                 </div>
 
                 {/* Legenda */}

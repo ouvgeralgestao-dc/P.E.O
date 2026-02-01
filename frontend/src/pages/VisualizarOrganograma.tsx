@@ -511,31 +511,31 @@ function VisualizarOrganograma() {
                 {/* Agora a estilização é feita clicando diretamente na caixinha */}
             </div>
 
-            {/* Botões Flutuantes - Fixos no Lado Direito */}
-            <div className="header-actions">
-                <Button
-                    className="btn-action btn-print"
-                    onClick={handlePrintPreview}
-                >
-                    <span className="btn-icon">🖨️</span> Imprimir / PDF
-                </Button>
-                <Button
-                    className="btn-action btn-edit"
-                    variant="secondary"
-                    onClick={handleEditClick}
-                >
-                    <span className="btn-icon">✏️</span> Editar
-                </Button>
-                <Button
-                    className="btn-action btn-delete"
-                    variant="danger"
-                    onClick={handleDeleteClick}
-                >
-                    <span className="btn-icon">🗑️</span> Deletar
-                </Button>
-            </div>
-
             <div className="container main-content-area">
+                {/* Botões de Ação Centralizados */}
+                <div className="header-actions">
+                    <Button
+                        className="btn-action btn-print"
+                        onClick={handlePrintPreview}
+                    >
+                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                    </Button>
+                    <Button
+                        className="btn-action btn-edit"
+                        variant="secondary"
+                        onClick={handleEditClick}
+                    >
+                        <span className="btn-icon">✏️</span> Editar
+                    </Button>
+                    <Button
+                        className="btn-action btn-delete"
+                        variant="danger"
+                        onClick={handleDeleteClick}
+                    >
+                        <span className="btn-icon">🗑️</span> Deletar
+                    </Button>
+                </div>
+
                 {/* Canvas - Ocupa toda a largura inicialmente */}
                 <Card className="canvas-card">
                     <OrganogramaCanvas

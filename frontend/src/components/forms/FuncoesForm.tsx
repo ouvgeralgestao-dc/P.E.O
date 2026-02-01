@@ -60,11 +60,11 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
 
                 if (!Array.isArray(orgaos)) return;
 
-                // Filtrar e formatar para o Select
+                // Filtrar e formatar para o Select - Usando NOME como VALUE para paridade com EstruturaForm
                 const formattedOptions = orgaos
                     .filter(orgao => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
                     .map(orgao => ({
-                        value: orgao.id,
+                        value: orgao.nome, // NOME como valor real
                         label: orgao.nome.length > 85 ? orgao.nome.substring(0, 85) + '...' : orgao.nome
                     }))
                     .sort((a, b) => a.label.localeCompare(b.label));
@@ -126,9 +126,8 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                 } else {
                     // Senão, buscar na API Institucional
                     console.log(`[FuncoesForm] Buscando setores INSTITUCIONAIS para nomeOrgao: ${nomeOrgao}`);
-                    const orgaoInfo = getOrgaoById(nomeOrgao);
-                    const nomeParaChecar = orgaoInfo ? orgaoInfo.nome : nomeOrgao;
-                    const response = await api.get(`/organogramas/${encodeURIComponent(nomeParaChecar)}`);
+                    // nomeOrgao agora já é o nome real vindo do Select (ou URL)
+                    const response = await api.get(`/organogramas/${encodeURIComponent(nomeOrgao)}`);
                     setores = response.data?.data?.organogramaEstrutural?.setores || [];
                 }
 
@@ -172,10 +171,25 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
 
     // Atualizar campo do cargo atual
     const handleCargoFieldChange = (field, value) => {
-        setCurrentCargo(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        if (field === 'hierarquia') {
+            setCurrentCargo(prev => ({
+                ...prev,
+                [field]: value,
+                parentId: null, // Resetar pai ao mudar de nível
+                position: null  // <--- CORREÇÃO: Limpa posição antiga
+            }));
+        } else if (field === 'parentId') {
+            setCurrentCargo(prev => ({
+                ...prev,
+                [field]: value,
+                position: null // <--- CORREÇÃO: Limpa posição se mudar de pai
+            }));
+        } else {
+            setCurrentCargo(prev => ({
+                ...prev,
+                [field]: value
+            }));
+        }
     };
 
     // Adicionar símbolo ao cargo atual (Agrupando por tipo)
@@ -380,7 +394,9 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                         required
                         disabled={orgaoTravado || disableOrgaoSelection}
                         error={errors.nomeOrgao}
-                        helperText={disableOrgaoSelection ? "Órgão fixado pelo modo Sandbox" : (orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional")}
+                        helperText={disableOrgaoSelection 
+                            ? "Criação vinculada ao órgão selecionado no Dashboard" 
+                            : (orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional")}
                     />
                 </div>
 
@@ -389,6 +405,20 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
 
             {/* Adicionar Cargo */}
             <Card title="Adicionar Cargo/Função" className="mb-24">
+                {currentCargo.isEditing && (
+                    <div style={{ 
+                        backgroundColor: '#fff3cd', 
+                        color: '#856404', 
+                        padding: '10px', 
+                        borderRadius: '4px', 
+                        marginBottom: '15px',
+                        border: '1px solid #ffeeba',
+                        fontWeight: 'bold',
+                        textAlign: 'center'
+                    }}>
+                        ⚠️ EDIÇÃO EM ANDAMENTO: Clique em "CONFIRMAR ALTERAÇÃO" abaixo para efetivar a mudança!
+                    </div>
+                )}
                 <div className="cargo-inputs-grid">
                     <div className="grid-item-prefixo">
                         <Select
@@ -504,7 +534,7 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                 </div>
 
                 <Button onClick={handleAddCargo} fullWidth variant="primary">
-                    {currentCargo.isEditing ? '✓ Atualizar Cargo' : '✓ Adicionar Cargo ao Organograma'}
+                    {currentCargo.isEditing ? '✓ CONFIRMAR Alteração (Salvar na Lista)' : '✓ Adicionar Cargo ao Organograma'}
                 </Button>
                 {currentCargo.isEditing && (
                     <Button onClick={handleCancelEdit} fullWidth variant="outline" style={{ marginTop: '10px' }}>

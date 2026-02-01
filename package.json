@@ -5,7 +5,8 @@
   "main": "electron/main.js",
   "author": "CodeCat",
   "scripts": {
-    "start": "electron .",
+    "start": "npx tsx start-server.ts",
+    "electron": "electron .",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"wait-on tcp:6002 && electron .\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",

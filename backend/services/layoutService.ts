@@ -91,14 +91,30 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
     const nodes = [node];
     const children = node.children || [];
 
-    // Lógica Robusta de Assessorias (Inclui verificação por string para Funcional)
+    // 1. Identificar a Hierarquia MÁXIMA entre os filhos (quem é o mais profundo?)
+    // Ex: Se tem filhos Nível 2 e Nível 3, o Max é 3.
+    let maxChildLevel = 0;
+    children.forEach(c => {
+        const h = parseInt(c.hierarquia || 0);
+        if (h > maxChildLevel) maxChildLevel = h;
+    });
+
     const isAssessoriaNode = (n) => {
-        return n.isAssessoria ||
-            (n.hierarquia !== undefined && parseInt(n.hierarquia) === 0) ||
-            (n.nomeCargo && n.nomeCargo.toLowerCase().includes('assessor')) ||
-            (n.nomeSetor && n.nomeSetor.toLowerCase().includes('assessor')) ||
-            (n.tipoSetor && n.tipoSetor.toLowerCase().includes('assessoria')) ||
-            (n.tipoSetor && n.tipoSetor.toLowerCase().includes('gabinete'));
+        // [FORCE FIX] Chefia NUNCA é assessoria, mesmo que o banco diga ao contrário (por bugs antigos)
+        if (n.nomeSetor && (
+            n.nomeSetor.toLowerCase().includes('superintend') ||
+            n.nomeSetor.toLowerCase().includes('diretoria') ||
+            n.nomeSetor.toLowerCase().includes('subsecretari')
+        )) {
+            return false;
+        }
+
+        // Regra 1: Explicitamente Assessoria
+        if (n.isAssessoria) return true;
+        // Regra 2: Nível 0 é sempre assessoria
+        if (n.hierarquia !== undefined && parseInt(n.hierarquia) === 0) return true;
+        
+        return false;
     };
 
     const isParentAssessoria = isAssessoriaNode(node);
@@ -107,20 +123,11 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
     let setoresNormais = [];
 
     if (isParentAssessoria) {
-        // Se o pai já é assessoria, filhos são sempre verticais para evitar crescimento lateral infinito
+        // Se o pai já é assessoria, filhos são sempre verticais
         setoresNormais = children;
     } else {
-        assessorias = children.filter(c => {
-            const nivel = c.hierarquia !== undefined ? parseInt(c.hierarquia) : undefined;
-            const isLikelyAssessoria = isAssessoriaNode(c);
-            return (nivel === 0) || (isLikelyAssessoria && (nivel === undefined || nivel === 0));
-        });
-        setoresNormais = children.filter(c => {
-            const nivel = c.hierarquia !== undefined ? parseInt(c.hierarquia) : undefined;
-            const isLikelyAssessoria = isAssessoriaNode(c);
-            const isLateral = (nivel === 0) || (isLikelyAssessoria && (nivel === undefined || nivel === 0));
-            return !isLateral;
-        });
+        assessorias = children.filter(c => isAssessoriaNode(c));
+        setoresNormais = children.filter(c => !isAssessoriaNode(c));
     }
 
     const selfWidth = spacing.HORIZONTAL + (assessorias.length * spacing.HORIZONTAL);
@@ -158,7 +165,44 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
     let childrenBlockWidth = 0;
 
     if (setoresNormais.length > 0) {
-        setoresNormais.sort((a, b) => (parseInt(a.hierarquia || 0) - parseInt(b.hierarquia || 0)));
+        // [MODIFICAÇÃO VISUAL]
+        // Ordenar setores normais para que os níveis mais "Importantes" (menor hierarquia, ex: 2)
+        // fiquem no CENTRO visual, e os níveis menos importantes (maior hierarquia, ex: 3) nas pontas.
+        
+        // 1. Agrupar por hierarquia
+        const byHierarchy = {};
+        setoresNormais.forEach(s => {
+            const h = parseInt(s.hierarquia || 999);
+            if (!byHierarchy[h]) byHierarchy[h] = [];
+            byHierarchy[h].push(s);
+        });
+
+        // 2. Ordenar chaves de hierarquia (2, 3, 4...)
+        const levels = Object.keys(byHierarchy).map(Number).sort((a, b) => a - b);
+        
+        // 3. Construir lista final "Do Centro para Fora" (Highest Priority in Center)
+        let sortedSetores = [];
+        
+        // Se tivermos níveis mistos, colocamos o nível mais baixo (mais importante) no meio
+        // Ex: temos [L2, L3, L3]. Queremos [L3, L2, L3].
+        
+        if (levels.length > 1) {
+            const topLevel = levels[0]; // Ex: 2
+            const topLevelNodes = byHierarchy[topLevel]; // [NodeL2]
+            const otherNodes = []; // [NodeL3, NodeL3]
+            
+            levels.slice(1).forEach(l => otherNodes.push(...byHierarchy[l]));
+
+            // Estratégia: Metade dos outros à esquerda, Top no meio, Metade à direita
+            const midPoint = Math.ceil(otherNodes.length / 2);
+            const leftWing = otherNodes.slice(0, midPoint);
+            const rightWing = otherNodes.slice(midPoint);
+            
+            sortedSetores = [...leftWing, ...topLevelNodes, ...rightWing];
+        } else {
+             // Apenas um nível, mantém ordem padrão (pode ser alfabética ou id)
+             sortedSetores = setoresNormais.sort((a,b) => (a.nomeSetor || '').localeCompare(b.nomeSetor || ''));
+        }
 
         const childrenLayouts = [];
         const advisorHeight = maxAssessoriaY - y;
@@ -168,9 +212,19 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
         );
         const childY = y + verticalGap;
 
-        setoresNormais.forEach(child => {
+        sortedSetores.forEach(child => {
+            // [FIX] Calcular Y baseado no nível hierárquico específico do filho
+            // Garante que saltos de nível (ex: 1 -> 3) tenham gap visual correspondente
+            const parentLevel = parseInt(node.hierarquia || 0);
+            const childLevel = parseInt(child.hierarquia || 0);
+            const levelDiff = childLevel > parentLevel ? (childLevel - parentLevel) : 1;
+            
+            // Gap base (já inclui clearance de assessorias) + Gap extra por níveis pulados
+            const extraGap = (levelDiff - 1) * spacing.VERTICAL;
+            const specificChildY = childY + extraGap;
+
             const childLayout = calculateSubtreeLayout(
-                child, 0, childY, spacing, alignMode
+                child, 0, specificChildY, spacing, alignMode
             );
             childrenLayouts.push(childLayout);
             childrenBlockWidth += childLayout.width;

@@ -83,7 +83,9 @@ const calculateSubtreeLayout = (node: any, x: number, y: number, spacing: any, a
     const nodes = [node];
     const children = node.children || [];
     
-    const isStaff = (n: any) => n.isStaff || (n.hierarquia !== undefined && parseInt(n.hierarquia) === 0) || (n.tipoSetor && n.tipoSetor.toLowerCase().includes('assessoria'));
+    const isStaff = (n: any) => {
+        return n.isStaff || n.isAssessoria || (n.hierarquia !== undefined && parseInt(n.hierarquia) === 0);
+    };
     
     let assessorias: any[] = [];
     let normais: any[] = [];
@@ -247,12 +249,21 @@ function LivePreviewContent({ setores = [], cargos = [], isFuncional }: { setore
             
             // FitView inicial: Padding menor e maior velocidade para aparecer logo
             const timer = setTimeout(() => {
-                fitView({ padding: 0.2, duration: 200 });
+                fitView({ padding: 0.1, duration: 450, minZoom: 0.01, maxZoom: 1 });
                 lastFitCount.current = flowNodes.length;
             }, 300); 
-            return () => clearTimeout(timer);
+
+            // Segunda chamada de segurança para garantir o enquadramento após renderização completa
+            const timer2 = setTimeout(() => {
+                fitView({ padding: 0.15, duration: 300, minZoom: 0.01, maxZoom: 1 });
+            }, 800);
+
+            return () => {
+                clearTimeout(timer);
+                clearTimeout(timer2);
+            };
         }
-    }, [flowNodes.length, fitView]); // Depender do length para evitar loops infinitos com a função fitView
+    }, [flowNodes.length, fitView]); 
 
     return (
         <div className="live-preview-canvas">
@@ -263,7 +274,7 @@ function LivePreviewContent({ setores = [], cargos = [], isFuncional }: { setore
                 <div className="zoom-controls">
                     <button onClick={() => zoomOut()} className="zoom-btn">−</button>
                     <button onClick={() => zoomIn()} className="zoom-btn">+</button>
-                    <button onClick={() => fitView({ padding: 0.3, duration: 400 })} className="zoom-btn">⟲</button>
+                    <button onClick={() => fitView({ padding: 0.15, duration: 400, minZoom: 0.01 })} className="zoom-btn">⟲</button>
                 </div>
             </div>
             <div className="preview-canvas-wrapper">
@@ -280,9 +291,11 @@ function LivePreviewContent({ setores = [], cargos = [], isFuncional }: { setore
                         nodesDraggable={true}
                         nodesConnectable={false}
                         elementsSelectable={false}
+                        minZoom={0.01}
+                        maxZoom={4}
                         onInit={(instance) => {
-                            setTimeout(() => instance.fitView({ padding: 0.2 }), 50);
-                            setTimeout(() => instance.fitView({ padding: 0.2 }), 250);
+                            setTimeout(() => instance.fitView({ padding: 0.15, minZoom: 0.01 }), 50);
+                            setTimeout(() => instance.fitView({ padding: 0.15, minZoom: 0.01 }), 300);
                         }}
                     >
                         <Background color="#e2e8f0" gap={20} />

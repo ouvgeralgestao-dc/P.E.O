@@ -311,9 +311,31 @@ const reconstructTree = (flatList) => {
     });
 
     list.forEach(node => {
+        // [FIX] SANITIZAÇÃO DE DADOS LEGADOS
+        // Verificar se a relação pai-filho é hierarquicamente válida
+        let parentValid = false;
+        
         if (node.parentId && map[node.parentId]) {
-            map[node.parentId].children.push(node);
-        } else {
+            const parent = map[node.parentId];
+            
+            // Regra: Pai deve ter nível hierárquico MENOR (número) que o filho
+            // Ex: Sec(1) -> Superintendencia(2) [OK]
+            // Ex: Superintendencia(2) -> Superintendencia(2) [INVÁLIDO]
+            const hPai = parseFloat(parent.hierarquia || 0);
+            const hFilho = parseFloat(node.hierarquia || 0);
+
+            // Permitir assessoria (nível 0) ser filha de qualquer coisa, e qualquer coisa ser filho de assessoria
+            const isAssessoriaRel = hPai === 0 || hFilho === 0;
+
+            if (hPai < hFilho || isAssessoriaRel) {
+                parentValid = true;
+                parent.children.push(node);
+            } else {
+                console.warn(`[SQLite] Sanitização: Removendo pai inválido para ${node.nomeSetor} (H:${hFilho}). Pai: ${parent.nomeSetor} (H:${hPai})`);
+            }
+        }
+
+        if (!parentValid) {
             roots.push(node);
         }
     });

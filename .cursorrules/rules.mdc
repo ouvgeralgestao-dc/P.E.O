@@ -43,6 +43,21 @@
 
 ---
 
+## 🎨 REGRA DE OURO: LAYOUT E DESIGN (GATILHO)
+
+**GATILHO:** Sempre que a tarefa envolver:
+- Alteração em **posicionamento de nós** (x, y)
+- Modificação na lógica de **linhas/arestas** (edges)
+- Ajustes em **CustomEdge**, **layoutHelpers** ou **OrganogramaCanvas**
+- Mudanças visuais (CSS/Design) no canvas
+
+**AÇÃO OBRIGATÓRIA:**
+1. **Ler na íntegra** o **[MANUAL_TECNICO_LAYOUT.md](file:///c:/Users/junio/OneDrive/Área de Trabalho/Criador_Organograma/.cursorrules/MANUAL_TECNICO_LAYOUT.md)**
+2. **Respeitar 100%** as lógicas de "Anti-Snapback", "Vertical vs Assessoria" e "Barramento" descritas nele
+3. **Validar paridade** entre `useMemo` e `handleResetLayout` em qualquer mudança
+
+---
+
 ## 🇧🇷 IDIOMA OBRIGATÓRIO: PORTUGUÊS (PT-BR)
 
 **REGRA SUPREMA DE COMUNICAÇÃO:**

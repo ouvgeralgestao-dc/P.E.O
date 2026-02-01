@@ -211,34 +211,35 @@ function SandboxFuncional() {
                         </h1>
                     </div>
 
-                    {/* Zona 3: Ações Agrupadas */}
-                    <div className="header-zone-actions">
-                        <div className="actions-container">
-                            <button
-                                type="button"
-                                className="btn-action-primary"
-                                onClick={handlePrint}
-                            >
-                                <span className="btn-icon">🖨️</span>
-                                Imprimir
-                            </button>
-                            <button
-                                type="button"
-                                className="btn-action-secondary"
-                                onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-funcional`)}
-                            >
-                                <span className="btn-icon">✏️</span>
-                                Editar
-                            </button>
-                            <button
-                                type="button"
-                                className="btn-action-danger"
-                                onClick={handleDelete}
-                            >
-                                <span className="btn-icon">🗑️</span>
-                                Excluir
-                            </button>
-                        </div>
+                </div>
+
+                {/* Botões de Ação Centralizados - Acima do Canvas */}
+                <div className="header-actions">
+                    <div className="actions-container">
+                        <button
+                            type="button"
+                            className="btn-action-primary"
+                            onClick={handlePrint}
+                        >
+                            <span className="btn-icon">🖨️</span>
+                            Imprimir
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-action-secondary"
+                            onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-funcional`)}
+                        >
+                            <span className="btn-icon">✏️</span>
+                            Editar
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-action-danger"
+                            onClick={handleDelete}
+                        >
+                            <span className="btn-icon">🗑️</span>
+                            Excluir
+                        </button>
                     </div>
                 </div>
 

@@ -115,6 +115,23 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
             const id = setor.id || uuidv4();
             const parentId = setor.parentId || null;
 
+            // Extrair posição com fallback robusto (suporta tanto flat positionX quanto nested position.x)
+            // Se position for EXPLICITAMENTE null (do frontend fix), usamos 0 ou null, dependendo da lógica de layout
+            let posX = 0;
+            let posY = 0;
+
+            if (setor.position === null) {
+                // Frontend mandou resetar (position: null)
+                posX = 0;
+                posY = 0;
+            } else if (setor.position && typeof setor.position === 'object') {
+                posX = setor.position.x || 0;
+                posY = setor.position.y || 0;
+            } else {
+                posX = setor.positionX || 0;
+                posY = setor.positionY || 0;
+            }
+
             await dbAsync.run(
                 `INSERT INTO sandbox_setores (
                     id, user_id, orgao_id, nome_setor, tipo_setor, hierarquia, parent_id,
@@ -128,8 +145,8 @@ export const saveSandboxEstrutural = async (req: AuthenticatedRequest, res: Resp
                     setor.tipoSetor,
                     setor.hierarquia,
                     parentId,
-                    setor.positionX || 0,
-                    setor.positionY || 0,
+                    posX,
+                    posY,
                     setor.customStyle ? JSON.stringify(setor.customStyle) : null,
                     setor.cargos ? JSON.stringify(setor.cargos) : null,
                     setor.isAssessoria ? 1 : 0
@@ -249,6 +266,21 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
             const id = cargo.id || uuidv4();
             const parentId = cargo.parentId || null;
 
+            // Extrair posição com fallback robusto
+            let posX = 0;
+            let posY = 0;
+
+            if (cargo.position === null) {
+                posX = 0;
+                posY = 0;
+            } else if (cargo.position && typeof cargo.position === 'object') {
+                posX = cargo.position.x || 0;
+                posY = cargo.position.y || 0;
+            } else {
+                posX = cargo.positionX || 0;
+                posY = cargo.positionY || 0;
+            }
+
             await dbAsync.run(
                 `INSERT INTO sandbox_cargos_funcionais (
                     id, user_id, orgao_id, nome_cargo, ocupante, hierarquia, nivel, parent_id,
@@ -263,8 +295,8 @@ export const saveSandboxFuncional = async (req: AuthenticatedRequest, res: Respo
                     cargo.hierarquia,
                     cargo.nivel,
                     parentId,
-                    cargo.positionX || 0,
-                    cargo.positionY || 0,
+                    posX,
+                    posY,
                     cargo.customStyle ? JSON.stringify(cargo.customStyle) : null,
                     cargo.simbolos ? JSON.stringify(cargo.simbolos) : null,
                     cargo.setorRef || null,

@@ -118,33 +118,6 @@ function OrganogramaGeral() {
         <div className="organograma-geral">
             <div className="container">
                 {/* Header */}
-                <div className="page-header">
-                    <div className="header-left">
-                        <Button variant="outline" onClick={() => navigate('/')}>
-                            ← Voltar
-                        </Button>
-                        <div className="header-info">
-                            <h2 className="page-title">Organograma Geral</h2>
-                            <p className="page-subtitle">Prefeitura Municipal de Duque de Caxias</p>
-                        </div>
-                    </div>
-                    <div className="header-actions">
-                        <Button
-                            className="btn-action btn-print"
-                            onClick={handlePrintPreview}
-                        >
-                            <span className="btn-icon">🖨️</span> Imprimir / PDF
-                        </Button>
-                        <Button
-                            className="btn-action btn-refresh"
-                            variant="primary"
-                            onClick={() => loadOrganogramaGeral(true)}
-                        >
-                            <span className="btn-icon">🔄</span> Atualizar
-                        </Button>
-                    </div>
-                </div>
-
                 {/* Legenda */}
                 <div className="legend-card">
                     <h3>Estrutura do Organograma</h3>
@@ -174,6 +147,23 @@ function OrganogramaGeral() {
                             <span>Diretorias (Nível 3+)</span>
                         </div>
                     </div>
+                </div>
+
+                {/* Botões de Ação Centralizados */}
+                <div className="header-actions-centered">
+                    <Button
+                        className="btn-action btn-print"
+                        onClick={handlePrintPreview}
+                    >
+                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                    </Button>
+                    <Button
+                        className="btn-action btn-refresh"
+                        variant="primary"
+                        onClick={() => loadOrganogramaGeral(true)}
+                    >
+                        <span className="btn-icon">🔄</span> Atualizar
+                    </Button>
                 </div>
 
                 {/* Canvas */}

@@ -21,11 +21,7 @@ const CustomEdge = ({
     // Distância vertical entre origem e destino
     const dy = targetY - sourceY;
 
-    // ESTRATÉGIA "LINHA BAIXA" (Push Down Strategy)
-    // Se houver distância vertical suficiente (>100px), forçamos a dobra (centerY)
-    // para acontecer apenas 60px acima do destino.
-    // Isso faz a linha passar "por trás/baixo" de quaisquer nós intermediários.
-    let options = {
+    let options: any = {
         sourceX,
         sourceY,
         sourcePosition,
@@ -35,10 +31,15 @@ const CustomEdge = ({
         borderRadius: 0 // Linhas quadradas ortogonais
     };
 
-    // Apenas aplicar estratégia para conexões Top-Bottom (Verticais)
-    // Para laterais, deixamos o padrão
-    if (dy > 100 && sourcePosition === 'bottom' && targetPosition === 'top') {
-        options['centerY'] = targetY - 60;
+    // ESTRATÉGIA "LINHA ALTA / BARRAMENTO" (Fixed Top Branching)
+    if (sourcePosition === 'bottom' && targetPosition === 'top') {
+        // [FIX CRÍTICO] Se o layout calculou um forkY específico (para limpar assessorias), use-o.
+        // Caso contrário, use o padrão de 50px abaixo da origem.
+        if (data && data.customForkY) {
+            options['centerY'] = data.customForkY;
+        } else {
+             options['centerY'] = sourceY + 50;
+        }
     }
 
     // Usar smoothstep (ortogonal) em vez de bezier para organograma

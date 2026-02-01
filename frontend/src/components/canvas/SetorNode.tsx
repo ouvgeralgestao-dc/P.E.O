@@ -56,7 +56,11 @@ const SetorNode = ({ data, selected }) => {
     };
 
     // Posição vertical forçada para handles laterais (Pixel Perfect Alignment)
-    const lateralHandleStyle = data.handleY ? { top: data.handleY } : {};
+    // [FIX CRÍTICO] Mudamos de 50% para 45px (valor fixo).
+    // Isso garante que mesmo que uma caixa cresça por ter mais texto, 
+    // a linha de conexão lateral ficará SEMPRE na mesma altura (45px do topo),
+    // resultando em uma linha 100% reta entre o pai e as assessorias.
+    const lateralHandleStyle = { top: '45px' };
 
     // Suporte a Gradientes (background) e Cores Sólidas (backgroundColor)
     const backgroundStyle = effectiveStyle.background || effectiveStyle.backgroundColor || defaultBg;

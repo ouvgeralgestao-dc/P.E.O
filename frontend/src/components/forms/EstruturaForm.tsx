@@ -101,10 +101,16 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
         setCurrentSetor(prev => {
             const newState = { ...prev, [field]: value };
 
-            // Se mudou a hierarquia, reseta o tipo de setor para evitar inconsistência
-            // Isso previne que um tipo inválido (ex: Diretoria) persista ao mudar para Nível 3 (Subsecretaria)
+            // Se mudou a hierarquia ou o pai, reseta a posição visual antiga
+            // Isso força o motor de layout a recalcular a posição correta na nova estrutura
             if (field === 'hierarquia') {
                 newState.tipoSetor = '';
+                newState.parentId = null; // Resetar pai ao mudar de nível
+                newState.position = null; // <--- CORREÇÃO: Limpa posição antiga (ex: lá embaixo)
+            }
+
+            if (field === 'parentId') {
+                newState.position = null; // <--- CORREÇÃO: Limpa posição se mudar de pai
             }
 
             return newState;
@@ -396,6 +402,20 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
 
             {/* Adicionar Setor */}
             <Card title="Adicionar Setor" className="mb-24">
+                {currentSetor.isEditing && (
+                    <div style={{ 
+                        backgroundColor: '#fff3cd', 
+                        color: '#856404', 
+                        padding: '10px', 
+                        borderRadius: '4px', 
+                        marginBottom: '15px',
+                        border: '1px solid #ffeeba',
+                        fontWeight: 'bold',
+                        textAlign: 'center'
+                    }}>
+                        ⚠️ EDIÇÃO EM ANDAMENTO: Clique em "CONFIRMAR ALTERAÇÃO" abaixo para efetivar a mudança!
+                    </div>
+                )}
                 <div className="form-row">
                     <Select
                         label="Hierarquia"
@@ -516,7 +536,7 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                 </div>
 
                 <Button onClick={handleAddSetor} fullWidth variant="primary">
-                    {currentSetor.isEditing ? '✓ Atualizar Setor na Estrutura' : '✓ Adicionar Setor à Estrutura'}
+                    {currentSetor.isEditing ? '✓ CONFIRMAR Alteração (Salvar na Lista)' : '✓ Adicionar Setor à Estrutura'}
                 </Button>
                 {currentSetor.isEditing && (
                     <Button onClick={handleCancelEdit} fullWidth variant="outline" style={{ marginTop: '10px' }}>
