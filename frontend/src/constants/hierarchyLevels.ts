@@ -50,20 +50,29 @@ export const HIERARCHY_BORDERS = {
 };
 
 // Tipos de setor por nível hierárquico
+// Lista completa de tipos para níveis 1-10
+const ALL_SETOR_TYPES = [
+    'Secretaria', 'Presidência', 'Procuradoria',
+    'Superintendência', 'Subprocuradoria', 'Subsecretaria',
+    'Diretoria', 'Gerência', 'Coordenação', 'Assessor(a)',
+    'Divisão', 'Departamento', 'Seção', 'Núcleo',
+    'Setor', 'Unidade', 'Protocolo', 'Gabinete'
+];
+
+// Tipos de setor por nível hierárquico
 export const SETOR_TYPES = {
     0: ['Assessoria', 'Assessor(a)', 'Gabinete', 'Consultoria'],
     0.5: ['Subprefeitura'],  // Apenas Subprefeitura
-    1: ['Secretaria', 'Presidência', 'Procuradoria'],
-    2: ['Superintendência', 'Subprocuradoria'],
-    3: ['Subsecretaria'],
-    // Níveis 4-10: Tipos livres (todos disponíveis, exceto os específicos de 1, 2 e 3)
-    4: ['Diretoria', 'Gerência', 'Coordenação', 'Assessor(a)', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    5: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    6: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    7: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    8: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    9: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo'],
-    10: ['Diretoria', 'Gerência', 'Coordenação', 'Divisão', 'Departamento', 'Seção', 'Núcleo', 'Setor', 'Unidade', 'Protocolo']
+    1: ALL_SETOR_TYPES,
+    2: ALL_SETOR_TYPES,
+    3: ALL_SETOR_TYPES,
+    4: ALL_SETOR_TYPES,
+    5: ALL_SETOR_TYPES,
+    6: ALL_SETOR_TYPES,
+    7: ALL_SETOR_TYPES,
+    8: ALL_SETOR_TYPES,
+    9: ALL_SETOR_TYPES,
+    10: ALL_SETOR_TYPES
 };
 
 // Labels de hierarquia para exibição

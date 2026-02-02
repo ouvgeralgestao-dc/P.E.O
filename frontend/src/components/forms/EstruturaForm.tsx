@@ -21,7 +21,7 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
     const [currentSetor, setCurrentSetor] = useState({
         tipoSetor: '',
         nomeSetor: '',
-        hierarquia: '',
+        hierarquia: '', // Será calculado automaticamente
         isAssessoria: false,
         parentId: null,
         cargos: [],
@@ -32,6 +32,8 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
     const [orgaosOptions, setOrgaosOptions] = useState([]); // Lista dinâmica de órgãos
 
     const setores = data.setores || [];
+    // Simular que já existe raiz e níveis anteriores para lógica de UI
+    const temRaiz = setores.some((s: any) => parseFloat(s.hierarquia) === 1 || parseFloat(s.hierarquia) === 0.5);
     const nomeOrgao = data.nomeOrgao || '';
 
     // Buscar lista de órgãos da API
@@ -110,7 +112,45 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
             }
 
             if (field === 'parentId') {
-                newState.position = null; // <--- CORREÇÃO: Limpa posição se mudar de pai
+                newState.position = null; // Limpa posição se mudar de pai
+
+                // Recalcular hierarquia ao mudar de pai
+                if (value) { // Se escolheu um pai
+                    const pai = setores.find(s => s.id === value);
+                    if (pai) {
+                        // Se é assessoria, mantém 0. Se não, é Nível Pai + 1
+                        if (newState.isAssessoria) {
+                            newState.hierarquia = '0';
+                        } else {
+                            const nivelPai = parseFloat(pai.hierarquia);
+                            const nivelNovo = Math.min((nivelPai < 1 ? 1 : nivelPai) + 1, 10);
+                            newState.hierarquia = String(nivelNovo);
+                        }
+                    }
+                } else if (!temRaiz) {
+                    // Sem pai e sem raiz -> Nível 1
+                    newState.hierarquia = '1';
+                }
+            }
+
+            if (field === 'isAssessoria') {
+                // Se marcou assessoria, hierarquia 0. Se desmarcou, recalcula baseada no pai.
+                if (value === true) {
+                    newState.hierarquia = '0';
+                    newState.parentId = newState.parentId; // Mantém pai atual
+                } else {
+                    // Desmarcou -> Volta para vertical
+                    if (newState.parentId) {
+                        const pai = setores.find(s => s.id === newState.parentId);
+                        if (pai) {
+                            const nivelPai = parseFloat(pai.hierarquia);
+                            const nivelNovo = Math.min((nivelPai < 1 ? 1 : nivelPai) + 1, 10);
+                            newState.hierarquia = String(nivelNovo);
+                        }
+                    } else if (!temRaiz) {
+                        newState.hierarquia = '1';
+                    }
+                }
             }
 
             return newState;
@@ -253,6 +293,16 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
         });
     };
 
+    // Efeito para definir hierarquia inicial se for o primeiro
+    useEffect(() => {
+        if (!currentSetor.isEditing && !currentSetor.hierarquia) {
+            const existeRaiz = setores.some(s => parseFloat(s.hierarquia) === 1 || parseFloat(s.hierarquia) === 0.5);
+            if (!existeRaiz) {
+                setCurrentSetor(prev => ({ ...prev, hierarquia: '1' }));
+            }
+        }
+    }, [setores, currentSetor.isEditing, currentSetor.hierarquia]);
+
     const handleEditSetor = (setor) => {
         const hierarquia = parseFloat(setor.hierarquia);
         let tipoEncontrado = '';
@@ -333,17 +383,41 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
         const hierarquia = parseFloat(currentSetor.hierarquia);
         if (isNaN(hierarquia)) return [];
 
-        // Priorizar opções vindas do banco de dados (Configurações)
+        let options = [];
+
+        // 1. Obter opções do Banco (Configurações)
         if (tipoSetorOptions.length > 0) {
             const hStr = hierarquia.toString();
-            return tipoSetorOptions
-                .filter(t => t.hierarquias.includes(hStr))
+
+            // Flexibilidade:
+            // - Níveis 1-10: Todos os tipos
+            // - Assessoria (Checkbox marcado): Todos os tipos (Ideia do usuário: qualquer setor pode ser assessoria)
+            const shouldUseAll = (hierarquia >= 1 && hierarquia <= 10) || currentSetor.isAssessoria;
+
+            options = tipoSetorOptions
+                .filter(t => shouldUseAll || t.hierarquias.includes(hStr))
                 .map(t => ({ value: t.nome, label: t.nome }));
         }
 
-        // Fallback para a constante estática caso o banco falhe ou esteja vazio
-        const tipos = SETOR_TYPES[hierarquia] || [];
-        return tipos.map(tipo => ({ value: tipo, label: tipo }));
+        // 2. Se for Nível 1-10, Assessoria, ou não houver opções do banco, adicionar tipos padrão (ALL_SETOR_TYPES)
+        if (options.length === 0 || (hierarquia >= 1 && hierarquia <= 10) || currentSetor.isAssessoria) {
+
+            // Se for Assessoria (explicitamente marcada), usamos a lista COMPLETA (igual nível 1)
+            // Se for nível 0 nativo (sem checkbox explícito, ex: edição antiga), mantém restrição
+            const tiposBase = currentSetor.isAssessoria
+                ? (SETOR_TYPES['1'] || [])
+                : (SETOR_TYPES[hierarquia] || SETOR_TYPES['1'] || []);
+
+            const padraoOptions = tiposBase.map(t => ({ value: t, label: t }));
+
+            // Merge unificando por valor para evitar duplicatas
+            const currentValues = new Set(options.map(o => o.value));
+            const novos = padraoOptions.filter(o => !currentValues.has(o.value));
+
+            options = [...options, ...novos];
+        }
+
+        return options.sort((a, b) => a.label.localeCompare(b.label));
     };
 
     // Verificar se é nível Subprefeito
@@ -403,11 +477,11 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
             {/* Adicionar Setor */}
             <Card title="Adicionar Setor" className="mb-24">
                 {currentSetor.isEditing && (
-                    <div style={{ 
-                        backgroundColor: '#fff3cd', 
-                        color: '#856404', 
-                        padding: '10px', 
-                        borderRadius: '4px', 
+                    <div style={{
+                        backgroundColor: '#fff3cd',
+                        color: '#856404',
+                        padding: '10px',
+                        borderRadius: '4px',
                         marginBottom: '15px',
                         border: '1px solid #ffeeba',
                         fontWeight: 'bold',
@@ -417,14 +491,25 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                     </div>
                 )}
                 <div className="form-row">
-                    <Select
-                        label="Hierarquia"
-                        value={currentSetor.hierarquia}
-                        onChange={(e) => handleSetorFieldChange('hierarquia', e.target.value)}
-                        options={hierarquiaOptions}
-                        required
-                        placeholder="Selecione o nível hierárquico"
-                    />
+                    {/* Checkbox de Assessoria (só se já tiver raiz) */}
+                    {temRaiz && (
+                        <div className="form-field" style={{ display: 'flex', alignItems: 'center', marginTop: '25px', marginBottom: '15px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '16px' }}>
+                                <input
+                                    type="checkbox"
+                                    name="isAssessoria"
+                                    checked={currentSetor.isAssessoria}
+                                    onChange={(e) => handleSetorFieldChange('isAssessoria', e.target.checked)}
+                                    style={{ width: '20px', height: '20px', marginRight: '10px' }}
+                                />
+                                É Assessoria?
+                            </label>
+                            <small className="help-text" style={{ marginLeft: '10px', color: '#666' }}>
+                                (Lateral, Nível 0)
+                            </small>
+                        </div>
+                    )}
+
                     <Select
                         label="Tipo de Setor"
                         value={currentSetor.tipoSetor}
@@ -432,24 +517,39 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                         options={getTiposSetorOptions()}
                         required
                         placeholder="Selecione o tipo"
-                        disabled={!currentSetor.hierarquia}
+                        disabled={!currentSetor.hierarquia} // Hierarquia é calculada automaticamente
                     />
                 </div>
 
-                {/* Seleção de Setor Pai - Para níveis 2+ ou Assessoria */}
-                {currentSetor.hierarquia && (parseFloat(currentSetor.hierarquia) > 1 || parseFloat(currentSetor.hierarquia) === 0) && setores.length > 0 && (
+                {/* Visualização do Nível Automático (Read-Only) */}
+                <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
+                    Nível Hierárquico Automático: <strong>{currentSetor.hierarquia ? (HIERARCHY_LABELS[currentSetor.hierarquia] || currentSetor.hierarquia) : 'Aguardando seleção...'}</strong>
+                </div>
+
+                {/* Seleção de Setor Pai - Obrigatório se já existe raiz */}
+                {temRaiz && setores.length > 0 && (
                     <Select
                         label="Setor Pai (Subordinado a)"
                         value={currentSetor.parentId || ''}
                         onChange={(e) => handleSetorFieldChange('parentId', e.target.value || null)}
                         options={(() => {
-                            // Filtrar setores que podem ser pais
                             const hierarquiaAtual = parseFloat(currentSetor.hierarquia);
+
+                            // Se a hierarquia ainda não foi definida (NaN), mostramos TODOS os setores possíveis como pai
+                            // O usuário escolhe o pai, e a hierarquia será calculada a partir dele.
+                            if (isNaN(hierarquiaAtual)) {
+                                return setores
+                                    .filter(s => s.id !== currentSetor.id)
+                                    .map(s => ({
+                                        value: s.id,
+                                        label: `${s.nomeSetor} (Nível ${s.hierarquia})`
+                                    }));
+                            }
 
                             // Se for Assessoria (0), pode ser ligado a qualquer nível >= 1 OU a outra Assessoria (0)
                             if (hierarquiaAtual === 0) {
                                 return setores
-                                    .filter(s => parseFloat(s.hierarquia) >= 0 && s.id !== currentSetor.id) // Permite nível 0 (outra assessoria)
+                                    .filter(s => parseFloat(s.hierarquia) >= 0 && s.id !== currentSetor.id)
                                     .map(s => ({
                                         value: s.id,
                                         label: `${s.nomeSetor} (Nível ${s.hierarquia})`
