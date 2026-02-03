@@ -1,73 +1,150 @@
 /**
  * Formulário de Organograma de Funções
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+// @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import { HIERARCHY_LEVELS, HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
-import { CARGOS_DAS } from '../../constants/cargosDAS';
-import { getOrgaoById } from '../../constants/orgaos';
+import { CARGOS_DAS, DESCRICOES_DAS, SIMBOLOS_DAS } from '../../constants/cargosDAS'; // Importando constantes legadas
 import { validateCargo } from '../../utils/validators';
 import api from '../../services/api';
 import './FuncoesForm.css';
 
-const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, isSandbox = false, orgaoId = null }) => {
-    const [currentCargo, setCurrentCargo] = useState({
+const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, isSandbox = false, orgaoId = null }: any) => {
+    const [currentCargo, setCurrentCargo] = useState<any>({
         prefixo: '',
         complementoNome: '',
         ocupante: '',
-        hierarquia: '',
+        hierarquia: '1', // Default 1
         isAssessoria: false,
+        isOperacional: false, // Novo campo
         parentId: null,
         setorRef: null,
         simbolos: []
     });
     const [currentSimbolo, setCurrentSimbolo] = useState({ tipo: '', quantidade: 1 });
 
-    const [prefixosOptions, setPrefixosOptions] = useState([]);
-    const [setoresOptions, setSetoresOptions] = useState([]);
+    const [prefixosOptions, setPrefixosOptions] = useState<any[]>([]);
+    const [setoresOptions, setSetoresOptions] = useState<any[]>([]);
+    const [cargoTypes, setCargoTypes] = useState<any[]>([]);
 
-    // Buscar prefixos do backend
+    const cargos = data.cargos || [];
+    const nomeOrgao = data.nomeOrgao || '';
+
+    // --- LÓGICA LEGADA DE CARGOS DAS (Restaurada a pedido do usuário) ---
+    // Em vez de buscar da API, usamos a lista estática onde ficam "DAS-S, DAS-9, etc"
+    // para garantir que a lista seja EXATAMENTE o que o usuário espera.
+
+    // Mapeamento de Nível Hierárquico baseado no DAS (Inferência)
+    // DAS-9/S = 1, DAS-8 = 2, DAS-7 = 3...
+    const getHierarchyFromDasKey = (key: string) => {
+        const map: any = {
+            'DAS-S': 1, 'DAS-9': 2, 'DAS-8': 3, 'DAS-7': 4,
+            'DAS-6': 5, 'DAS-5': 6, 'DAS-4': 7, 'DAS-3': 8,
+            'DAS-2': 9, 'DAS-1': 10, 'FC-1': 11
+        };
+        return map[key] || 11;
+    };
+
+    // --- 1. PREFIXOS DO CARGO (Configuração do Usuário) ---
+    // Fonte: Endpoint /prefixos (Tabela editável pelo usuário)
+    // Objetivo: Refletir exatamente o que o usuário cadastrou em "Configurar Prefixos"
     React.useEffect(() => {
         const fetchPrefixos = async () => {
             try {
                 const response = await api.get('/prefixos');
-                if (response.data && response.data.success) {
-                    const options = response.data.data.map(p => ({
-                        value: p.nome,
-                        label: p.nome
-                    }));
-                    setPrefixosOptions(options);
-                }
+                const userPrefixos = response.data?.data || [];
+
+                const options = userPrefixos.map((p: any) => ({
+                    value: p.nome,
+                    label: p.nome
+                }));
+                // Ordenar alfabeticamente
+                options.sort((a: any, b: any) => a.label.localeCompare(b.label));
+
+                setPrefixosOptions(options);
             } catch (error) {
                 console.error('Erro ao buscar prefixos:', error);
-                // Fallback silencioso ou notificação de erro
             }
         };
         fetchPrefixos();
     }, []);
-    const [orgaosOptions, setOrgaosOptions] = useState([]);
 
-    // Buscar lista de órgãos da API
-    React.useEffect(() => {
+    // --- 2. TIPOS DE SÍMBOLO (Oficiais do Sistema) ---
+    // Fonte: Endpoint /configs/cargos (Tabela tipos_cargo do DB)
+    // Objetivo: Listar os símbolos oficiais (DAS-S, DAS-9, etc.)
+    useEffect(() => {
+        const fetchSimbolos = async () => {
+            try {
+                const response = await api.get('/configs/cargos');
+                if (response.data?.success) {
+                    const allTypes = response.data.data || []; // Lista completa do banco
+
+                    // O usuário pediu a lista que tem DAS-S, DAS-9, etc.
+                    // Esses itens geralmente têm ordem definida (1, 2, 3...). 
+                    // Itens migrados/customizados pelo usuário costumam ter ordem null ou alta (99).
+                    // Para garantir que apareçam os DAS, ordenamos pela ordem.
+                    const sortedTypes = allTypes.sort((a: any, b: any) => (a.ordem || 999) - (b.ordem || 999));
+
+                    setCargoTypes(sortedTypes);
+                }
+            } catch (e) {
+                console.error('Erro ao buscar símbolos:', e);
+            }
+        };
+        fetchSimbolos();
+    }, []);
+
+    const [orgaosOptions, setOrgaosOptions] = useState<any[]>([]);
+
+    // Options
+    // Usar dados do BANCO filtrados (cargoTypes) para garantir consistência
+    // E mapear o NOME (que no banco é Descrição ex: "Diretor") para o CÓDIGO (ex: "DAS-8")
+    // pois o usuário quer ver o código na lista SEM OS SÍMBOLOS FÍSICOS (quadrados/bolinhas).
+    const simbolosOptions = cargoTypes.map((cargo: any) => {
+        // Tentar encontrar a chave (DAS-X) correspondente à descrição
+        const dasKey = Object.keys(DESCRICOES_DAS).find(key =>
+            DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === cargo.nome
+        );
+
+        // Se achou (ex: achou "DAS-8" para "Diretor"), usa "DAS-8" no label
+        // Se não achou (cargo customizado), usa o nome original
+        const labelText = dasKey || cargo.nome;
+
+        return {
+            value: cargo.nome, // Mantemos o valor (nome) para compatibilidade com o backend
+            label: labelText // AGORA SEM SÍMBOLO: apenas "DAS-8"
+        };
+    });
+
+    // Helper para display do nome do símbolo (Reverso do DESCRICOES_DAS)
+    const getSimboloDisplay = (nome: string) => {
+        const dasKey = Object.keys(DESCRICOES_DAS).find(key =>
+            DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === nome
+        );
+        return dasKey || nome;
+    };
+
+    // Buscar Órgãos
+    useEffect(() => {
         const fetchOrgaos = async () => {
             try {
                 const response = await api.get('/orgaos');
-                const orgaos = response.data.data || []; // Ajuste para pegar o array correto
+                const orgaos = response.data.data || [];
 
                 if (!Array.isArray(orgaos)) return;
 
-                // Filtrar e formatar para o Select - Usando NOME como VALUE para paridade com EstruturaForm
                 const formattedOptions = orgaos
-                    .filter(orgao => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
-                    .map(orgao => ({
-                        value: orgao.nome, // NOME como valor real
+                    .filter((orgao: any) => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
+                    .map((orgao: any) => ({
+                        value: orgao.nome,
                         label: orgao.nome.length > 85 ? orgao.nome.substring(0, 85) + '...' : orgao.nome
                     }))
-                    .sort((a, b) => a.label.localeCompare(b.label));
+                    .sort((a: any, b: any) => a.label.localeCompare(b.label));
 
                 setOrgaosOptions(formattedOptions);
             } catch (error) {
@@ -78,26 +155,20 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         fetchOrgaos();
     }, []);
 
-    const cargos = data.cargos || [];
-    const nomeOrgao = data.nomeOrgao || '';
-
-    // Trava o órgão se houver qualquer cargo Nível 1 ou Subprefeito-Cargo (raízes)
-    const orgaoTravado = cargos.some(c => {
+    // Trava o órgão
+    const orgaoTravado = cargos.some((c: any) => {
         const h = parseFloat(c.hierarquia);
         return h === 1 || h === 0.5;
     });
 
-    const tamanhoFolha = data.tamanhoFolha || 'A3';
-
-    // Helper para achatar árvore de setores
-    const flattenSetoresForOptions = (nodes) => {
-        let options = [];
+    const flattenSetoresForOptions = (nodes: any) => {
+        let options: any[] = [];
         if (!nodes || !Array.isArray(nodes)) return [];
 
-        nodes.forEach(node => {
+        nodes.forEach((node: any) => {
             options.push({
                 value: node.id,
-                label: node.nomeSetor || node.nome // Garantir compatibilidade de nome
+                label: node.nomeSetor || node.nome
             });
             if (node.children && node.children.length > 0) {
                 options = options.concat(flattenSetoresForOptions(node.children));
@@ -106,10 +177,9 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         return options;
     };
 
-    // Verificar se o órgão existe e carregar setores estruturais
-    React.useEffect(() => {
+    // Verificar órgão e carregar setores
+    useEffect(() => {
         const checkOrgao = async () => {
-            // Em modo Sandbox, orgaoId é mais importante que nomeOrgao
             if (!nomeOrgao && !(isSandbox && orgaoId)) {
                 setSetoresOptions([]);
                 return;
@@ -117,32 +187,26 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
 
             try {
                 let setores = [];
-                
-                // Se for Modo Sandbox, buscar na API de Sandbox
-                if (isSandbox && orgaoId) {
-                    console.log(`[FuncoesForm] Buscando setores SANDBOX para orgaoId: ${orgaoId}`);
+                // CORREÇÃO: Priorizar setores passados via props (Edição)
+                if (data.setores && data.setores.length > 0) {
+                    setores = data.setores;
+                    console.log('[FuncoesForm] Usando setores recebidos via props:', setores.length);
+                }
+                else if (isSandbox && orgaoId) {
                     const sandboxResponse = await api.get(`/sandbox/estrutural/${orgaoId}`);
                     setores = sandboxResponse.data?.setores || [];
                 } else {
-                    // Senão, buscar na API Institucional
-                    console.log(`[FuncoesForm] Buscando setores INSTITUCIONAIS para nomeOrgao: ${nomeOrgao}`);
-                    // nomeOrgao agora já é o nome real vindo do Select (ou URL)
                     const response = await api.get(`/organogramas/${encodeURIComponent(nomeOrgao)}`);
                     setores = response.data?.data?.organogramaEstrutural?.setores || [];
                 }
 
-                console.log(`[FuncoesForm] Setores encontrados: ${setores.length}`);
-
-                // Carregar setores estruturais para referência
                 if (setores && setores.length > 0) {
                     const flatSetores = flattenSetoresForOptions(setores);
-                    // Ordenar alfabeticamente para facilitar busca
                     flatSetores.sort((a, b) => a.label.localeCompare(b.label));
                     setSetoresOptions(flatSetores);
                 } else {
                     setSetoresOptions([]);
                 }
-
             } catch (error: any) {
                 console.error('[FuncoesForm] Erro ao carregar setores:', error);
                 if (error.response && error.response.status === 404) {
@@ -152,194 +216,162 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         };
 
         checkOrgao();
-
         const timeoutId = setTimeout(() => {
-            if (nomeOrgao) {
-                checkOrgao();
-            }
+            if (nomeOrgao) checkOrgao();
         }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [nomeOrgao, isSandbox, orgaoId]);
 
-    // Atualizar nome do órgão
-    const handleNomeOrgaoChange = (e) => {
+    // --- LÓGICA DE HIERARQUIA AUTOMÁTICA ---
+    useEffect(() => {
+        let novoNivel = '1';
+
+        // 1. Assessoria é sempre 0
+        if (currentCargo.isAssessoria) {
+            novoNivel = '0';
+        }
+        // 2. Se tiver Pai...
+        else if (currentCargo.parentId) {
+            const pai = cargos.find((c: any) => c.id === currentCargo.parentId);
+            if (pai) {
+                const nivelPai = parseFloat(pai.hierarquia);
+                let base = (nivelPai < 1 ? 1 : nivelPai) + 1;
+
+                // Ajuste Operacional: Desce +1 nível
+                if (currentCargo.isOperacional) base += 1;
+
+                novoNivel = String(Math.min(base, 10)); // Max 10
+            }
+        }
+        // 3. Sem pai (Raiz)
+        else {
+            // Se for operacional sem pai, talvez devesse ser 2? Mas manteremos 1 por padrão se for raiz.
+            // Se o usuário quiser, ele muda manualmente? Ah, é travado agora?
+            // Se for raiz e operacional, faz sentido ser 2? Vamos assumir que sim para consistência.
+            novoNivel = currentCargo.isOperacional ? '2' : '1';
+        }
+
+        if (currentCargo.hierarquia !== novoNivel) {
+            setCurrentCargo((prev: any) => ({ ...prev, hierarquia: novoNivel }));
+        }
+    }, [currentCargo.isAssessoria, currentCargo.isOperacional, currentCargo.parentId, cargos, currentCargo.hierarquia]);
+
+    const handleNomeOrgaoChange = (e: any) => {
         updateData({ nomeOrgao: e.target.value });
     };
 
-
-
-    // Atualizar campo do cargo atual
-    const handleCargoFieldChange = (field, value) => {
-        if (field === 'hierarquia') {
-            setCurrentCargo(prev => ({
+    const handleCargoFieldChange = (field: string, value: any) => {
+        if (field === 'parentId') {
+            setCurrentCargo((prev: any) => ({
                 ...prev,
                 [field]: value,
-                parentId: null, // Resetar pai ao mudar de nível
-                position: null  // <--- CORREÇÃO: Limpa posição antiga
-            }));
-        } else if (field === 'parentId') {
-            setCurrentCargo(prev => ({
-                ...prev,
-                [field]: value,
-                position: null // <--- CORREÇÃO: Limpa posição se mudar de pai
+                position: null // Reset position on move
             }));
         } else {
-            setCurrentCargo(prev => ({
+            setCurrentCargo((prev: any) => ({
                 ...prev,
                 [field]: value
             }));
         }
     };
 
-    // Adicionar símbolo ao cargo atual (Agrupando por tipo)
     const handleAddSimbolo = () => {
         if (currentSimbolo.tipo && currentSimbolo.quantidade > 0) {
-            setCurrentCargo(prev => {
-                const existingIndex = prev.simbolos.findIndex(s => s.tipo === currentSimbolo.tipo);
-
+            setCurrentCargo((prev: any) => {
+                const existingIndex = prev.simbolos.findIndex((s: any) => s.tipo === currentSimbolo.tipo);
                 let newSimbolos;
                 if (existingIndex >= 0) {
-                    // Símbolo já existe: Soma a quantidade
                     newSimbolos = [...prev.simbolos];
                     newSimbolos[existingIndex] = {
                         ...newSimbolos[existingIndex],
                         quantidade: newSimbolos[existingIndex].quantidade + currentSimbolo.quantidade
                     };
                 } else {
-                    // Símbolo novo: Adiciona à lista
                     newSimbolos = [...prev.simbolos, { ...currentSimbolo }];
                 }
-
-                return {
-                    ...prev,
-                    simbolos: newSimbolos
-                };
+                return { ...prev, simbolos: newSimbolos };
             });
             setCurrentSimbolo({ tipo: '', quantidade: 1 });
         }
     };
 
-    // Remover símbolo do cargo atual
-    const handleRemoveSimbolo = (index) => {
-        setCurrentCargo(prev => ({
+    const handleRemoveSimbolo = (index: number) => {
+        setCurrentCargo((prev: any) => ({
             ...prev,
-            simbolos: prev.simbolos.filter((_, i) => i !== index)
+            simbolos: prev.simbolos.filter((_: any, i: number) => i !== index)
         }));
     };
 
-    // Adicionar/Atualizar cargo à lista
     const handleAddCargo = () => {
-        // Gerar nome completo concatenado
+        // Validação de Setor de Referência (Obrigatório para exibir nome no organograma)
+        if (!currentCargo.setorRef) {
+            alert('⚠️ É obrigatório selecionar um Setor de Referência para vincular o cargo.');
+            return;
+        }
+
         const nomeCompleto = currentCargo.prefixo && currentCargo.complementoNome
             ? `${currentCargo.prefixo} de ${currentCargo.complementoNome}`
             : currentCargo.prefixo || currentCargo.complementoNome || '';
 
+        // Validação final de hierarquia
+        let finalHierarquia = currentCargo.hierarquia; // Já calculado pelo useEffect
+
         const cargoParaValidar = {
             ...currentCargo,
-            nomeCargo: nomeCompleto
+            nomeCargo: nomeCompleto,
+            hierarquia: finalHierarquia
         };
 
         const validation = validateCargo(cargoParaValidar);
 
         if (validation.valid) {
             if (currentCargo.isEditing) {
-                // Atualizar cargo existente
-                const { isEditing, prefixo, complementoNome, ...cargoLimpo } = cargoParaValidar;
+                const { isEditing, ...cargoLimpo } = cargoParaValidar;
                 updateData({
-                    cargos: cargos.map(c => c.id === cargoLimpo.id ? cargoLimpo : c)
+                    cargos: cargos.map((c: any) => c.id === cargoLimpo.id ? cargoLimpo : c)
                 });
             } else {
-                // Adicionar novo cargo
                 const novoCargo = {
                     ...cargoParaValidar,
                     id: uuidv4(),
-                    isAssessoria: parseInt(currentCargo.hierarquia) === 0,
-                    // Se for nível 1, pai é null. Se for 0 (Assessoria) ou outros níveis, deve ter pai.
-                    parentId: parseInt(currentCargo.hierarquia) === 1 ? null : currentCargo.parentId
+                    isAssessoria: parseInt(finalHierarquia) === 0,
+                    parentId: parseInt(finalHierarquia) === 1 ? null : currentCargo.parentId
                 };
-
-                updateData({
-                    cargos: [...cargos, novoCargo]
-                });
+                updateData({ cargos: [...cargos, novoCargo] });
             }
 
-            // Resetar formulário
+            // Reset
             setCurrentCargo({
                 prefixo: '',
                 complementoNome: '',
                 ocupante: '',
-                hierarquia: '',
+                hierarquia: '1',
                 isAssessoria: false,
+                isOperacional: false,
                 parentId: null,
                 setorRef: null,
                 simbolos: []
             });
         } else {
-            // Mostrar erros de validação ao usuário
-            const errorMessages = validation.errors?.join('\n') || 'Dados inválidos. Verifique os campos.';
-            alert('⚠️ Não foi possível adicionar o cargo:\n\n' + errorMessages);
+            // Fix: usar Object.values para garantir array de erros se for objeto
+            const errorList = Array.isArray(validation.errors) ? validation.errors : Object.values(validation.errors || {});
+            alert('⚠️ ' + errorList.join('\n'));
         }
     };
 
-    // Remover cargo da lista com proteção de integridade
-    const handleRemoveCargo = (id) => {
-        const cargoParaRemover = cargos.find(c => c.id === id);
-        if (!cargoParaRemover) return;
-
-        const h = parseFloat(cargoParaRemover.hierarquia);
-        const isCargoRaiz = h === 1 || h === 0.5;
-
-        // Se for o único cargo raiz (Nível 1)
-        if (isCargoRaiz) {
-            const outrasRaizes = cargos.filter(c => {
-                const ch = parseFloat(c.hierarquia);
-                return (ch === 1 || ch === 0.5) && c.id !== id;
+    const handleRemoveCargo = (id: string) => {
+        if (window.confirm("Deseja remover este cargo?")) {
+            updateData({
+                cargos: cargos.filter((c: any) => c.id !== id)
             });
-
-            if (outrasRaizes.length === 0) {
-                const confirmar = window.confirm("TEM CERTEZA QUE DESEJA DELETAR?");
-
-                if (!confirmar) return;
-
-                // Se confirmou, limpa tudo
-                updateData({ cargos: [] });
-                return;
-            }
         }
-
-        // Remoção padrão
-        updateData({
-            cargos: cargos.filter(c => c.id !== id)
-        });
     };
 
-    // Opções de hierarquia
-    const hierarquiaOptions = Object.entries(HIERARCHY_LEVELS)
-        .map(([key, value]) => ({
-            value: value.toString(),
-            label: key === 'ASSESSORIA' ? 'Assessoria (0)' : `Nível ${value}`
-        }));
-
-    // Opções de símbolos DAS
-    const simbolosOptions = CARGOS_DAS.map(cargo => ({
-        value: cargo,
-        label: cargo
-    }));
-
-    // Opções de cargos pai (apenas cargos já adicionados)
-    const cargosPaiOptions = cargos.map(cargo => ({
-        value: cargo.id,
-        label: `${cargo.nomeCargo} (Nível ${cargo.hierarquia})`
-    }));
-
-    // Carregar cargo para edição
-    const handleEditCargo = (cargo) => {
+    const handleEditCargo = (cargo: any) => {
         // Tentar separar o nome em prefixo + complemento
         let prefixoEncontrado = '';
         let complementoEncontrado = cargo.nomeCargo;
-
-        // Usar prefixos carregados do backend
         const prefixosList = prefixosOptions.map(p => p.value);
         for (const p of prefixosList) {
             if (cargo.nomeCargo.startsWith(p + ' de ')) {
@@ -357,22 +389,22 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
             ...cargo,
             prefixo: prefixoEncontrado,
             complementoNome: complementoEncontrado,
+            // CORREÇÃO: Assegurar que setorRef e parentId sejam carregados corretamente
+            setorRef: cargo.setorRef || cargo.setor_ref || null,
+            parentId: cargo.parentId === 'null' ? null : (cargo.parentId || null),
             isEditing: true
         });
 
-        // Rolar para o topo do formulário de cargo
         const formElement = document.querySelector('.funcoes-form');
-        if (formElement) {
-            formElement.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Cancelar edição
     const handleCancelEdit = () => {
         setCurrentCargo({
             prefixo: '',
             complementoNome: '',
             ocupante: '',
+            hierarquia: '1',
             isAssessoria: false,
             parentId: null,
             setorRef: null,
@@ -380,9 +412,21 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         });
     };
 
+
+
+    const cargosPaiOptions = cargos.map((cargo: any) => ({
+        value: cargo.id,
+        label: `${cargo.nomeCargo} (Nível ${cargo.hierarquia})`
+    }));
+
+    const parseHierarchy = (val: string) => parseFloat(val);
+    const formatHierarchyLabel = (level: number) => {
+        if (level === 0) return 'Assessoria (0)';
+        return `Nível ${level}`;
+    };
+
     return (
         <div className="funcoes-form">
-            {/* Configurações Gerais */}
             <Card title="Configurações Gerais" className="mb-24">
                 <div className="form-row">
                     <Select
@@ -394,138 +438,152 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                         required
                         disabled={orgaoTravado || disableOrgaoSelection}
                         error={errors.nomeOrgao}
-                        helperText={disableOrgaoSelection 
-                            ? "Criação vinculada ao órgão selecionado no Dashboard" 
-                            : (orgaoTravado ? "Órgão travado após adicionar primeiro cargo" : "Selecione o órgão para criar o diagrama funcional")}
                     />
                 </div>
-
-
             </Card>
 
-            {/* Adicionar Cargo */}
             <Card title="Adicionar Cargo/Função" className="mb-24">
                 {currentCargo.isEditing && (
-                    <div style={{ 
-                        backgroundColor: '#fff3cd', 
-                        color: '#856404', 
-                        padding: '10px', 
-                        borderRadius: '4px', 
-                        marginBottom: '15px',
-                        border: '1px solid #ffeeba',
-                        fontWeight: 'bold',
-                        textAlign: 'center'
-                    }}>
-                        ⚠️ EDIÇÃO EM ANDAMENTO: Clique em "CONFIRMAR ALTERAÇÃO" abaixo para efetivar a mudança!
+                    <div style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '10px', borderRadius: '4px', marginBottom: '15px', border: '1px solid #ffeeba', fontWeight: 'bold', textAlign: 'center' }}>
+                        ⚠️ EDIÇÃO EM ANDAMENTO
                     </div>
                 )}
+
                 <div className="cargo-inputs-grid">
                     <div className="grid-item-prefixo">
                         <Select
                             label="Prefixo do Cargo"
                             value={currentCargo.prefixo}
-                            onChange={(e) => handleCargoFieldChange('prefixo', e.target.value)}
+                            onChange={(e: any) => setCurrentCargo((prev: any) => ({ ...prev, prefixo: e.target.value }))}
                             options={prefixosOptions}
                             placeholder="Selecione..."
                             required
-                            helperText="Ex: Secretário, Diretor..."
                         />
                     </div>
                     <div className="grid-item-complemento">
                         <Input
                             label="Complemento do Nome"
                             value={currentCargo.complementoNome}
-                            onChange={(e) => handleCargoFieldChange('complementoNome', e.target.value)}
-                            placeholder="Ex: de Governo, de Dados..."
+                            onChange={(e: any) => handleCargoFieldChange('complementoNome', e.target.value)}
+                            placeholder="Ex: de Governo"
                             required
-                            helperText="Conectivo ' de ' é automático"
                         />
                     </div>
                     <div className="grid-item-ocupante">
                         <Input
                             label="Nome do Ocupante"
                             value={currentCargo.ocupante}
-                            onChange={(e) => handleCargoFieldChange('ocupante', e.target.value)}
+                            onChange={(e: any) => handleCargoFieldChange('ocupante', e.target.value)}
                             placeholder="Ex: João da Silva"
-                            required={false}
-                            helperText="Opcional"
                         />
                     </div>
                 </div>
 
                 <div className="form-row">
-                    <Select
-                        label="Hierarquia"
-                        value={currentCargo.hierarquia}
-                        onChange={(e) => handleCargoFieldChange('hierarquia', e.target.value)}
-                        options={hierarquiaOptions}
-                        required
-                        placeholder="Selecione o nível hierárquico"
-                    />
+                    {/* Checkbox de Chefia vs Operacional - BLOQUEADO PARA NÍVEL 1 */}
+                    {/* Se estiver editando um cargo nível 1, ou criando o primeiro cargo (que será nível 1), não mostrar opções */}
+                    {(cargos.length > 0 && parseFloat(currentCargo.hierarquia) !== 1) && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '30px', marginBottom: '10px' }}>
+                            <div className="checkbox-container" style={{ display: 'flex', alignItems: 'center' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={currentCargo.isAssessoria}
+                                        onChange={(e) => setCurrentCargo((prev: any) => ({ ...prev, isAssessoria: e.target.checked }))}
+                                    />
+                                    É uma Assessoria? (Nível 0 - Lateral)
+                                </label>
+                            </div>
 
-                    {/* Seleção de Cargo Pai - Renderização Condicional */}
-                    {currentCargo.hierarquia && parseInt(currentCargo.hierarquia) !== 1 && cargos.length > 0 && (
+                            {!currentCargo.isAssessoria && (
+                                <div className="checkbox-container" style={{ display: 'flex', alignItems: 'center' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={currentCargo.isOperacional}
+                                            onChange={(e) => setCurrentCargo((prev: any) => ({ ...prev, isOperacional: e.target.checked }))}
+                                        />
+                                        É Operacional? (Desce 1 Nível)
+                                    </label>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* AVISO PARA NÍVEL 1 */}
+                    {parseFloat(currentCargo.hierarquia) === 1 && (
+                        <div style={{ marginTop: '15px', marginBottom: '15px', color: '#666', fontStyle: 'italic', fontSize: '0.9em' }}>
+                            * Cargos de Nível 1 são Raiz e não podem ser Assessoria ou Operacional.
+                        </div>
+                    )}
+
+                    {/* Pai Obrigatório para filhos, mas OPCIONAL/OCULTO para Nível 1 */}
+                    {cargos.length > 0 && parseFloat(currentCargo.hierarquia) !== 1 && (
                         <Select
                             label="Cargo Pai (Subordinado a)"
                             value={currentCargo.parentId || ''}
-                            onChange={(e) => handleCargoFieldChange('parentId', e.target.value || null)}
+                            onChange={(e: any) => handleCargoFieldChange('parentId', e.target.value || null)}
                             options={cargosPaiOptions}
                             placeholder="Selecione o cargo pai"
-                            helperText="Escolha a qual cargo este estará subordinado"
+                            helperText="O nível hierárquico será calculado automaticamente."
+                            required={!currentCargo.isAssessoria}
                         />
                     )}
                 </div>
 
-                {/* Setor de Referência */}
+                {/* Display Nível */}
+                <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px', border: '1px solid #e9ecef', fontSize: '0.9rem' }}>
+                    <strong>Nível Hierárquico Calculado: </strong>
+                    <span style={{ color: parseHierarchy(currentCargo.hierarquia) === 0 ? '#6c757d' : '#007bff', fontWeight: 'bold' }}>
+                        {formatHierarchyLabel(parseHierarchy(currentCargo.hierarquia))}
+                    </span>
+                </div>
+
+                {/* Setor Ref */}
                 <div className="form-row">
                     <Select
                         label="Setor de Referência (Estrutural)"
                         value={currentCargo.setorRef || ''}
-                        onChange={(e) => handleCargoFieldChange('setorRef', e.target.value || null)}
+                        onChange={(e: any) => handleCargoFieldChange('setorRef', e.target.value || null)}
                         options={setoresOptions}
-                        placeholder="Selecione o setor estrutural correspondente"
-                        helperText="Vincula este cargo a um setor estrutural para filtros cruzados"
+                        placeholder="Selecione o setor estrutural"
+                        required
+                        helperText="Vincule este cargo ao setor onde ele está lotado para exibir o nome no organograma."
                     />
                 </div>
+                {setoresOptions.length === 0 && nomeOrgao && (
+                    <div style={{ padding: '10px', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '4px', marginTop: '-15px', marginBottom: '15px', fontSize: '0.9rem' }}>
+                        ⚠️ Nenhum setor estrutural encontrado. Crie o Organograma Estrutural primeiro para vincular cargos.
+                    </div>
+                )}
 
-                {/* Símbolos */}
+                {/* Simbolos */}
                 <div className="simbolos-section">
-                    <h4>Símbolos DAS</h4>
-                    <p className="helper-text">
-                        Adicione os símbolos (cargos) que compõem esta função.
-                        {currentCargo.hierarquia >= 5 && currentCargo.hierarquia <= 10 && (
-                            <span className="info-badge">
-                                ℹ️ Níveis 5-10 serão agrupados automaticamente na visualização
-                            </span>
-                        )}
-                    </p>
+                    <h4>Símbolos</h4>
                     <div className="form-row">
                         <Select
                             label="Tipo de Símbolo"
                             value={currentSimbolo.tipo}
-                            onChange={(e) => setCurrentSimbolo(prev => ({ ...prev, tipo: e.target.value }))}
+                            onChange={(e: any) => setCurrentSimbolo(prev => ({ ...prev, tipo: e.target.value }))}
                             options={simbolosOptions}
-                            placeholder="Selecione o símbolo"
+                            placeholder="Selecione"
                         />
                         <Input
-                            label="Quantidade"
+                            label="Qtd"
                             type="number"
                             value={currentSimbolo.quantidade}
-                            onChange={(e) => setCurrentSimbolo(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 1 }))}
+                            onChange={(e: any) => setCurrentSimbolo(prev => ({ ...prev, quantidade: parseInt(e.target.value) || 1 }))}
                             min="1"
                         />
                         <div className="add-simbolo-btn">
-                            <Button onClick={handleAddSimbolo} variant="secondary">
-                                + Adicionar Símbolo
-                            </Button>
+                            <Button onClick={handleAddSimbolo} variant="secondary">Adicionar</Button>
                         </div>
                     </div>
-
                     {currentCargo.simbolos.length > 0 && (
                         <div className="simbolos-list">
-                            {currentCargo.simbolos.map((simbolo, index) => (
+                            {currentCargo.simbolos.map((simbolo: any, index: number) => (
                                 <div key={index} className="simbolo-item">
-                                    <span>{simbolo.tipo} - Quantidade: {simbolo.quantidade}</span>
+                                    <span>{getSimboloDisplay(simbolo.tipo)} ({simbolo.quantidade})</span>
                                     <button onClick={() => handleRemoveSimbolo(index)} className="remove-btn">×</button>
                                 </div>
                             ))}
@@ -534,52 +592,30 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                 </div>
 
                 <Button onClick={handleAddCargo} fullWidth variant="primary">
-                    {currentCargo.isEditing ? '✓ CONFIRMAR Alteração (Salvar na Lista)' : '✓ Adicionar Cargo ao Organograma'}
+                    {currentCargo.isEditing ? '✓ SALVAR ALTERAÇÃO' : '✓ Adicionar Cargo'}
                 </Button>
                 {currentCargo.isEditing && (
-                    <Button onClick={handleCancelEdit} fullWidth variant="outline" style={{ marginTop: '10px' }}>
-                        Cancelar Edição
-                    </Button>
+                    <Button onClick={handleCancelEdit} fullWidth variant="outline" style={{ marginTop: '10px' }}>Cancelar</Button>
                 )}
             </Card>
 
-            {/* Lista de Cargos Adicionados */}
             {cargos.length > 0 && (
-                <Card title={`Cargos Adicionados (${cargos.length})`}>
+                <Card title={`Cargos (${cargos.length})`}>
                     <div className="cargos-list">
-                        {cargos.map((cargo) => (
-                            <div
-                                key={cargo.id}
-                                className="cargo-item-card"
-                                style={{ borderLeftColor: HIERARCHY_COLORS[cargo.hierarquia] }}
-                            >
+                        {cargos.map((cargo: any) => (
+                            <div key={cargo.id} className="cargo-item-card" style={{ borderLeftColor: HIERARCHY_COLORS[cargo.hierarquia] }}>
                                 <div className="cargo-info">
                                     <h4>{cargo.nomeCargo}</h4>
-                                    <p>
-                                        Nível {cargo.hierarquia}
-                                        {cargo.isAssessoria && ' (Assessoria)'}
-                                    </p>
+                                    <p>Nível {cargo.hierarquia} {cargo.isAssessoria && '(Assessoria)'}</p>
                                     <div className="cargo-simbolos">
-                                        {cargo.simbolos.map((simbolo, idx) => (
-                                            <span key={idx} className="simbolo-badge">
-                                                {simbolo.tipo} ({simbolo.quantidade})
-                                            </span>
+                                        {cargo.simbolos.map((s: any, i: number) => (
+                                            <span key={i} className="simbolo-badge">{getSimboloDisplay(s.tipo)} ({s.quantidade})</span>
                                         ))}
                                     </div>
                                 </div>
                                 <div className="cargo-item-actions">
-                                    <button
-                                        onClick={() => handleEditCargo(cargo)}
-                                        className="edit-cargo-btn"
-                                    >
-                                        Editar
-                                    </button>
-                                    <button
-                                        onClick={() => handleRemoveCargo(cargo.id)}
-                                        className="remove-cargo-btn"
-                                    >
-                                        Remover
-                                    </button>
+                                    <button onClick={() => handleEditCargo(cargo)} className="edit-cargo-btn">Editar</button>
+                                    <button onClick={() => handleRemoveCargo(cargo.id)} className="remove-cargo-btn">Remover</button>
                                 </div>
                             </div>
                         ))}

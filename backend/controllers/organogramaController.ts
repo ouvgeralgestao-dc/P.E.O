@@ -67,9 +67,17 @@ const recalculateHierarchy = (setores: any[]) => {
                 // Cálculo de nível automático: Base + 1
                 // Trata subprefeitura (0.5) e assessoria (0) como base 0 para virar 1
                 let baseH = currentH;
+                // Se o pai for assessoria (0) ou subpref (0.5), tratamos como base 0 para o filho ser 1
                 if (baseH < 1) baseH = 0;
 
                 let nextH = Math.floor(baseH) + 1;
+
+                // Lógica de Hierarquia Operacional (Novo)
+                // Se for marcado como operacional, desce mais um nível para se diferenciar da chefia
+                if (child.is_operacional) {
+                    nextH += 1;
+                }
+
                 // Limite máximo de 10
                 if (nextH > 10) nextH = 10;
 
@@ -105,7 +113,7 @@ export const createOrganogramaEstrutural = async (req, res, next) => {
         const orgaoIdSlug = fileSystem.normalizeOrgaoId(nomeOrgao);
 
         // Validação de Duplicidade CORRETA
-        const existingOrgaoId = await storageService.getOrgaoIdByName(nomeOrgao) || orgaoIdSlug;
+        const existingOrgaoId = req.body.orgaoId || await storageService.getOrgaoIdByName(nomeOrgao) || orgaoIdSlug;
 
         // RECUPERAÇÃO DE NOME INTELIGENTE (Smart Retrieval V2 - Heurística de Qualidade)
         // Objetivo: Impedir que um nome rico (ex: "Conselho de Contribuintes") seja sobrescrito por um slug ("conselho_de_contribuintes")
@@ -221,7 +229,8 @@ export const updateOrganogramaEstrutural = async (req, res, next) => {
 
         const orgaoIdSlug = fileSystem.normalizeOrgaoId(decodedName);
 
-        let orgaoId = await storageService.getOrgaoIdByName(decodedName);
+        // PRIORIDADE: orgaoId vindo do body (se enviado pelo front), senão busca pelo nome
+        let orgaoId = req.body.orgaoId || await storageService.getOrgaoIdByName(decodedName);
 
         // CORREÇÃO ID vs NOME: Se não achou por nome, verifica se decodedName é o ID direto
         if (!orgaoId) {
@@ -310,8 +319,9 @@ export const getOrganogramaByName = async (req, res, next) => {
         const estrutura = await storageService.getOrgaoEstrutural(orgaoId);
         const metadata = await storageService.getOrgaoMetadata(orgaoId);
 
-        // Buscar metadados específicos do organograma estrutural (tamanho da folha)
-        const tamanhoFolha = await storageService.getTamanhoFolha(orgaoId);
+        // Buscar metadados específicos do organograma estrutural
+        const estruturalMeta = await storageService.getOrganogramaEstruturalMeta(orgaoId);
+        const tamanhoFolha = estruturalMeta ? estruturalMeta.tamanhoFolha : 'A4';
 
         if (!metadata) {
             return res.status(404).json({ success: false, message: 'Órgão não encontrado' });
@@ -352,11 +362,14 @@ export const getOrganogramaByName = async (req, res, next) => {
             data: {
                 orgao: metadata.orgao,
                 orgaoId: metadata.id,
-                createdAt: metadata.createdAt,
-                updatedAt: metadata.updatedAt,
+                // Priorizar datas específicas do estrutural se existirem
+                createdAt: estruturalMeta?.createdAt || metadata.createdAt,
+                updatedAt: estruturalMeta?.updatedAt || metadata.updatedAt,
                 organogramaEstrutural: estrutura && estrutura.length > 0 ? {
                     tamanhoFolha: tamanhoFolha,
-                    setores: estrutura
+                    setores: estrutura,
+                    createdAt: estruturalMeta?.createdAt,
+                    updatedAt: estruturalMeta?.updatedAt
                 } : null,
                 organogramasFuncoes: organogramasFuncoes
             },
@@ -518,8 +531,12 @@ export async function createOrganogramaFuncoes(req, res, next) {
             nomeOrgao = decodeURIComponent(req.params.nomeOrgao);
         }
 
-        // CORREÇÃO FK: Buscar ID real do órgão no banco antes de normalizar
-        let orgaoId = await storageService.getOrgaoIdByName(nomeOrgao);
+        // CORREÇÃO FK: Priorizar ID enviado explicitamente pelo frontend
+        let orgaoId = req.body.orgaoId || null;
+
+        if (!orgaoId) {
+            orgaoId = await storageService.getOrgaoIdByName(nomeOrgao);
+        }
 
         // CORREÇÃO ID vs NOME: Se não achou por nome, verifica se nomeOrgao é o ID direto
         if (!orgaoId) {
@@ -532,6 +549,14 @@ export async function createOrganogramaFuncoes(req, res, next) {
             orgaoId = fileSystem.normalizeOrgaoId(nomeOrgao);
         } else {
             console.log(`[CREATE FUNCIONAL] ID resolvido com sucesso: '${nomeOrgao}' -> '${orgaoId}'`);
+        }
+
+        // BLOQUEIO CRÍTICO: Se não achou ID real no banco, NÃO prosseguir (causará FK error)
+        if (!orgaoId) {
+            return res.status(404).json({
+                success: false,
+                message: `Não foi possível localizar o órgão '${nomeOrgao}' no banco de dados. Verifique o cadastro do órgão institucional primeiro.`
+            });
         }
 
         // AUTH CHECK: Usuário comum só pode editar seu órgão

@@ -8,6 +8,7 @@ import DetailedTableCard from '../components/common/DetailedTableCard';
 import ConsolidatedTableCard from '../components/common/ConsolidatedTableCard';
 import Button from '../components/common/Button';
 import ViewSelectionModal from '../components/common/ViewSelectionModal';
+import { DESCRICOES_DAS } from '../constants/cargosDAS';
 import './Dashboard.css';
 
 interface Organograma {
@@ -58,6 +59,13 @@ const Dashboard = () => {
                 return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
             })
             .join(' ');
+    }, []);
+
+    // Helper para reverter Descrição -> Código (ex: "Diretor" -> "DAS-8")
+    const getDasCode = useCallback((descricao: string) => {
+        if (!descricao) return '';
+        const entry = Object.entries(DESCRICOES_DAS).find(([_, value]) => value === descricao);
+        return entry ? entry[0] : descricao;
     }, []);
 
     const formatDate = useCallback((dateString?: string) => {
@@ -305,7 +313,7 @@ const Dashboard = () => {
                     {/* Botão Premium para criar Funcional se apenas Estrutural existir */}
                     {org.organogramaEstrutural && (!org.organogramasFuncoes || org.organogramasFuncoes.length === 0) && (
                         <Button
-                            variant="success"
+                            variant="primary"
                             fullWidth
                             className="btn-criar-funcional-premium"
                             onClick={(e: React.MouseEvent) => {
@@ -452,16 +460,16 @@ const Dashboard = () => {
     // Helper de Ordenação Hierárquica
     const getSymbolRank = useCallback((symbol: string) => {
         const s = symbol.toUpperCase().trim();
-        
+
         // 1. Topo da Pirâmide
         if (s === 'DAS-S') return 1;
         if (s === 'SS') return 2;
         if (s === 'VP') return 3;
-        
+
         // 2. FC-1 (Solicitado explicitamente após DAS-S)
         if (s === 'FC-1') return 5;
         if (s === 'FC-2') return 6; // Caso exista
-        
+
         // 3. DAS Numéricos (DAS-10A -> DAS-1)
         // Usamos regex para extrair o número. Quanto maior o número, menor o rank (aparece antes)
         const matchDas = s.match(/^DAS-(\d+)/);
@@ -469,7 +477,7 @@ const Dashboard = () => {
             const num = parseInt(matchDas[1]);
             // Ex: DAS-10 -> 20 - 10 = 10
             // Ex: DAS-1 -> 20 - 1 = 19
-            return 20 - num; 
+            return 20 - num;
         }
 
         // 4. CAI / DAI
@@ -581,7 +589,7 @@ const Dashboard = () => {
         return {
             // Sorting Chart 1: Símbolos (Principal change)
             chartDataSimbolos: Object.entries(simbolosCount)
-                .map(([name, value]) => ({ label: name, value }))
+                .map(([name, value]) => ({ label: getDasCode(name), value }))
                 .sort(sortSymbolsByRank), // Ordenado por Rank
 
             // Sorting Chart 2: Detalhes de Símbolos dentro dos cargos
@@ -590,7 +598,7 @@ const Dashboard = () => {
                     label: name,
                     value: info.total,
                     details: Object.entries(info.simbolosMap)
-                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .map(([sName, sValue]) => ({ label: getDasCode(sName), value: sValue }))
                         .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value),
@@ -641,7 +649,7 @@ const Dashboard = () => {
                     label: formatOrgaoName(name),
                     value: s.simbolos,
                     details: Object.entries(s.simbolosMap)
-                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .map(([sName, sValue]) => ({ label: getDasCode(sName), value: sValue }))
                         .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value),
@@ -652,7 +660,7 @@ const Dashboard = () => {
                     label: name,
                     value: s.total,
                     details: Object.entries(s.simbolosMap)
-                        .map(([sName, sValue]) => ({ label: sName, value: sValue }))
+                        .map(([sName, sValue]) => ({ label: getDasCode(sName), value: sValue }))
                         .sort(sortSymbolsByRank) // Ordenado por Rank
                 }))
                 .sort((a, b) => b.value - a.value)
@@ -673,7 +681,7 @@ const Dashboard = () => {
                 const processSetor = (node: any) => {
                     if (node.nomeSetor) {
                         const setorPassaFiltro = selectedSetores.length === 0 || selectedSetores.includes(node.nomeSetor);
-                        
+
                         // Coletar símbolos deste setor
                         const simbolosDoSetor: Record<string, number> = {};
                         let temSimboloNoFiltro = selectedSimbolos.length === 0;
@@ -682,7 +690,7 @@ const Dashboard = () => {
                             node.cargos.forEach((c: any) => {
                                 const qtd = parseInt(c.quantidade) || 0;
                                 const tipo = c.tipo;
-                                
+
                                 const simboloPassaFiltro = selectedSimbolos.length === 0 || selectedSimbolos.includes(tipo);
                                 if (tipo && qtd > 0 && simboloPassaFiltro) {
                                     simbolosDoSetor[tipo] = (simbolosDoSetor[tipo] || 0) + qtd;
@@ -696,9 +704,9 @@ const Dashboard = () => {
                         if (setorPassaFiltro && temSimboloNoFiltro && Object.keys(simbolosDoSetor).length > 0) {
                             totalSetores++;
                             if (!setoresData[node.id || node.nomeSetor]) {
-                                setoresData[node.id || node.nomeSetor] = { 
-                                    setor: node.nomeSetor, 
-                                    simbolos: simbolosDoSetor 
+                                setoresData[node.id || node.nomeSetor] = {
+                                    setor: node.nomeSetor,
+                                    simbolos: simbolosDoSetor
                                 };
                             }
                         }
@@ -717,7 +725,7 @@ const Dashboard = () => {
                         .map(s => ({
                             setor: s.setor,
                             simbolos: Object.entries(s.simbolos)
-                                .map(([tipo, quantidade]) => ({ tipo, quantidade }))
+                                .map(([tipo, quantidade]) => ({ tipo: getDasCode(tipo), quantidade }))
                                 .sort(sortSymbolsByRank)
                         }))
                         .sort((a, b) => {

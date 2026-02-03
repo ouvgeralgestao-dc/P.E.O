@@ -47,8 +47,10 @@ function OrganogramaGeralFuncional() {
             const response = await api.get(url);
 
             // Adaptar estrutura para o formato esperado pelo OrganogramaCanvas
+            const { organogramaEstrutural, ...restData } = response.data.data;
             const adaptedData = {
-                ...response.data.data,
+                ...restData,
+                setores: organogramaEstrutural?.setores || [], // Usar apenas para lookup
                 organogramasFuncoes: [response.data.data.organogramaFuncional]
             };
 

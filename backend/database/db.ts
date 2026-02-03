@@ -36,6 +36,12 @@ function runMigrations() {
         { table: 'usuarios', column: 'nome', type: 'TEXT', default: 'NULL' },
         { table: 'usuarios', column: 'orgao_id', type: 'TEXT', default: 'NULL' },
         { table: 'usuarios', column: 'ativo', type: 'INTEGER', default: '1' },
+        // 2026-02-03: Hierarquia Operacional vs Chefia (is_operacional)
+        { table: 'setores', column: 'is_operacional', type: 'INTEGER', default: '0' },
+        { table: 'cargos_funcionais', column: 'is_operacional', type: 'INTEGER', default: '0' },
+        // 2026-02-03: Data de criação e atualização para organogramas estruturais
+        { table: 'organogramas_estruturais', column: 'created_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
+        { table: 'organogramas_estruturais', column: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
     ];
 
     for (const m of migrations) {
@@ -149,11 +155,101 @@ function seedUsuarios() {
     }
 }
 
+// Função para seedar Tipos de Cargo (Refatoração Dinâmica)
+function seedTiposCargo() {
+    try {
+        const count = client.prepare('SELECT COUNT(*) as total FROM tipos_cargo').get() as { total: number };
+        if (count.total > 0) return;
+
+        console.log('🌱 [Seed] Inicializando tabela tipos_cargo com padrões...');
+
+        const padroes = [
+            { nome: 'Secretário Municipal', hierarquia: 1, simbolo: '⬛', ordem: 1 },
+            { nome: 'Subsecretário / Diretor Geral', hierarquia: 2, simbolo: '⬛', ordem: 2 },
+            { nome: 'Diretor', hierarquia: 3, simbolo: '⬛', ordem: 3 },
+            { nome: 'Coordenador', hierarquia: 4, simbolo: '▪', ordem: 4 },
+            { nome: 'Gerente / Chefe de Departamento', hierarquia: 5, simbolo: '▪', ordem: 5 },
+            { nome: 'Chefe de Divisão', hierarquia: 6, simbolo: '▪', ordem: 6 },
+            { nome: 'Chefe de Seção', hierarquia: 7, simbolo: '▫', ordem: 7 },
+            { nome: 'Supervisor', hierarquia: 8, simbolo: '▫', ordem: 8 },
+            { nome: 'Assistente', hierarquia: 9, simbolo: '▫', ordem: 9 },
+            { nome: 'Auxiliar', hierarquia: 10, simbolo: '○', ordem: 10 },
+            { nome: 'Função Comissionada', hierarquia: 11, simbolo: '○', ordem: 11 }
+        ];
+
+        // Mapeamento de abreviações antigas para referência se necessário
+        // 'DAS-S' -> Secretário
+        // 'DAS-9' -> Subsecretário...
+
+        const insert = client.prepare(`
+            INSERT INTO tipos_cargo (id, nome, hierarquia_padrao, simbolo, ordem)
+            VALUES (?, ?, ?, ?, ?)
+        `);
+
+        client.transaction(() => {
+            for (const p of padroes) {
+                // Usar UUID ou slug simples como ID? Vamos usar UUID para consistência
+                insert.run(crypto.randomUUID(), p.nome, p.hierarquia, p.simbolo, p.ordem);
+            }
+        })();
+
+        console.log('✅ [Seed] Tipos de Cargo inicializados.');
+
+    } catch (e) {
+        console.error('❌ [Seed] Erro ao seedar tipos_cargo:', e);
+    }
+}
+
+// Função para migrar prefixos legados para a nova tabela tipos_cargo
+function migratePrefixosToTiposCargo() {
+    try {
+        // Verificar se a tabela prefixos existe
+        const tableExists = client.prepare("SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='prefixos'").get() as { count: number };
+        if (!tableExists || tableExists.count === 0) return;
+
+        console.log('🔄 [Migration] Verificando migração de prefixos antigos...');
+
+        const prefixos = client.prepare('SELECT * FROM prefixos').all() as any[];
+
+        if (prefixos.length === 0) return;
+
+        const insert = client.prepare(`
+            INSERT INTO tipos_cargo (id, nome, hierarquia_padrao, simbolo, ordem)
+            VALUES (?, ?, ?, ?, ?)
+        `);
+
+        // Check existing names to avoid duplicates
+        const existing = client.prepare('SELECT nome FROM tipos_cargo').all() as any[];
+        const existingNames = new Set(existing.map(e => e.nome.toLowerCase()));
+
+        let migratedCount = 0;
+
+        client.transaction(() => {
+            for (const p of prefixos) {
+                if (!existingNames.has(p.nome.toLowerCase())) {
+                    // Default: Nível 11 (Outros), Símbolo O, Ordem 99
+                    insert.run(crypto.randomUUID(), p.nome, 11, '○', 99);
+                    migratedCount++;
+                }
+            }
+        })();
+
+        if (migratedCount > 0) {
+            console.log(`✅ [Migration] ${migratedCount} prefixos antigos migrados para tipos_cargo.`);
+        }
+
+    } catch (e) {
+        console.error('❌ [Migration] Erro ao migrar prefixos:', e);
+    }
+}
+
 // Executa init + migrations + seed na importação
 initDb();
 runMigrations();
 seedFromJson();
 seedUsuarios();
+migratePrefixosToTiposCargo(); // Run before seedTiposCargo to preserve user data preference? Or after? Order doesn't matter much due to checks.
+seedTiposCargo();
 
 // Wrapper Async para compatibilidade com código existente
 export const dbAsync = {

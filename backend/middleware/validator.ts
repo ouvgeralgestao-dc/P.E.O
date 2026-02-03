@@ -15,9 +15,9 @@ const CARGO_MAX_QUANTITY = {
     'FC-1': 10000
 };
 
-// Regras de símbolos por nível hierárquico
 const SIMBOLOS_POR_NIVEL = {
     0: Infinity, // Assessoria - ilimitado
+    0.5: Infinity, // Subprefeitura - ilimitado
     1: Infinity, // Nível 1 - ilimitado
     2: Infinity, // Nível 2 - ilimitado
     3: Infinity, // Nível 3 - ilimitado
@@ -41,8 +41,11 @@ export const validateCargosDAS = (cargos) => {
     for (const cargo of cargos) {
         const maxQty = CARGO_MAX_QUANTITY[cargo.tipo];
 
+        // Se o cargo não está na lista fixa de DAS, ignoramos a validação de quantidade máxima
+        // Isso permite cargos dinâmicos ou cargos DAS identificados pelo nome rico
         if (!maxQty) {
-            errors.push(`Tipo de cargo inválido: ${cargo.tipo}`);
+            // Log informativo apenas, sem bloquear a criação
+            // console.log(`[Validator] Ignorando limite máximo para cargo customizado: ${cargo.tipo}`);
             continue;
         }
 
@@ -117,7 +120,7 @@ export const validateOrganogramaEstrutural = [
         .notEmpty().withMessage('Nome do setor é obrigatório'),
 
     body('setores.*.hierarquia')
-        .isInt({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 (Assessoria) e 10'),
+        .isFloat({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 (Assessoria) e 10. Subprefeituras usam 0.5.'),
 
     body('setores.*.cargos')
         .isArray().withMessage('Cargos deve ser um array'),
@@ -192,7 +195,7 @@ export const validateUpdateOrganogramaEstrutural = [
         .notEmpty().withMessage('Nome do setor é obrigatório'),
 
     body('setores.*.hierarquia')
-        .isInt({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 (Assessoria) e 10'),
+        .isFloat({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 (Assessoria) e 10. Subprefeituras usam 0.5.'),
 
     body('setores.*.cargos')
         .isArray().withMessage('Cargos deve ser um array'),
@@ -267,7 +270,7 @@ export const validateOrganogramaFuncoes = [
         .isLength({ max: 500 }).withMessage('Nome do cargo deve ter no máximo 500 caracteres'),
 
     body('cargos.*.hierarquia')
-        .isInt({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 e 10'),
+        .isFloat({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 e 10'),
 
     body('cargos.*.simbolos')
         .isArray().withMessage('Símbolos deve ser um array'),
@@ -343,8 +346,8 @@ export const validateUpdateOrganogramaFuncoes = [
         }),
 
     body('cargos.*.hierarquia')
-        .customSanitizer(value => parseInt(value, 10))
-        .isInt({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 e 10'),
+        .customSanitizer(value => parseFloat(value))
+        .isFloat({ min: 0, max: 10 }).withMessage('Hierarquia deve ser entre 0 e 10'),
 
     // Validação customizada para aceitar simbolos (array) OU simbolo (string) + quantidade (number)
     (req, res, next) => {

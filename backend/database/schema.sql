@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS orgaos (
 CREATE TABLE IF NOT EXISTS organogramas_estruturais (
     orgao_id TEXT PRIMARY KEY REFERENCES orgaos(id) ON DELETE CASCADE,
     tamanho_folha TEXT DEFAULT 'A4',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME
 );
 
@@ -97,6 +98,19 @@ CREATE TABLE IF NOT EXISTS tipos_setor (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tipos_setor_nome ON tipos_setor(nome);
+
+-- TABELA 09B: TIPOS_CARGO (Dicionário de nomes de cargo e níveis padrão)
+CREATE TABLE IF NOT EXISTS tipos_cargo (
+    id TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    hierarquia_padrao REAL DEFAULT 1, -- Nível sugerido (DAS-S=1, DAS-9=2...)
+    simbolo TEXT,                     -- Símbolo padrão (ex: ⬛, ▪, ▫, ○)
+    ordem INTEGER DEFAULT 999,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tipos_cargo_nome ON tipos_cargo(nome);
 
 -- TABELA 10: USUÁRIOS (Gestão de Acesso)
 CREATE TABLE IF NOT EXISTS usuarios (

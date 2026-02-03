@@ -6,6 +6,7 @@
 import React from 'react';
 import { Handle, Position } from 'reactflow';
 import { HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
+import { DESCRICOES_DAS } from '../../constants/cargosDAS'; // Importar mapeamento
 import StyleEditor from './StyleEditor';
 import './SetorNode.css';
 
@@ -25,6 +26,14 @@ const SetorNode = ({ data, selected }) => {
         id
     } = data;
 
+    // Helper para reverter Descrição -> Código (ex: "Diretor" -> "DAS-8")
+    const getDasCode = (descricao) => {
+        if (!descricao) return '';
+        // Tenta encontrar a chave (DAS-X) cujo valor seja igual à descrição
+        const entry = Object.entries(DESCRICOES_DAS).find(([key, value]) => value === descricao);
+        return entry ? entry[0] : descricao; // Se não achar, retorna a descrição original
+    };
+
     // Derived values
     const nome = nomeSetor || nomeCargo; // Fallback
     const isPrefeito = tipoSetor === 'Prefeito' || data.id === 'prefeito' || data.id === 'prefeito-cargo';
@@ -38,7 +47,7 @@ const SetorNode = ({ data, selected }) => {
 
     // Style Editor state controlled by parent (OrganogramaCanvas)
     const showEditor = data.isEditing;
-    console.log(`[SetorNode] ${data.id?.substring(0, 8)} | isEditing=${data.isEditing} | showEditor=${showEditor}`);
+    // console.log(`[SetorNode] ${data.id?.substring(0, 8)} | isEditing=${data.isEditing} | showEditor=${showEditor}`);
     const nodeRef = React.useRef(null);
 
     // Cor especial para o Prefeito (Ouro) ou baseada na hierarquia
@@ -83,6 +92,9 @@ const SetorNode = ({ data, selected }) => {
         return { w: 240, h: 80 };
     };
     const { w, h } = getDimension();
+
+    // Debug removido para evitar ReferenceError
+    // if (!isAssessoriaNode) { ... }
 
     // console.log('[SetorNode] Style:', { id: data.id, style: data.style, custom: data.customStyle, effective: effectiveStyle });
 
@@ -210,23 +222,33 @@ const SetorNode = ({ data, selected }) => {
                 )}
 
                 {/* Setor de Referência (Cross-Filtering) */}
-                {data.nomeSetorRef && (
-                    <div className="node-setor-ref">
-                        {data.nomeSetorRef}
+                {/* Setor de Referência (Cross-Filtering) */}
+                {/* Setor de Referência (Cross-Filtering) */}
+                {(data.nomeSetorRef || data.setorRef) && (
+                    <div className="node-setor-ref" style={{
+                        fontSize: '10px',
+                        color: data.nomeSetorRef ? '#666' : 'red', // Vermelho se for só ID (Erro)
+                        backgroundColor: 'rgba(255,255,255,0.7)',
+                        padding: '2px 4px',
+                        borderRadius: '4px',
+                        marginBottom: '4px',
+                        fontWeight: 'bold',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        lineHeight: '1.1'
+                    }}>
+                        {data.nomeSetorRef || `[DEBUG] ID: ${data.setorRef}`}
                     </div>
                 )}
 
-                {/* Hierarquia */}
-                <div className="node-hierarquia">
-                    {isAssessoria ? 'Assessoria' : `Nível ${!isNaN(parseFloat(hierarquia)) ? parseFloat(hierarquia).toFixed(1) : hierarquia}`}
-                </div>
+
 
                 {/* Cargos (para organograma estrutural) */}
                 {cargos && cargos.length > 0 && (
                     <div className="node-cargos">
                         {cargos.map((cargo, idx) => (
                             <span key={idx} className="cargo-badge">
-                                {cargo.tipo} ({cargo.quantidade})
+                                {getDasCode(cargo.tipo)} ({cargo.quantidade})
                             </span>
                         ))}
                     </div>
@@ -237,7 +259,7 @@ const SetorNode = ({ data, selected }) => {
                     <div className="node-simbolos">
                         {simbolos.map((simbolo, idx) => (
                             <span key={idx} className="simbolo-badge">
-                                {simbolo.tipo} ({simbolo.quantidade})
+                                {getDasCode(simbolo.tipo)} ({simbolo.quantidade})
                             </span>
                         ))}
                     </div>

@@ -659,6 +659,12 @@ Se o código quebrar ou o usuário não gostar:
 2.  **Estudar Configurações:** Ler `package.json`, `tsconfig.json`, `vite.config.ts` e arquivos de inicialização de banco para entender as "Regras do Jogo" atuais.
 3.  **Respeitar Limites:** Não introduzir dependências que violem a arquitetura (ex: não usar `mongoose` se estamos em `sql`).
 
+#### 💎 REGRA DE OURO DA PERSISTÊNCIA (DEBUG DE BANCO DE DADOS)
+**DIRETRIZ:** Jamais desistir de uma consulta ao banco de dados por erro de sintaxe ou ambiente.
+1.  **Tentativa e Adaptação:** Se um método falhar (ex: `sqlite3 CLI`), tente outro imediatamente (ex: Script Node.js, Python, Powershell Pipe).
+2.  **Inovação Tática:** Se a ferramenta está quebrada, construa uma ferramenta temporária.
+3.  **Limite da Desistência:** Só reporte "impossível" após esgotar TODAS as vias de acesso programático e de sistema. E mesmo assim, peça ajuda para brainstorming.
+
 #### 2. 🩹 Ciclo de Prevenção e Pausa Crítica
 **REGRA DE ZERO TOLERÂNCIA A ERROS:**
 -   Se o compilador (TypeScript), linter ou biblioteca emitir **ERRO** ou **AVISO (Warning)** durante a execução: **PAUSE IMEDIATAMENTE**.

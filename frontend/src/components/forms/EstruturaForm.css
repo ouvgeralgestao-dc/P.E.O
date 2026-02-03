@@ -20,24 +20,48 @@
     align-items: flex-end;
 }
 
-.checkbox-wrapper {
-    margin: 16px 0;
+/* Seção de Checkboxes (Assessoria / Operacional) */
+.checkbox-row-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #edf2f7;
+    align-items: center;
 }
 
-.checkbox-wrapper label {
+.checkbox-field {
     display: flex;
     align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    color: #2d3748;
+    gap: 12px;
 }
 
-.checkbox-wrapper input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+.checkbox-field label {
+    display: flex;
+    align-items: center;
     cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3748;
+    user-select: none;
 }
+
+.checkbox-field input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.checkbox-help-text {
+    font-size: 13px;
+    color: #718096;
+    font-weight: normal;
+}
+
 
 /* Seção de Cargos */
 .cargos-section {

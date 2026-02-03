@@ -1,22 +1,36 @@
 /**
  * Utilitários de Validação Frontend
  */
-import { QUANTIDADE_MAXIMA_DAS } from '../constants/cargosDAS';
+import { QUANTIDADE_MAXIMA_DAS, DESCRICOES_DAS } from '../constants/cargosDAS';
 import { SIMBOLOS_POR_NIVEL } from '../constants/hierarchyLevels';
 
 /**
  * Valida regras de quantidade máxima de cargos DAS
- * @param {string} tipoCargo - Tipo do cargo (ex: 'DAS-9')
+ * @param {string} tipoCargo - Tipo do cargo (ex: 'DAS-9' ou 'Diretor')
  * @param {number} quantidade - Quantidade solicitada
  * @returns {Object} - { valid: boolean, message: string }
  */
 export const validateQuantidadeDAS = (tipoCargo, quantidade) => {
-    const maxima = QUANTIDADE_MAXIMA_DAS[tipoCargo];
+    let chave = tipoCargo;
 
-    if (!maxima) {
+    // Tentar encontrar a chave (DAS-X) se foi passado a descrição
+    if (!QUANTIDADE_MAXIMA_DAS[chave]) {
+        const foundKey = Object.keys(DESCRICOES_DAS).find(
+            key => DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === tipoCargo
+        );
+        if (foundKey) {
+            chave = foundKey;
+        }
+    }
+
+    const maxima = QUANTIDADE_MAXIMA_DAS[chave];
+
+    // Se o cargo não estiver na lista de restrições (ex: cargo customizado do banco),
+    // assumimos que não tem limite específico (ou limite alto) e permitimos.
+    if (maxima === undefined) {
         return {
-            valid: false,
-            message: `Tipo de cargo "${tipoCargo}" não reconhecido`
+            valid: true,
+            message: ''
         };
     }
 

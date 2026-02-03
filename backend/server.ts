@@ -10,6 +10,7 @@ import usuariosRoutes from "./routes/usuarios.js";
 import solicitacoesRoutes from "./routes/solicitacoes.js";
 import sandboxRoutes from "./routes/sandbox.js";
 import permissoesRoutes from "./routes/permissoes.js";
+import configsRoutes from "./routes/configs.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 // Carregar variáveis de ambiente
@@ -33,6 +34,7 @@ app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/solicitacoes", solicitacoesRoutes);
 app.use("/api/sandbox", sandboxRoutes);
 app.use("/api/permissoes", permissoesRoutes);
+app.use("/api/configs", configsRoutes);
 
 // Rota de teste
 app.get("/api/health", (req, res) => {

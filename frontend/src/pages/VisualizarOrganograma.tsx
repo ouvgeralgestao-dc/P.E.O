@@ -12,6 +12,7 @@ import { exportToPNG, exportToJPG, exportToPDF } from '../utils/exportHelpers';
 import api from '../services/api';
 import { formatOrgaoName } from '../utils/formatters';
 import TabelaQuantidades from '../components/common/TabelaQuantidades';
+import { DESCRICOES_DAS } from '../constants/cargosDAS';
 import './VisualizarOrganograma.css';
 
 function VisualizarOrganograma() {
@@ -28,6 +29,41 @@ function VisualizarOrganograma() {
 
     // Ref para guardar os dados atuais do React Flow (nós e arestas)
     const flowDataRef = React.useRef({ nodes: [], edges: [] });
+
+    // Helper para reverter Descrição -> Código (ex: "Diretor" -> "DAS-8")
+    const getDasCode = (descricao: string) => {
+        if (!descricao) return '';
+        const entry = Object.entries(DESCRICOES_DAS).find(([_, value]) => value === descricao);
+        return entry ? entry[0] : descricao;
+    };
+
+    // Helper para formatar datas específicas do organograma
+    const getOrganogramaDates = () => {
+        const formatDate = (dateStr: string) => {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '-';
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        if (tipoVisualizacao === 'funcoes') {
+            return {
+                created: formatDate(displayData?.createdAt || fullData?.createdAt),
+                updated: formatDate(displayData?.updatedAt || fullData?.updatedAt)
+            };
+        }
+
+        return {
+            created: formatDate(fullData?.createdAt),
+            updated: formatDate(fullData?.updatedAt)
+        };
+    };
 
     // Ref para guardar fullData atualizado (evita stale closure)
     const fullDataRef = React.useRef(null);
@@ -65,7 +101,9 @@ function VisualizarOrganograma() {
             setDisplayData({
                 orgao: fullData.orgao,
                 organogramasFuncoes: funcoes,
-                // Não passamos organogramaEstrutural
+                setores: fullData.organogramaEstrutural?.setores || [],
+                createdAt: funcoes.length > 0 ? funcoes[0].createdAt : null,
+                updatedAt: funcoes.length > 0 ? funcoes[0].updatedAt : null,
             });
         } else {
             // Fallback: mostrar tudo (comportamento antigo) ou nada
@@ -448,7 +486,7 @@ function VisualizarOrganograma() {
         Object.keys(stats).forEach(prefixo => {
             const item = (stats as any)[prefixo];
             const detalhesArr = Object.entries(item.simbolosMap as any)
-                .map(([tipo, qtd]) => `${tipo} (${qtd})`);
+                .map(([tipo, qtd]) => `${getDasCode(tipo as string)} (${qtd})`);
 
             const detalhes = detalhesArr.length > 0 ? detalhesArr.join(', ') : '-';
 
@@ -564,12 +602,13 @@ function VisualizarOrganograma() {
                         <div className="info-item">
                             <span className="info-label">Criado em:</span>
                             <span className="info-value">
-                                {fullData?.createdAt ? new Date(fullData.createdAt).toLocaleDateString('pt-BR') : '-'}
+                                {getOrganogramaDates().created}
                             </span>
                         </div>
                         <div className="info-item">
+                            <span className="info-label">Atualizado em:</span>
                             <span className="info-value">
-                                {fullData?.updatedAt ? new Date(fullData.updatedAt).toLocaleDateString('pt-BR') : '-'}
+                                {getOrganogramaDates().updated}
                             </span>
                         </div>
                         {tipoVisualizacao === 'funcoes' && estatisticasCargos && (
@@ -651,7 +690,7 @@ function VisualizarOrganograma() {
 
                                                         cargoMap.forEach((qtd, tipo) => {
                                                             total += qtd;
-                                                            details.push(`${tipo} (${qtd})`);
+                                                            details.push(`${getDasCode(tipo)} (${qtd})`);
                                                         });
                                                     }
 

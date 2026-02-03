@@ -41,8 +41,18 @@ function SandboxFuncional() {
             // Buscar organograma funcional
             const response = await api.get(`/sandbox/funcional/${orgao.id}`);
 
+            // [NEW] Buscar também dados estruturais para lookup de nomes de setores
+            let setoresEstruturais = [];
+            try {
+                const estruturalResponse = await api.get(`/sandbox/estrutural/${orgao.id}`);
+                setoresEstruturais = estruturalResponse.data?.setores || [];
+            } catch (e) {
+                console.warn('[SandboxFuncional] Não foi possível carregar dados estruturais para lookup', e);
+            }
+
             setOrganogramaData({
                 orgao: response.data.orgao,
+                setores: setoresEstruturais, // Injetar apenas a lista para lookup, sem ativar o modo estrutural
                 organogramasFuncoes: [{
                     id: 'sandbox-funcional',
                     cargos: response.data.cargos || []

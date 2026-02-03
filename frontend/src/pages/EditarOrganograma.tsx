@@ -265,7 +265,9 @@ function EditarOrganograma() {
         : {
             nomeOrgao: organogramaData.orgao,
             tamanhoFolha: organogramaData.organogramasFuncoes?.[0]?.tamanhoFolha || 'A3',
-            cargos: normalizeCargos(flattenCargosRecursive(organogramaData.organogramasFuncoes?.[0]?.cargos || []))
+            cargos: normalizeCargos(flattenCargosRecursive(organogramaData.organogramasFuncoes?.[0]?.cargos || [])),
+            // CORREÇÃO: Incluir setores estruturais para popular o dropdown de referência
+            setores: flattenSetores(organogramaData.organogramaEstrutural?.setores || [])
         };
 
     // Configurar steps do wizard

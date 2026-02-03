@@ -17,6 +17,9 @@ interface InputProps {
     name?: string;
     id?: string;
     className?: string;
+    min?: string | number;
+    max?: string | number;
+    step?: string | number;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -31,7 +34,10 @@ const Input: React.FC<InputProps> = ({
     helperText = null,
     name,
     id,
-    className = ''
+    className = '',
+    min,
+    max,
+    step
 }) => {
     const inputId = id || name || `input-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = error !== null && error !== '';
@@ -53,6 +59,9 @@ const Input: React.FC<InputProps> = ({
                 placeholder={placeholder}
                 required={required}
                 disabled={disabled}
+                min={min}
+                max={max}
+                step={step}
                 className={`input-field ${hasError ? 'input-error' : ''}`}
             />
             {hasError && <span className="input-error-message">{error}</span>}

@@ -167,17 +167,17 @@ const OrganogramaCanvasInner = ({
             // Só executa se não houve falha prévia
             if (!hasInvalidNodes && (positionsWithY.length <= 2 || hasHierarchy)) {
                 const tempPosMap = new Map(setores.map(s => [s.id, s]));
-                
+
                 for (const setor of setores) {
                     if (!setor.parentId || !tempPosMap.has(setor.parentId)) continue;
-                    
+
                     const parent = tempPosMap.get(setor.parentId);
                     // Validar apenas se ambos tem posição numérica válida
                     if (typeof setor.position?.y !== 'number' || typeof parent.position?.y !== 'number') continue;
 
                     const hChild = parseFloat(setor.hierarquia || 0);
                     const hParent = parseFloat(parent.hierarquia || 0);
-                    
+
                     // Checar apenas espinha dorsal (h>0) e ignorar assessorias
                     if (hChild > 0 && hParent > 0 && !(setor.isAssessoria || parent.isAssessoria)) {
                         const levelDiff = hChild - hParent;
@@ -185,7 +185,7 @@ const OrganogramaCanvasInner = ({
                             // Gap base esperado: 90px * diff (Conservador)
                             const minExpectedDelta = levelDiff * 90;
                             const actualDelta = setor.position.y - parent.position.y;
-                            
+
                             if (actualDelta < minExpectedDelta) {
                                 console.warn(`[Layout Fix] Inconsistência Geométrica: ${setor.nomeSetor} (L${hChild}) muito perto de ${parent.nomeSetor} (L${hParent}). Delta: ${actualDelta}, Min: ${minExpectedDelta}`);
                                 hasGeometricInconsistency = true;
@@ -221,12 +221,12 @@ const OrganogramaCanvasInner = ({
 
                 // Detecção de "Filho Regular" (que demanda a linha vertical principal)
                 const nomeLower = (item.nomeSetor || '').toLowerCase();
-                const isChefia = nomeLower.includes('superintend') || 
-                               nomeLower.includes('diretoria') || 
-                               nomeLower.includes('subsecretari');
-                
+                const isChefia = nomeLower.includes('superintend') ||
+                    nomeLower.includes('diretoria') ||
+                    nomeLower.includes('subsecretari');
+
                 const isAss = !isChefia && (
-                    item.isAssessoria || 
+                    item.isAssessoria ||
                     (item.hierarquia === '0' || item.hierarquia === 0) ||
                     nomeLower.includes('assessoria') ||
                     (item.tipoSetor || '').toLowerCase().includes('assessoria')
@@ -266,12 +266,12 @@ const OrganogramaCanvasInner = ({
                 // [FORCE FIX VISUAL] Superintendência/Diretoria/Subsecretaria NUNCA é assessoria lateral
                 // Isso previne linhas laterais quando o layout é vertical
                 const nomeLower = (setor.nomeSetor || setor.nomeCargo || '').toLowerCase();
-                const isChefiaForcada = nomeLower.includes('superintend') || 
-                                      nomeLower.includes('diret') || 
-                                      nomeLower.includes('subsecretari') ||
-                                      nomeLower.includes('secretari') ||
-                                      nomeLower.includes('gerencia') ||
-                                      nomeLower.includes('coordena');
+                const isChefiaForcada = nomeLower.includes('superintend') ||
+                    nomeLower.includes('diret') ||
+                    nomeLower.includes('subsecretari') ||
+                    nomeLower.includes('secretari') ||
+                    nomeLower.includes('gerencia') ||
+                    nomeLower.includes('coordena');
 
                 const isAssessoriaNode = !isChefiaForcada && (
                     setor.isAssessoria || hirarqNum === 0
@@ -340,7 +340,7 @@ const OrganogramaCanvasInner = ({
                             const rawY = (setor.position && !isNaN(setor.position.y)) ? setor.position.y : 0;
                             const pId = setor.parentId || setor.originalParentId;
                             const parentPos = positionMap.get(pId);
-                            
+
                             if (isAssessoriaNode && !isVerticalAssessoria && !setor._isNested && parentPos) {
                                 if (Math.abs(rawY - parentPos.y) > 0.1) {
                                     console.warn(`[AUTO-CURA] Alinhando Y de ${setor.nomeSetor} (${rawY} -> ${parentPos.y})`);
@@ -439,7 +439,7 @@ const OrganogramaCanvasInner = ({
                         data: {
                             // [ROBUST FIX] Usar o cálculo baseado na posição real dos filhos
                             // Subtraímos 60px (Margin) para a linha ficar acima dos filhos
-                            customForkY: parentMinChildY.has(setor.parentId || setor.originalParentId) 
+                            customForkY: parentMinChildY.has(setor.parentId || setor.originalParentId)
                                 ? (parentMinChildY.get(setor.parentId || setor.originalParentId) - 60)
                                 : undefined
                         }
@@ -467,6 +467,21 @@ const OrganogramaCanvasInner = ({
             cargosHierarquicos.forEach(cargo => flattenCargo(cargo));
             return result;
         };
+
+        // [LOOKUP DINÂMICO] Mapa de Setores Estruturais para resolver nomes (id -> nome)
+        const setorLookupMap = new Map();
+        const setoresParaLookup = organogramaData.setores || organogramaData.organogramaEstrutural?.setores || [];
+
+        if (setoresParaLookup.length > 0) {
+            // Reutilizar a função flattenSetores que acabamos de definir acima
+            const flatSetores = flattenSetores(setoresParaLookup);
+            flatSetores.forEach(s => {
+                setorLookupMap.set(s.id, s.nomeSetor || s.nome);
+            });
+            console.log(`[OrganogramaCanvas] Lookup Map Size: ${setorLookupMap.size}`, Object.fromEntries(setorLookupMap));
+        } else {
+            console.warn('[OrganogramaCanvas] AVISO: Lista de setores para lookup vazia! Verifique se "organogramaData.setores" ou "organogramaData.organogramaEstrutural.setores" estão populados.', organogramaData);
+        }
 
         // Processar organogramas de funções
         if (organogramaData.organogramasFuncoes && organogramaData.organogramasFuncoes.length > 0) {
@@ -592,7 +607,46 @@ const OrganogramaCanvasInner = ({
                             nivel: isAssessoriaNode ? 0 : (cargo.nivel || cargo.hierarquia || 0),
                             tipoSetor: cargo.tipoSetor, // Preservar se vier do backend
                             isAssessoria: isAssessoriaNode,
-                            nomeSetorRef: cargo.nome_setor_ref, // Novo campo de referência cruzada
+                            isOperacional: cargo.isOperacional, // [SYNC] Persistir propriedade Operacional
+                            nomeSetorRef: (() => {
+                                const direct = cargo.nome_setor_ref || cargo.nomeSetorRef;
+                                if (direct) return direct;
+                                const refId = cargo.setor_ref || cargo.setorRef;
+                                let lookedUp = refId ? setorLookupMap.get(refId) : null;
+
+                                // [FALLBACK AUTOMÁTICO] Se não houve link explícito, tentar match por nome
+                                // Ex: Cargo "Diretor de Ouvidoria Geral" -> Setor "Ouvidoria Geral"
+                                if (!lookedUp && !direct && setorLookupMap.size > 0) {
+                                    const cargoNameNormalized = (cargo.nomeCargo || '').toLowerCase();
+
+                                    // Converter mapa array e ordenar por comprimento do nome (decrescente)
+                                    // Para garantir que "Secretaria de Saúde Mental" seja encontrado antes de "Secretaria de Saúde"
+                                    const candidates = Array.from(setorLookupMap.entries())
+                                        .map(([id, nome]) => ({ id, nome: String(nome) }))
+                                        .filter(c => c.nome.length > 3) // Ignorar siglas muito curtas para evitar falsos positivos
+                                        .sort((a, b) => b.nome.length - a.nome.length);
+
+                                    for (const candidate of candidates) {
+                                        const sNomeNorm = candidate.nome.toLowerCase();
+                                        if (cargoNameNormalized.includes(sNomeNorm)) {
+                                            lookedUp = candidate.nome;
+                                            //console.log(`[AUTO-LINK] ${cargo.nomeCargo} -> ${candidate.nome}`);
+                                            break; // Encontrou o match mais longo
+                                        }
+                                    }
+                                }
+
+                                if (refId && !lookedUp) {
+                                    console.warn(`[DEBUG] Lookup FALHOU para ${cargo.nomeCargo}. ID Buscado: ${refId}. Setores Disponíveis: ${setorLookupMap.size}`);
+                                } else if (refId && lookedUp) {
+                                    console.log(`[DEBUG] Lookup SUCESSO: ${cargo.nomeCargo} -> ${lookedUp}`);
+                                } else if (direct) {
+                                    console.log(`[DEBUG] Nome Setor Direto encontrado: ${cargo.nomeCargo} -> ${direct}`);
+                                }
+
+                                return lookedUp;
+                            })(),
+                            setorRef: cargo.setor_ref || cargo.setorRef, // Mapear ambos os casos
                             simbolos: cargo.simbolos,
                             simbolo: cargo.simbolo, // Preservar para cargos agrupados
                             quantidade: cargo.quantidade,
@@ -657,7 +711,7 @@ const OrganogramaCanvasInner = ({
                             },
                             style: { stroke: '#9e9e9e', strokeWidth: 2 },
                             data: {
-                                customForkY: parentMinChildYFunc.has(cargo.parentId) 
+                                customForkY: parentMinChildYFunc.has(cargo.parentId)
                                     ? (parentMinChildYFunc.get(cargo.parentId) - 60)
                                     : undefined
                             }
@@ -781,7 +835,10 @@ const OrganogramaCanvasInner = ({
                 ocupante: node.data.ocupante,
                 simbolos: node.data.simbolos,
                 simbolo: node.data.simbolo, // Enviar de volta para o backend
-                quantidade: node.data.quantidade
+                isOperacional: node.data.isOperacional, // [SYNC] Enviar flag de Operacional
+                quantidade: node.data.quantidade,
+                setorRef: node.data.setorRef,         // [FIX] Preservar referência de setor
+                nomeSetorRef: node.data.nomeSetorRef  // [FIX] Preservar nome do setor
             };
         });
 
@@ -851,7 +908,45 @@ const OrganogramaCanvasInner = ({
         let itemsToLayout = [];
 
         // 1. Identificar dados e resetar posições/estilos
-        if (organogramaData?.organogramaEstrutural) {
+        // 1. Identificar dados e resetar posições/estilos
+        // [FIX CRÍTICO 03/02/2026] Usar o estado ATUAL dos nós ('nodes') como fonte da verdade.
+        // Isso preserva edições recentes (nomes, referências de setor, etc.) que ainda não foram salvas/recarregadas no 'organogramaData'.
+        // O 'organogramaData' é obsoleto assim que o usuário faz uma edição.
+        if (nodes && nodes.length > 0) {
+            console.log('[Reset] Usando estado atual dos nós para preservar edições:', nodes.length);
+
+            itemsToLayout = nodes.map(node => ({
+                id: node.id,
+                parentId: node.data.parentId,
+                // Mapear campos de dados essenciais
+                nomeSetor: node.data.nomeSetor,
+                tipoSetor: node.data.tipoSetor,
+                nomeCargo: node.data.nomeCargo,
+                ocupante: node.data.ocupante,
+                simbolos: node.data.simbolos,
+                simbolo: node.data.simbolo,
+                quantidade: node.data.quantidade,
+
+                // CRÍTICO: Preservar referências de setor que o usuário acabou de adicionar
+                setorRef: node.data.setorRef,
+                nomeSetorRef: node.data.nomeSetorRef,
+                isOperacional: node.data.isOperacional,
+
+                // Hierarquia
+                hierarquia: node.data.hierarquia,
+
+                // Flags de Controle
+                isAssessoria: node.data.isAssessoria,
+                _isNested: node.data._isNested,
+
+                // Resetar Posição e Estilo para o Layout Automático
+                position: { x: 0, y: 0 },
+                style: {},
+                customStyle: {}
+            }));
+
+        } else if (organogramaData?.organogramaEstrutural) {
+            // Fallback para dados iniciais se não houver nós
             const flattenHelper = (items, result = []) => {
                 items.forEach(item => {
                     const { children, ...rest } = item;
@@ -871,7 +966,6 @@ const OrganogramaCanvasInner = ({
                 return result;
             };
 
-            // Extrair todos os cargos de todos os organogramas funcionais (Recursivamente)
             itemsToLayout = organogramaData.organogramasFuncoes.flatMap(org =>
                 flattenHelper(org.cargos || [])
             );
@@ -879,13 +973,38 @@ const OrganogramaCanvasInner = ({
 
         if (itemsToLayout.length === 0) return;
 
-        // 2. Remover duplicatas
+        // 2. Remover duplicatas E Ajustar Hierarquia Operacional (Frontend Simulation)
         const uniqueItems = [];
         const seen = new Set();
+        const itemMapForHierarchy = new Map();
+
+        // Primeira passada: Dedup e Indexar
         itemsToLayout.forEach(item => {
             if (!seen.has(item.id)) {
                 seen.add(item.id);
-                uniqueItems.push(item);
+                // Clonar para não mutar estado original inadvertidamente
+                const clone = { ...item };
+                uniqueItems.push(clone);
+                itemMapForHierarchy.set(clone.id, clone);
+            }
+        });
+
+        // Segunda passada: Ajustar Hierarquia Operacional
+        // Regra: Se é operacional, deve ter nível > pai (para ficar abaixo visualmente)
+        uniqueItems.forEach(item => {
+            if (item.isOperacional && item.parentId) {
+                const parent = itemMapForHierarchy.get(item.parentId);
+                if (parent) {
+                    const parentH = parseFloat(parent.hierarquia || 0);
+                    const myH = parseFloat(item.hierarquia || 0);
+
+                    // Se hierarquia for igual ou menor que o pai, força descer um nível
+                    // Isso simula a lógica do backend 'recalculateHierarchy'
+                    if (myH <= parentH) {
+                        item.hierarquia = String(Math.floor(parentH) + 1);
+                        console.log(`[Reset] Ajustando hierarquia Operacional: ${item.nomeCargo} (${myH} -> ${item.hierarquia})`);
+                    }
+                }
             }
         });
 
@@ -901,12 +1020,12 @@ const OrganogramaCanvasInner = ({
             // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual) - Reset Layout
             // [FORCE FIX VISUAL REPLICADO] Superintendência/Diretoria/Subsecretaria NUNCA é assessoria lateral
             const nomeLower = (item.nomeSetor || item.nomeCargo || '').toLowerCase();
-            const isChefiaForcada = nomeLower.includes('superintend') || 
-                                  nomeLower.includes('diret') || 
-                                  nomeLower.includes('subsecretari') ||
-                                  nomeLower.includes('secretari') ||
-                                  nomeLower.includes('gerencia') ||
-                                  nomeLower.includes('coordena');
+            const isChefiaForcada = nomeLower.includes('superintend') ||
+                nomeLower.includes('diret') ||
+                nomeLower.includes('subsecretari') ||
+                nomeLower.includes('secretari') ||
+                nomeLower.includes('gerencia') ||
+                nomeLower.includes('coordena');
 
             const isAssessoriaNode = !isChefiaForcada && item.isAssessoria;
 
@@ -951,6 +1070,9 @@ const OrganogramaCanvasInner = ({
                     simbolos: item.simbolos,
                     simbolo: item.simbolo, // Para funcional agrupado
                     quantidade: item.quantidade,
+                    setorRef: item.setorRef,             // [FIX] Mapear referência de setor
+                    nomeSetorRef: item.nomeSetorRef,     // [FIX] Mapear nome do setor
+                    isOperacional: item.isOperacional || item.data?.isOperacional || 0, // [FIX] Mapear flag operacional
                     hierarquia: isAssessoriaNode ? 0 : (item.hierarquia || 0),
                     isAssessoria: isAssessoriaNode,
                     cargos: item.cargos,
@@ -986,15 +1108,15 @@ const OrganogramaCanvasInner = ({
             if (item.parentId) {
                 // Copiar lógica de Edge - Detecção robusta de assessoria
                 const hirarqNum = typeof item.hierarquia === 'string' ? parseFloat(item.hierarquia) : (item.hierarquia || 0);
-                
-                 // [FORCE FIX VISUAL REPLICADO] 
+
+                // [FORCE FIX VISUAL REPLICADO] 
                 const nomeLower = (item.nomeSetor || item.nomeCargo || '').toLowerCase();
-                const isChefiaForcada = nomeLower.includes('superintend') || 
-                                      nomeLower.includes('diret') || 
-                                      nomeLower.includes('subsecretari') ||
-                                      nomeLower.includes('secretari') ||
-                                      nomeLower.includes('gerencia') ||
-                                      nomeLower.includes('coordena');
+                const isChefiaForcada = nomeLower.includes('superintend') ||
+                    nomeLower.includes('diret') ||
+                    nomeLower.includes('subsecretari') ||
+                    nomeLower.includes('secretari') ||
+                    nomeLower.includes('gerencia') ||
+                    nomeLower.includes('coordena');
 
                 const isAssessoriaNode = !isChefiaForcada && (
                     item.isAssessoria || hirarqNum === 0 ||
@@ -1088,7 +1210,10 @@ const OrganogramaCanvasInner = ({
                         ocupante: node.data.ocupante,
                         simbolos: node.data.simbolos || [],
                         simbolo: node.data.simbolo,
-                        quantidade: node.data.quantidade
+                        quantidade: node.data.quantidade,
+                        setorRef: node.data.setorRef,         // [FIX] Preservar referência de setor
+                        nomeSetorRef: node.data.nomeSetorRef, // [FIX] Preservar nome do setor
+                        isOperacional: node.data.isOperacional // [FIX] Preservar flag operacional
                     };
                 });
                 console.log('[Reset] Salvando layout padrão recalculado');
@@ -1096,7 +1221,7 @@ const OrganogramaCanvasInner = ({
             }
         }, 150);
 
-    }, [organogramaData, onSavePositions, onStyleChange, initialEdges, setNodes, setEdges]);
+    }, [organogramaData, nodes, onSavePositions, onStyleChange, initialEdges, setNodes, setEdges]);
 
     // Função para cores do MiniMap baseado na hierarquia
     const nodeColor = useCallback((node) => {

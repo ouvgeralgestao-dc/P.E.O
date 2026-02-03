@@ -10,7 +10,7 @@ const SPACING = {
     VERTICAL: 180,        // Espaçamento vertical entre níveis
     ASSESSORIA_OFFSET_X: 350,  // Offset horizontal para Assessoria (lateral direita)
     ASSESSORIA_OFFSET_Y: 0,    // Offset vertical para Assessoria (mesma altura do pai)
-    MIN_SIBLING_GAP: 50,  // Gap mínimo entre nós irmãos
+    MIN_SIBLING_GAP: 80,  // Gap mínimo entre nós irmãos (Aumentado de 50 para 80)
     LAYER_GAP: 200        // Espaçamento entre camadas horizontais
 };
 
@@ -18,8 +18,8 @@ const SPACING = {
 // Helper para dimensões (Sincronizado com Frontend)
 export function getNodeDimensions(item) {
     let h = 0;
-    if (item.hierarquia !== undefined) h = parseInt(item.hierarquia);
-    else if (item.nivel !== undefined) h = parseInt(item.nivel);
+    if (item.hierarquia !== undefined) h = parseFloat(item.hierarquia);
+    else if (item.nivel !== undefined) h = parseFloat(item.nivel);
 
     const isPrefeito = item.tipoSetor === 'Prefeito' || item.id === 'prefeito' || (item.nomeCargo && item.nomeCargo.toLowerCase().includes('prefeito'));
 
@@ -95,7 +95,7 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
     // Ex: Se tem filhos Nível 2 e Nível 3, o Max é 3.
     let maxChildLevel = 0;
     children.forEach(c => {
-        const h = parseInt(c.hierarquia || 0);
+        const h = parseFloat(c.hierarquia || 0);
         if (h > maxChildLevel) maxChildLevel = h;
     });
 
@@ -112,8 +112,8 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
         // Regra 1: Explicitamente Assessoria
         if (n.isAssessoria) return true;
         // Regra 2: Nível 0 é sempre assessoria
-        if (n.hierarquia !== undefined && parseInt(n.hierarquia) === 0) return true;
-        
+        if (n.hierarquia !== undefined && parseFloat(n.hierarquia) === 0) return true;
+
         return false;
     };
 
@@ -145,7 +145,7 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
 
         const { h: assessoriaHeight } = getNodeDimensions(assessoria);
         // Centralização Vertical em relação ao Pai
-        const assY = y + (nodeHeight / 2) - (assessoriaHeight / 2);
+        const assY = y; // Perfect-Pixel: Alinhado no topo do pai para linha reta no handle de 45px
 
         const mode = isRight ? 'right' : 'left';
 
@@ -154,7 +154,7 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
             x + (dynamicOffset * direction),
             assY,
             spacing,
-            mode
+            mode // Restaurado de 'center' para o modo direcional (left/right)
         );
         nodes.push(...assessoriaLayout.nodes);
         maxY = Math.max(maxY, assessoriaLayout.maxY);
@@ -168,40 +168,40 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
         // [MODIFICAÇÃO VISUAL]
         // Ordenar setores normais para que os níveis mais "Importantes" (menor hierarquia, ex: 2)
         // fiquem no CENTRO visual, e os níveis menos importantes (maior hierarquia, ex: 3) nas pontas.
-        
+
         // 1. Agrupar por hierarquia
         const byHierarchy = {};
         setoresNormais.forEach(s => {
-            const h = parseInt(s.hierarquia || 999);
+            const h = parseFloat(s.hierarquia || 999);
             if (!byHierarchy[h]) byHierarchy[h] = [];
             byHierarchy[h].push(s);
         });
 
         // 2. Ordenar chaves de hierarquia (2, 3, 4...)
         const levels = Object.keys(byHierarchy).map(Number).sort((a, b) => a - b);
-        
+
         // 3. Construir lista final "Do Centro para Fora" (Highest Priority in Center)
         let sortedSetores = [];
-        
+
         // Se tivermos níveis mistos, colocamos o nível mais baixo (mais importante) no meio
         // Ex: temos [L2, L3, L3]. Queremos [L3, L2, L3].
-        
+
         if (levels.length > 1) {
             const topLevel = levels[0]; // Ex: 2
             const topLevelNodes = byHierarchy[topLevel]; // [NodeL2]
             const otherNodes = []; // [NodeL3, NodeL3]
-            
+
             levels.slice(1).forEach(l => otherNodes.push(...byHierarchy[l]));
 
             // Estratégia: Metade dos outros à esquerda, Top no meio, Metade à direita
             const midPoint = Math.ceil(otherNodes.length / 2);
             const leftWing = otherNodes.slice(0, midPoint);
             const rightWing = otherNodes.slice(midPoint);
-            
+
             sortedSetores = [...leftWing, ...topLevelNodes, ...rightWing];
         } else {
-             // Apenas um nível, mantém ordem padrão (pode ser alfabética ou id)
-             sortedSetores = setoresNormais.sort((a,b) => (a.nomeSetor || '').localeCompare(b.nomeSetor || ''));
+            // Apenas um nível, mantém ordem padrão (pode ser alfabética ou id)
+            sortedSetores = setoresNormais.sort((a, b) => (a.nomeSetor || '').localeCompare(b.nomeSetor || ''));
         }
 
         const childrenLayouts = [];
@@ -215,10 +215,10 @@ function calculateSubtreeLayout(node, x, y, spacing, alignMode = 'center') {
         sortedSetores.forEach(child => {
             // [FIX] Calcular Y baseado no nível hierárquico específico do filho
             // Garante que saltos de nível (ex: 1 -> 3) tenham gap visual correspondente
-            const parentLevel = parseInt(node.hierarquia || 0);
-            const childLevel = parseInt(child.hierarquia || 0);
+            const parentLevel = parseFloat(node.hierarquia || 0);
+            const childLevel = parseFloat(child.hierarquia || 0);
             const levelDiff = childLevel > parentLevel ? (childLevel - parentLevel) : 1;
-            
+
             // Gap base (já inclui clearance de assessorias) + Gap extra por níveis pulados
             const extraGap = (levelDiff - 1) * spacing.VERTICAL;
             const specificChildY = childY + extraGap;
@@ -410,7 +410,7 @@ export function groupCargosByType(cargos) {
 
     cargos.forEach(cargo => {
         // Garantir que hierarquia seja tratada como número
-        const hierarquia = parseInt(cargo.hierarquia);
+        const hierarquia = parseFloat(cargo.hierarquia);
 
         if (hierarquia >= 5 && hierarquia <= 10) {
             // Verificar se o cargo já está no formato agrupado (simbolo + quantidade)

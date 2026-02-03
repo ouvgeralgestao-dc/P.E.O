@@ -76,15 +76,15 @@ export const calculateHierarchicalLayout = (setores) => {
 
         // Normalizar hierarquia para número
         const hirarqNum = typeof c.hierarquia === 'string' ? parseFloat(c.hierarquia) : (c.hierarquia || 0);
-        
+
         // [FORCE FIX] Chefias nunca são assessorias laterais
         const nomeLower = (c.nomeSetor || c.nomeCargo || '').toLowerCase();
-        const isChefiaForcada = nomeLower.includes('superintend') || 
-                              nomeLower.includes('diret') || 
-                              nomeLower.includes('subsecretari') ||
-                              nomeLower.includes('secretari') ||
-                              nomeLower.includes('gerencia') ||
-                              nomeLower.includes('coordena');
+        const isChefiaForcada = nomeLower.includes('superintend') ||
+            nomeLower.includes('diret') ||
+            nomeLower.includes('subsecretari') ||
+            nomeLower.includes('secretari') ||
+            nomeLower.includes('gerencia') ||
+            nomeLower.includes('coordena');
 
         if (isChefiaForcada) return false;
         if (hirarqNum === 0) return true;
@@ -204,14 +204,14 @@ export const calculateHierarchicalLayout = (setores) => {
         // PARA LINHA 100% RETA: O ponto Y global deve ser igual.
         // Y_global_pai + 45px === Y_global_filha + 45px
         // Logo: Y_global_filha === Y_global_pai. O offset deve ser ZERO!
-        const yOffsetForAlignment = 0; 
+        const yOffsetForAlignment = 0;
 
         console.log(`[LAYOUT FIX] Alinhamento 1:1 rigoroso aplicado`, {
             yOffsetForAlignment
         });
 
         // CORREÇÃO: Inicializar maxAssessoriaY com o Y do pai + sua altura (onde começam os filhos)
-        let maxAssessoriaY = y + h; 
+        let maxAssessoriaY = y + h;
 
         assessorias.forEach((ass, i) => {
             // Regra: 1ª (i=0) Direita, 2ª (i=1) Esquerda, 3ª (i=2) Direita...
@@ -235,15 +235,15 @@ export const calculateHierarchicalLayout = (setores) => {
             const getDeepMaxY = (node, currentY) => {
                 const { h: nodeH } = getDynamicDimensions(node.hierarquia, true, '');
                 let maxY = currentY + nodeH;
-                
+
                 if (node.children && node.children.length > 0) {
-                     // Calcular Y dos filhos aninhados (Lógica simétrica à de nestedAdvisors abaixo)
-                     const FIXED_VERTICAL_GAP = 100;
-                     const startChildY = currentY + nodeH + FIXED_VERTICAL_GAP;
-                     
-                     node.children.forEach(child => {
-                         maxY = Math.max(maxY, getDeepMaxY(child, startChildY));
-                     });
+                    // Calcular Y dos filhos aninhados (Lógica simétrica à de nestedAdvisors abaixo)
+                    const FIXED_VERTICAL_GAP = 100;
+                    const startChildY = currentY + nodeH + FIXED_VERTICAL_GAP;
+
+                    node.children.forEach(child => {
+                        maxY = Math.max(maxY, getDeepMaxY(child, startChildY));
+                    });
                 }
                 return maxY;
             };
@@ -268,44 +268,46 @@ export const calculateHierarchicalLayout = (setores) => {
         // LÓGICA 2: NESTED ADVISORS (Filhos de Assessoria - Cadeia Horizontal)
         // =================================================================================
         if (nestedAdvisors.length > 0) {
-            // Direção depende do lado do Pai
+            // Direção depende do lado do Pai (expande "para fora")
             const direction = setor._side === 'left' ? -1 : 1;
 
             // Dimensões do Pai para calcular descida
             const { h: parentH_forNested } = getDynamicDimensions(setor.hierarquia, true, '');
 
-            // Start Y: Abaixo do pai + GAP PADRONIZADO
-            const FIXED_VERTICAL_GAP = 100; // Valor fixo para padronizar distância
+            const FIXED_VERTICAL_GAP = 100;
             const startY = y + parentH_forNested + FIXED_VERTICAL_GAP;
 
-            // Espaçamento Horizontal entre os filhos
-            const NESTED_SPACING = 280;
+            // Preparar larguras das subárvores
+            const nestedLayouts = nestedAdvisors.map(child => ({
+                node: child,
+                width: calcularLarguraSubarvore(child)
+            }));
 
-            nestedAdvisors.forEach((child, idx) => {
-                // Layout em L:
-                // idx=0: Fica exatamente verticalmente abaixo do pai (offset 0)
-                // idx=1: Fica ao lado (1 * spacing)
-                // idx=2: Fica ao lado (2 * spacing)
+            const NESTED_GAP = 80; // GAP aumentado para evitar caixas "grudadas"
 
-                // Se o pai é Left -> expande para Left (x - offset)
-                // Se o pai é Right -> expande para Right (x + offset)
+            // Lógica de Expansão Externa:
+            // O primeiro filho (idx=0) fica centralizado exatamente abaixo do pai (x_center_available).
+            // Os seguintes se deslocam para fora (direction) baseado na largura acumulada.
+            let currentOffset = 0;
 
-                // Nota: Se quisermos o "L" perfeito, o primeiro filho não desloca X.
-                const childOffset = idx * NESTED_SPACING;
+            nestedLayouts.forEach((layoutItem, idx) => {
+                const { node, width } = layoutItem;
 
-                const childX = x_center_available + (childOffset * direction);
-                const childY = startY;
+                if (idx > 0) {
+                    const prevWidth = nestedLayouts[idx - 1].width;
+                    // Deslocamento = (metade do anterior + GAP + metade do atual)
+                    currentOffset += (prevWidth / 2) + NESTED_GAP + (width / 2);
+                }
 
-                // Herdar lado do pai
-                child._side = setor._side || 'right';
-                // Marcar como nested
-                child._isNested = true;
-                child.sourcePosition = 'bottom';
-                child.targetPosition = 'top'; // FORÇADO: Sempre recebe linha por cima, vinda do Bottom do Pai
+                const childCenterX = x_center_available + (currentOffset * direction);
 
-                // Garantir Y exato (sem flutuação de float)
-                const exactY = Math.round(childY);
-                posicionarNos(child, childX, exactY);
+                // Herdar lado do pai e configurar handles
+                node._side = setor._side || 'right';
+                node._isNested = true;
+                node.sourcePosition = 'bottom';
+                node.targetPosition = 'top';
+
+                posicionarNos(node, childCenterX, Math.round(startY));
             });
         }
 
@@ -326,16 +328,16 @@ export const calculateHierarchicalLayout = (setores) => {
 
         // 2. Ordenar Hierarquias (2, 3, 4...)
         const sortedHierarchyKeys = Object.keys(byHierarchy).map(Number).sort((a, b) => a - b);
-        
+
         // 3. Construir lista final "Do Centro para Fora"
         let sortedSetores = [];
-        
+
         if (sortedHierarchyKeys.length > 1) {
             // Ex: Temos Nível 2 e Nível 3 misturados
             // Pegamos o Nível SUPERIOR (2) para ser o CENTRO
-            const topLevel = sortedHierarchyKeys[0]; 
+            const topLevel = sortedHierarchyKeys[0];
             const topLevelNodes = byHierarchy[topLevel];
-            
+
             // Os demais (Nível 3+) vão para as pontas
             const otherNodes = [];
             sortedHierarchyKeys.slice(1).forEach(l => otherNodes.push(...byHierarchy[l]));
@@ -343,22 +345,22 @@ export const calculateHierarchicalLayout = (setores) => {
             const midPoint = Math.ceil(otherNodes.length / 2);
             const leftWing = otherNodes.slice(0, midPoint);
             const rightWing = otherNodes.slice(midPoint);
-            
+
             sortedSetores = [...leftWing, ...topLevelNodes, ...rightWing];
         } else {
-             // Apenas um nível (ex: todos Nível 3), mantém ordem alfabética ou original
-             sortedSetores = subordinados.sort((a,b) => (a.nomeSetor || '').localeCompare(b.nomeSetor || ''));
+            // Apenas um nível (ex: todos Nível 3), mantém ordem alfabética ou original
+            sortedSetores = subordinados.sort((a, b) => (a.nomeSetor || '').localeCompare(b.nomeSetor || ''));
         }
 
         const advisorHeight = maxAssessoriaY - y;
-        
+
         // Gap vertical base: Se houver assessoria, precisamos pular
         // [FIX] Aumentado de + 50 para + 80 para afastar mais a linha
         const verticalGapBase = Math.max(
-             SPACING_CONFIG.verticalSpacing,
+            SPACING_CONFIG.verticalSpacing,
             (advisorHeight > 0 ? advisorHeight + 100 : SPACING_CONFIG.verticalSpacing)
         );
-        
+
         const childYStart = y + verticalGapBase;
 
         // CORREÇÃO VISUAL: Definir altura exata onde a linha horizontal (fork) deve acontecer
@@ -368,7 +370,7 @@ export const calculateHierarchicalLayout = (setores) => {
             // [FIX] Aumentei o espaçamento para "descer mais" como pedido
             setor._customForkY = childYStart - 60; // Mais respiro acima dos filhos
         } else {
-            setor._customForkY = undefined; 
+            setor._customForkY = undefined;
         }
 
         // Calcular largura total do bloco de filhos
@@ -378,14 +380,14 @@ export const calculateHierarchicalLayout = (setores) => {
             width: calcularLarguraSubarvore(child)
         }));
 
-        const totalChildrenWidth = childrenLayouts.reduce((sum, item) => sum + item.width, 0) 
-                                 + (Math.max(0, childrenLayouts.length - 1) * LAYOUT_CONSTANTS.HORIZONTAL_GAP);
+        const totalChildrenWidth = childrenLayouts.reduce((sum, item) => sum + item.width, 0)
+            + (Math.max(0, childrenLayouts.length - 1) * LAYOUT_CONSTANTS.HORIZONTAL_GAP);
 
         let currentChildX = x_center_available - (totalChildrenWidth / 2);
 
         childrenLayouts.forEach(layoutItem => {
             const { node, width } = layoutItem;
-            
+
             // Centralizar o nó no seu espaço alocado
             const childCenterX = currentChildX + (width / 2);
 
@@ -393,11 +395,12 @@ export const calculateHierarchicalLayout = (setores) => {
             const parentLevelVal = parseFloat(setor.hierarquia || 0);
             const childLevelVal = parseFloat(node.hierarquia || 0);
             const levelDiff = childLevelVal > parentLevelVal ? (childLevelVal - parentLevelVal) : 1;
-            
+
             // Se pulou nível (ex: 1 -> 3), desce mais. Se é (1 -> 2), desce padrão.
             // Gap extra apenas para a DIFERENÇA além de 1
             const extraGap = (levelDiff - 1) * LAYOUT_CONSTANTS.VERTICAL_GAP;
-            
+
+
             const finalChildY = Math.round(childYStart + extraGap);
 
             posicionarNos(node, childCenterX, finalChildY);

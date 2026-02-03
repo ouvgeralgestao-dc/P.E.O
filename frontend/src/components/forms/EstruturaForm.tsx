@@ -2,16 +2,15 @@
  * Formulário de Estrutura Organizacional
  * Versão atualizada: Filtros condicionais aplicados
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { useEffect } from 'react';
 import api from '../../services/api';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
 import Card from '../common/Card';
 import { HIERARCHY_LEVELS, SETOR_TYPES, HIERARCHY_COLORS, HIERARCHY_LABELS } from '../../constants/hierarchyLevels';
-import { CARGOS_DAS } from '../../constants/cargosDAS';
+import { CARGOS_DAS, DESCRICOES_DAS } from '../../constants/cargosDAS';
 import { PAGE_SIZE_OPTIONS } from '../../constants/pageSizes';
 import { ORGAOS_OPTIONS, SUBPREFEITURAS, SUBPREFEITURAS_IDS, getOrgaoById } from '../../constants/orgaos';
 import { validateSetor, validateNome } from '../../utils/validators';
@@ -23,133 +22,111 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
         nomeSetor: '',
         hierarquia: '', // Será calculado automaticamente
         isAssessoria: false,
+        isOperacional: false, // Novo campo: Ajuste fino de hierarquia
         parentId: null,
-        cargos: [],
-        isEditing: false
+        cargos: [] as any[],
+        isEditing: false,
+        id: '',
+        position: null as any
     });
     const [currentCargo, setCurrentCargo] = useState({ tipo: '', quantidade: 1 });
-    const [tipoSetorOptions, setTipoSetorOptions] = useState([]); // Dicionário dinâmico do banco
-    const [orgaosOptions, setOrgaosOptions] = useState([]); // Lista dinâmica de órgãos
+    const [tipoSetorOptions, setTipoSetorOptions] = useState<any[]>([]);
+    const [cargoTypes, setCargoTypes] = useState<any[]>([]);
+    const [orgaosOptions, setOrgaosOptions] = useState<any[]>([]);
 
     const setores = data.setores || [];
-    // Simular que já existe raiz e níveis anteriores para lógica de UI
     const temRaiz = setores.some((s: any) => parseFloat(s.hierarquia) === 1 || parseFloat(s.hierarquia) === 0.5);
     const nomeOrgao = data.nomeOrgao || '';
 
-    // Buscar lista de órgãos da API
+    // Carregar configurações iniciais (Órgãos, Cargos e Tipos de Setor)
     useEffect(() => {
-        const fetchOrgaos = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get('/orgaos');
-                // IMPORTANTE: A API retorna { success: true, data: [...] }
-                const orgaos = response.data.data || [];
-
-                if (!Array.isArray(orgaos)) {
-                    console.error('Órgãos não é um array:', orgaos);
-                    return;
+                // 1. Buscar tipos de cargo
+                const cargosResponse = await api.get('/configs/cargos');
+                if (cargosResponse.data && cargosResponse.data.success) {
+                    setCargoTypes(cargosResponse.data.data || []);
                 }
 
-                // Filtrar e formatar para o Select
-                const formattedOptions = orgaos
-                    .filter(orgao => orgao.id !== 'prefeito-municipal' && orgao.id !== 'vice-prefeito-municipal')
-                    .map(orgao => ({
-                        value: orgao.nome, // Valor agora é o nome real para evitar slugs na UI
-                        label: orgao.nome.length > 85 ? orgao.nome.substring(0, 85) + '...' : orgao.nome
-                    }))
-                    .sort((a, b) => a.label.localeCompare(b.label));
+                // 2. Buscar órgãos e formatar para Select
+                const orgaosResponse = await api.get('/orgaos');
+                const orgaosList = orgaosResponse.data.data || [];
+                if (Array.isArray(orgaosList)) {
+                    const formatted = orgaosList
+                        .filter(o => o.id !== 'prefeito-municipal' && o.id !== 'vice-prefeito-municipal')
+                        .map(o => ({
+                            value: o.nome,
+                            label: o.nome.length > 85 ? o.nome.substring(0, 85) + '...' : o.nome
+                        }))
+                        .sort((a, b) => a.label.localeCompare(b.label));
+                    setOrgaosOptions(formatted);
+                }
 
-                setOrgaosOptions(formattedOptions);
+                // 3. Buscar dicionário de setores
+                const sectorConfigResponse = await api.get('/setores/config');
+                setTipoSetorOptions(sectorConfigResponse.data.data || []);
+
             } catch (error) {
-                console.error("Erro ao buscar órgãos:", error);
+                console.error('[EstruturaForm] Erro ao carregar dados iniciais:', error);
             }
         };
 
-        fetchOrgaos();
+        fetchData();
     }, []);
 
     // Trava o órgão se houver qualquer setor Nível 1 ou Subprefeito (raízes)
-    const orgaoTravado = setores.some(s => {
+    const orgaoTravado = setores.some((s: any) => {
         const h = parseFloat(s.hierarquia);
         return h === 1 || h === 0.5;
     });
 
     const tamanhoFolha = data.tamanhoFolha || 'A3';
 
-    // Carregar dicionário de tipos de setor do banco
-    useEffect(() => {
-        const fetchSectorConfig = async () => {
-            try {
-                const response = await api.get('/setores/config');
-                setTipoSetorOptions(response.data.data || []);
-            } catch (error) {
-                console.error('Erro ao buscar dicionário de setores:', error);
-            }
-        };
-        fetchSectorConfig();
-    }, []);
+    // ... handlers simples ...
 
-    // Atualizar nome do órgão
-    const handleNomeOrgaoChange = (e) => {
-        updateData({ nomeOrgao: e.target.value });
-    };
-
-    // Atualizar tamanho da folha
-    const handleTamanhoFolhaChange = (e) => {
-        updateData({ tamanhoFolha: e.target.value });
-    };
+    const handleNomeOrgaoChange = (e) => updateData({ nomeOrgao: e.target.value });
+    const handleTamanhoFolhaChange = (e) => updateData({ tamanhoFolha: e.target.value });
 
     // Atualizar campo do setor atual
     const handleSetorFieldChange = (field, value) => {
         setCurrentSetor(prev => {
             const newState = { ...prev, [field]: value };
 
-            // Se mudou a hierarquia ou o pai, reseta a posição visual antiga
-            // Isso força o motor de layout a recalcular a posição correta na nova estrutura
-            if (field === 'hierarquia') {
-                newState.tipoSetor = '';
-                newState.parentId = null; // Resetar pai ao mudar de nível
-                newState.position = null; // <--- CORREÇÃO: Limpa posição antiga (ex: lá embaixo)
+            // Resetar posição se mudar estrutura
+            if (field === 'hierarquia' || field === 'parentId') {
+                newState.position = null;
             }
 
-            if (field === 'parentId') {
-                newState.position = null; // Limpa posição se mudar de pai
+            // Recálculo de Hierarquia Centralizado
+            const recalculate = (state) => {
+                if (state.isAssessoria) return '0';
 
-                // Recalcular hierarquia ao mudar de pai
-                if (value) { // Se escolheu um pai
-                    const pai = setores.find(s => s.id === value);
+                if (state.parentId) {
+                    const pai = setores.find(s => s.id === state.parentId);
                     if (pai) {
-                        // Se é assessoria, mantém 0. Se não, é Nível Pai + 1
-                        if (newState.isAssessoria) {
-                            newState.hierarquia = '0';
-                        } else {
-                            const nivelPai = parseFloat(pai.hierarquia);
-                            const nivelNovo = Math.min((nivelPai < 1 ? 1 : nivelPai) + 1, 10);
-                            newState.hierarquia = String(nivelNovo);
-                        }
+                        const nivelPai = parseFloat(pai.hierarquia);
+                        let base = (nivelPai < 1 ? 1 : nivelPai) + 1;
+
+                        // Ajuste Operacional: Desce +1 nível
+                        if (state.isOperacional) base += 1;
+
+                        return String(Math.min(base, 10));
                     }
                 } else if (!temRaiz) {
-                    // Sem pai e sem raiz -> Nível 1
-                    newState.hierarquia = '1';
+                    return state.isOperacional ? '2' : '1'; // Se for raiz operacional (raro), começa no 2? Ou 1? Vamos assumir 1 se for raiz, mas a lógica de raiz geralmente é 1 fixo.
+                    // Na verdade, se não tem pai e não tem raiz, é o primeiro. O primeiro deve ser 1.
+                    // Se o usuário marcar operacional no primeiro nó, talvez devesse ser 2? Mas sem pai não faz muito sentido ser operacional de ninguém.
+                    // Vamos manter 1 para raiz.
                 }
-            }
+                return state.hierarquia; // Mantém atual se não cair nas regras
+            };
 
-            if (field === 'isAssessoria') {
-                // Se marcou assessoria, hierarquia 0. Se desmarcou, recalcula baseada no pai.
-                if (value === true) {
+            // Triggers para recálculo
+            if (field === 'parentId' || field === 'isAssessoria' || field === 'isOperacional') {
+                if (field === 'isAssessoria' && value === true) {
                     newState.hierarquia = '0';
-                    newState.parentId = newState.parentId; // Mantém pai atual
                 } else {
-                    // Desmarcou -> Volta para vertical
-                    if (newState.parentId) {
-                        const pai = setores.find(s => s.id === newState.parentId);
-                        if (pai) {
-                            const nivelPai = parseFloat(pai.hierarquia);
-                            const nivelNovo = Math.min((nivelPai < 1 ? 1 : nivelPai) + 1, 10);
-                            newState.hierarquia = String(nivelNovo);
-                        }
-                    } else if (!temRaiz) {
-                        newState.hierarquia = '1';
-                    }
+                    newState.hierarquia = recalculate(newState);
                 }
             }
 
@@ -287,9 +264,12 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
             nomeSetor: '',
             hierarquia: '',
             isAssessoria: false,
+            isOperacional: false,
             parentId: null,
-            cargos: [],
-            isEditing: false
+            cargos: [] as any[],
+            isEditing: false,
+            id: '',
+            position: null
         });
     };
 
@@ -340,9 +320,12 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
             nomeSetor: '',
             hierarquia: '',
             isAssessoria: false,
+            isOperacional: false,
             parentId: null,
-            cargos: [],
-            isEditing: false
+            cargos: [] as any[],
+            isEditing: false,
+            id: '',
+            position: null
         });
     };
 
@@ -432,26 +415,23 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
     // Verificar se o órgão selecionado é uma Subprefeitura
     const isOrgaoSubprefeitura = SUBPREFEITURAS_IDS.includes(nomeOrgao);
 
-    // Opções de hierarquia (filtra Subprefeito se não for órgão Subprefeitura)
-    const hierarquiaOptions = Object.entries(HIERARCHY_LEVELS)
-        .filter(([key, value]) => {
-            // Se não for órgão Subprefeitura, remove a opção Subprefeito
-            if (!isOrgaoSubprefeitura && value === 0.5) {
-                return false;
-            }
-            return true;
+    // Opções de cargos DINÂMICAS: Agora usa cargoTypes da API
+    const cargosOptions = cargoTypes.length > 0
+        ? cargoTypes.map((c: any) => {
+            // Tentar encontrar o código DAS (ex: DAS-8) pela descrição (ex: Diretor)
+            const dasKey = Object.keys(DESCRICOES_DAS).find(key =>
+                DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === c.nome
+            );
+            return {
+                value: c.nome,
+                label: dasKey || c.nome // Mostra "DAS-8" se for oficial, ou "Assessor" se for custom
+            };
+        }).sort((a, b) => {
+            // Ordenar: Primeiro os que têm DAS (pela ordem do array) ou alfabético
+            if (a.label.startsWith('DAS') && b.label.startsWith('DAS')) return b.label.localeCompare(a.label); // DAS-S antes de DAS-1
+            return a.label.localeCompare(b.label);
         })
-        .map(([key, value]) => ({
-            value: value,
-            label: HIERARCHY_LABELS[value] || `Nível ${value}`
-        }))
-        .sort((a, b) => a.value - b.value);
-
-    // Opções de cargos DAS
-    const cargosOptions = CARGOS_DAS.map(cargo => ({
-        value: cargo,
-        label: cargo
-    }));
+        : [];
 
     return (
         <div className="estrutura-form">
@@ -470,8 +450,6 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                         helperText={disableOrgaoSelection ? "Órgão fixado pelo modo Sandbox" : (orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : "")}
                     />
                 </div>
-
-
             </Card>
 
             {/* Adicionar Setor */}
@@ -490,26 +468,40 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                         ⚠️ EDIÇÃO EM ANDAMENTO: Clique em "CONFIRMAR ALTERAÇÃO" abaixo para efetivar a mudança!
                     </div>
                 )}
-                <div className="form-row">
-                    {/* Checkbox de Assessoria (só se já tiver raiz) */}
-                    {temRaiz && (
-                        <div className="form-field" style={{ display: 'flex', alignItems: 'center', marginTop: '25px', marginBottom: '15px' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '16px' }}>
+                {/* Opções de Perfil do Setor (Assessoria / Operacional) */}
+                {temRaiz && (
+                    <div className="checkbox-row-container">
+                        <div className="checkbox-field">
+                            <label>
                                 <input
                                     type="checkbox"
                                     name="isAssessoria"
                                     checked={currentSetor.isAssessoria}
                                     onChange={(e) => handleSetorFieldChange('isAssessoria', e.target.checked)}
-                                    style={{ width: '20px', height: '20px', marginRight: '10px' }}
                                 />
                                 É Assessoria?
                             </label>
-                            <small className="help-text" style={{ marginLeft: '10px', color: '#666' }}>
-                                (Lateral, Nível 0)
-                            </small>
+                            <span className="checkbox-help-text">(Lateral, Nível 0)</span>
                         </div>
-                    )}
 
+                        {!currentSetor.isAssessoria && (
+                            <div className="checkbox-field">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        name="isOperacional"
+                                        checked={currentSetor.isOperacional}
+                                        onChange={(e) => handleSetorFieldChange('isOperacional', e.target.checked)}
+                                    />
+                                    É Operacional?
+                                </label>
+                                <span className="checkbox-help-text">(Desce 1 Nível extra)</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <div className="form-row">
                     <Select
                         label="Tipo de Setor"
                         value={currentSetor.tipoSetor}
@@ -598,7 +590,6 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                     />
                 )}
 
-                {/* Setor Pai removido - calculado automaticamente baseado na hierarquia */}
                 <div className="cargos-section">
                     <h4>Cargos DAS</h4>
                     <div className="form-row">
@@ -625,12 +616,20 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
 
                     {currentSetor.cargos.length > 0 && (
                         <div className="cargos-list">
-                            {currentSetor.cargos.map((cargo, index) => (
-                                <div key={index} className="cargo-item">
-                                    <span>{cargo.tipo} - Quantidade: {cargo.quantidade}</span>
-                                    <button onClick={() => handleRemoveCargo(index)} className="remove-btn">×</button>
-                                </div>
-                            ))}
+                            {currentSetor.cargos.map((cargo, index) => {
+                                // Encontrar código DAS (ex: DAS-7) pela descrição
+                                const dasKey = Object.keys(DESCRICOES_DAS).find(key =>
+                                    DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === cargo.tipo
+                                );
+                                const label = dasKey || cargo.tipo;
+
+                                return (
+                                    <div key={index} className="cargo-item">
+                                        <span>{label} - Quantidade: {cargo.quantidade}</span>
+                                        <button onClick={() => handleRemoveCargo(index)} className="remove-btn">×</button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -662,11 +661,20 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                                         {setor.isAssessoria && ' (Assessoria)'}
                                     </p>
                                     <div className="setor-cargos">
-                                        {setor.cargos.map((cargo, idx) => (
-                                            <span key={idx} className="cargo-badge">
-                                                {cargo.tipo} ({cargo.quantidade})
-                                            </span>
-                                        ))}
+                                        {setor.cargos.map((cargo, idx) => {
+                                            // Encontrar símbolo correspondente na lista dinâmica
+                                            // E mapear para código DAS se for o caso
+                                            const dasKey = Object.keys(DESCRICOES_DAS).find(key =>
+                                                DESCRICOES_DAS[key as keyof typeof DESCRICOES_DAS] === cargo.tipo
+                                            );
+                                            const label = dasKey || cargo.tipo;
+
+                                            return (
+                                                <span key={idx} className="cargo-badge">
+                                                    {label} ({cargo.quantidade})
+                                                </span>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 <div className="setor-item-actions">

@@ -66,6 +66,7 @@ function CriarOrganograma() {
 
             const response = await api.post('/organogramas/estrutural', {
                 nomeOrgao: nomeCompleto,
+                orgaoId: orgaoInfo?.id,
                 tamanhoFolha: formData.tamanhoFolha,
                 setores: formData.setores,
                 password: formData.password
@@ -73,7 +74,7 @@ function CriarOrganograma() {
 
             // Iniciar animação de Check suave
             setIsFinished(true);
-            setPendingNavigate(`/visualizar/${encodeURIComponent(nomeCompleto)}`);
+            setPendingNavigate(`/visualizar/${encodeURIComponent(nomeCompleto)}?tipo=estrutura`);
 
             // Pequeno delay para visualizar o check verde na barra
             setTimeout(() => {
@@ -99,6 +100,7 @@ function CriarOrganograma() {
 
             const response = await api.post('/organogramas/funcoes', {
                 nomeOrgao: nomeCompleto,
+                orgaoId: orgaoInfo?.id,
                 tamanhoFolha: formData.tamanhoFolha,
                 cargos: formData.cargos,
                 password: formData.password
@@ -108,7 +110,7 @@ function CriarOrganograma() {
 
             // Iniciar animação de Check suave
             setIsFinished(true);
-            setPendingNavigate(`/visualizar/${encodeURIComponent(formData.nomeOrgao)}`);
+            setPendingNavigate(`/visualizar/${encodeURIComponent(formData.nomeOrgao)}?tipo=funcoes`);
 
             // Pequeno delay para visualizar o check verde na barra
             setTimeout(() => {

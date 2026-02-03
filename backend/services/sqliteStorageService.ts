@@ -8,6 +8,18 @@ import { getNodeDimensions } from './layoutService.js';
 // TODAS AS OPERAÇÕES USAM SQLite - ZERO JSON
 // ==========================================
 
+// Helper para garantir que a data seja uma string ISO válida ou um fallback seguro
+const safeDate = (d) => {
+    try {
+        if (!d) return new Date().toISOString();
+        const date = new Date(d);
+        if (isNaN(date.getTime())) return new Date().toISOString();
+        return date.toISOString();
+    } catch (e) {
+        return new Date().toISOString();
+    }
+};
+
 // ==========================================
 // FUNÇÕES DE LEITURA (GET)
 // ==========================================
@@ -44,6 +56,18 @@ export const getOrgaoIdByName = async (termo: string) => {
         row = await dbAsync.get('SELECT id FROM orgaos WHERE UPPER(nome) LIKE UPPER(?)', [`%${termo.trim()}%`]);
         if (row) return row.id;
 
+        // 4. Busca Flexível (Slug Match): ignorar hifens e underscores
+        const slugTermo = termo.trim().toLowerCase().replace(/[-_]/g, '');
+        const allOrgaos = await dbAsync.all('SELECT id, nome FROM orgaos');
+
+        const match = allOrgaos.find(o => {
+            const idNormal = o.id.toLowerCase().replace(/[-_]/g, '');
+            const nomeNormal = o.nome.toLowerCase().replace(/[-_]/g, '');
+            return idNormal === slugTermo || nomeNormal === slugTermo;
+        });
+
+        if (match) return match.id;
+
         return null;
     } catch (error) {
         console.error('Erro ao buscar ID do órgão:', error);
@@ -55,15 +79,6 @@ export const getOrgaoMetadata = async (orgaoId: string) => {
     try {
         const row = await dbAsync.get('SELECT * FROM orgaos WHERE id = ?', [orgaoId]);
         if (!row) return null;
-
-        const safeDate = (d) => {
-            if (!d) return new Date().toISOString();
-            try {
-                const date = new Date(d);
-                if (isNaN(date.getTime())) return new Date().toISOString();
-                return date.toISOString();
-            } catch (e) { return new Date().toISOString(); }
-        };
 
         return {
             id: row.id,
@@ -80,14 +95,24 @@ export const getOrgaoMetadata = async (orgaoId: string) => {
     }
 };
 
-export const getTamanhoFolha = async (orgaoId) => {
+export const getOrganogramaEstruturalMeta = async (orgaoId) => {
     try {
-        const row = await dbAsync.get('SELECT tamanho_folha FROM organogramas_estruturais WHERE orgao_id = ?', [orgaoId]);
-        return row ? row.tamanho_folha : 'A4';
+        const row = await dbAsync.get('SELECT tamanho_folha, created_at, updated_at FROM organogramas_estruturais WHERE orgao_id = ?', [orgaoId]);
+        if (!row) return null;
+        return {
+            tamanhoFolha: row.tamanho_folha || 'A4',
+            createdAt: safeDate(row.created_at),
+            updatedAt: safeDate(row.updated_at)
+        };
     } catch (error) {
-        console.error('Erro ao buscar tamanho da folha:', error);
-        return 'A4';
+        console.error('Erro ao buscar metadados do estrutural:', error);
+        return null;
     }
+};
+
+export const getTamanhoFolha = async (orgaoId) => {
+    const meta = await getOrganogramaEstruturalMeta(orgaoId);
+    return meta ? meta.tamanhoFolha : 'A4';
 };
 
 
@@ -117,6 +142,7 @@ const flattenSetores = (setores, orgaoId, parentId = null, ordem = 0) => {
                 ? parentId
                 : (setor.parentId || setor.parent_id || null),
             is_assessoria: setor.isAssessoria ? 1 : 0,
+            is_operacional: setor.isOperacional ? 1 : 0,
             ordem: ordem + index,
             style_json: JSON.stringify(setor.style || {}),
             position_json: JSON.stringify(setor.position || {}),
@@ -172,8 +198,11 @@ export const createOrUpdateOrgao = async (orgaoData) => {
                 if (newName === normalizedNew && oldName !== normalizedOld) {
                     console.warn(`[SQLite] BLINDAGEM V4: Bloqueando sobrescrita de nome formatado '${oldName}' pelo slug '${newName}'`);
                 } else {
-                    await dbAsync.run('UPDATE orgaos SET nome = ? WHERE id = ?', [orgao, targetId]);
+                    await dbAsync.run('UPDATE orgaos SET nome = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [orgao, targetId]);
                 }
+            } else {
+                // Mesmo que o nome não mude, atualizamos o timestamp do órgão
+                await dbAsync.run('UPDATE orgaos SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [targetId]);
             }
 
             if (auth) {
@@ -201,7 +230,7 @@ export const createOrUpdateOrgao = async (orgaoData) => {
                 );
             } else {
                 await dbAsync.run(
-                    'INSERT INTO organogramas_estruturais (orgao_id, tamanho_folha, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                    'INSERT INTO organogramas_estruturais (orgao_id, tamanho_folha, created_at, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
                     [targetId, tamanhoFolha || 'A4']
                 );
             }
@@ -232,11 +261,11 @@ export const createOrUpdateOrgao = async (orgaoData) => {
                 await dbAsync.run(
                     `INSERT INTO setores (
                         id, orgao_id, nome, tipo, hierarquia, parent_id, 
-                        is_assessoria, ordem, style_json, position_json, cargos_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        is_assessoria, is_operacional, ordem, style_json, position_json, cargos_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         s.id, s.orgao_id, s.nome, s.tipo, s.hierarquia, s.parent_id,
-                        s.is_assessoria, s.ordem, s.style_json, s.position_json, s.cargos_json
+                        s.is_assessoria, s.is_operacional, s.ordem, s.style_json, s.position_json, s.cargos_json
                     ]
                 );
             }
@@ -293,6 +322,7 @@ const reconstructTree = (flatList) => {
         node.nomeSetor = node.nome;
         node.tipoSetor = node.tipo;
         node.isAssessoria = !!node.is_assessoria; // Converter 0/1 para bool
+        node.isOperacional = !!node.is_operacional; // Novo campo
         node.parentId = node.parent_id;
 
         // Limpar propriedades SQL antigas
@@ -302,6 +332,7 @@ const reconstructTree = (flatList) => {
         delete node.nome; // Frontend usa nomeSetor
         delete node.tipo; // Frontend usa tipoSetor
         delete node.is_assessoria;
+        delete node.is_operacional;
         delete node.parent_id;
 
         // CRÍTICO: Inicializar array de filhos (removido acidentalmente na última refatoração)
@@ -314,10 +345,10 @@ const reconstructTree = (flatList) => {
         // [FIX] SANITIZAÇÃO DE DADOS LEGADOS
         // Verificar se a relação pai-filho é hierarquicamente válida
         let parentValid = false;
-        
+
         if (node.parentId && map[node.parentId]) {
             const parent = map[node.parentId];
-            
+
             // Regra: Pai deve ter nível hierárquico MENOR (número) que o filho
             // Ex: Sec(1) -> Superintendencia(2) [OK]
             // Ex: Superintendencia(2) -> Superintendencia(2) [INVÁLIDO]
@@ -375,13 +406,15 @@ export const getOrgaoEstrutural = async (orgaoId) => {
 export const listOrganogramasFuncoes = async (orgaoId) => {
     try {
         const diagramas = await dbAsync.all(
-            'SELECT id, nome, updated_at FROM diagramas_funcionais WHERE orgao_id = ? ORDER BY created_at DESC',
+            'SELECT id, nome, created_at, updated_at FROM diagramas_funcionais WHERE orgao_id = ? ORDER BY created_at DESC',
             [orgaoId]
         );
         return diagramas.map(d => ({
             id: d.id,
             nome: d.nome || `Versão ${new Date(d.created_at).toLocaleDateString()}`,
-            data: d.updated_at
+            data: safeDate(d.updated_at),
+            createdAt: safeDate(d.created_at),
+            updatedAt: safeDate(d.updated_at)
         }));
     } catch (error) {
         console.error(`Erro ao listar funções para ${orgaoId}:`, error);
@@ -409,6 +442,7 @@ const flattenCargos = (cargos, diagramaId, parentId = null) => {
             parent_id: (parentId || cargo.parentId || cargo.parent_id), // Será higienizado abaixo
             // is_assessoria...
             is_assessoria: cargo.isAssessoria ? 1 : 0,
+            is_operacional: cargo.isOperacional ? 1 : 0,
             setor_ref: cargo.setorRef || cargo.setor_ref || cargo.data?.setorRef || null,
             style_json: JSON.stringify(cargo.style || {}),
             position_json: JSON.stringify(cargo.position || {}),
@@ -490,11 +524,11 @@ export const addOrganogramaFuncoes = async (orgaoId, nomeVersao, dados) => {
                 await dbAsync.run(
                     `INSERT INTO cargos_funcionais (
                         id, diagrama_id, nome_cargo, ocupante, hierarquia, parent_id,
-                        is_assessoria, style_json, position_json, simbolos_json, setor_ref
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        is_assessoria, is_operacional, style_json, position_json, simbolos_json, setor_ref
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         realId, c.diagrama_id, c.nome_cargo, c.ocupante, c.hierarquia, realParentId,
-                        c.is_assessoria, c.style_json, c.position_json, c.simbolos_json, c.setor_ref
+                        c.is_assessoria, c.is_operacional, c.style_json, c.position_json, c.simbolos_json, (c.setor_ref || c.setorRef)
                     ]
                 );
             }
@@ -536,6 +570,7 @@ const reconstructTreeFuncional = (flatList) => {
         node.label = node.nome_cargo; // Compatibilidade legado
         node.nomeCargo = node.nome_cargo; // Compatibilidade frontend (Stats)
         node.isAssessoria = !!node.is_assessoria; // MAPEAR PARA CAMELCASE
+        node.isOperacional = !!node.is_operacional;
         node.type = 'customNode'; // Forçar tipo se necessário (ver frontend)
 
         node.position = pos;
@@ -590,6 +625,18 @@ export const getOrganogramaFuncoes = async (orgaoId, diagramaId) => {
         ORDER BY c.ROWID ASC
     `, [targetId]);
 
+    if (cargos.length > 0) {
+        console.log(`[DEBUG] getOrganogramaFuncoes: ${cargos.length} cargos encontrados.`);
+        console.log('[DEBUG] Amostra (0):', {
+            id: cargos[0].id,
+            nome: cargos[0].nome_cargo,
+            setor_ref: cargos[0].setor_ref,
+            nome_setor_ref: cargos[0].nome_setor_ref
+        });
+    } else {
+        console.log('[DEBUG] getOrganogramaFuncoes: NENHUM cargo encontrado.');
+    }
+
     /* REMOVIDO FALLBACK LEGADO: O frontend agora controla o auto-layout inicial se necessário
     const hasPositions = cargos.some(c => {
         try {
@@ -617,7 +664,8 @@ export const getOrganogramaFuncoes = async (orgaoId, diagramaId) => {
         nome: diagrama.nome,
         tamanhoFolha: diagrama.tamanho_folha,
         cargos: tree,
-        updatedAt: diagrama.updated_at
+        createdAt: safeDate(diagrama.created_at),
+        updatedAt: safeDate(diagrama.updated_at)
     };
 };
 
@@ -625,6 +673,62 @@ export const getOrganogramaFuncoes = async (orgaoId, diagramaId) => {
 // ==========================================
 // FUNÇÕES DE ADMINISTRAÇÃO (METADATA ONLY)
 // ==========================================
+
+// --- GESTÃO DE TIPOS DE CARGO (Dinâmico) ---
+
+export const listTiposCargo = async () => {
+    try {
+        return await dbAsync.all('SELECT * FROM tipos_cargo ORDER BY ordem ASC, hierarquia_padrao ASC');
+    } catch (error) {
+        console.error('Erro ao listar tipos_cargo:', error);
+        throw error;
+    }
+};
+
+export const createTipoCargo = async (data: any) => {
+    try {
+        const { nome, hierarquia_padrao, simbolo, ordem } = data;
+        const id = uuidv4();
+        await dbAsync.run(
+            'INSERT INTO tipos_cargo (id, nome, hierarquia_padrao, simbolo, ordem) VALUES (?, ?, ?, ?, ?)',
+            [id, nome, hierarquia_padrao || 1, simbolo || '▪', ordem || 999]
+        );
+        return { id, ...data };
+    } catch (error) {
+        console.error('Erro ao criar tipo_cargo:', error);
+        throw error;
+    }
+};
+
+export const updateTipoCargo = async (id: string, data: any) => {
+    try {
+        const updates = [];
+        const params = [];
+        if (data.nome !== undefined) { updates.push('nome = ?'); params.push(data.nome); }
+        if (data.hierarquia_padrao !== undefined) { updates.push('hierarquia_padrao = ?'); params.push(data.hierarquia_padrao); }
+        if (data.simbolo !== undefined) { updates.push('simbolo = ?'); params.push(data.simbolo); }
+        if (data.ordem !== undefined) { updates.push('ordem = ?'); params.push(data.ordem); }
+
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+        params.push(id);
+
+        await dbAsync.run(`UPDATE tipos_cargo SET ${updates.join(', ')} WHERE id = ?`, params);
+        return { id, ...data };
+    } catch (error) {
+        console.error('Erro ao atualizar tipo_cargo:', error);
+        throw error;
+    }
+};
+
+export const deleteTipoCargo = async (id: string) => {
+    try {
+        await dbAsync.run('DELETE FROM tipos_cargo WHERE id = ?', [id]);
+        return { success: true };
+    } catch (error) {
+        console.error('Erro ao deletar tipo_cargo:', error);
+        throw error;
+    }
+};
 
 export const updateOrgaoMetadata = async (id, data) => {
     try {
