@@ -517,8 +517,8 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                         </div>
                     )}
 
-                    {/* Pai Obrigatório para filhos, mas OPCIONAL/OCULTO para Nível 1 */}
-                    {cargos.length > 0 && parseFloat(currentCargo.hierarquia) !== 1 && (
+                    {/* Pai Obrigatório para filhos, mas OPCIONAL para Nível 1 (para permitir troca de raiz -> filho) */}
+                    {cargos.length > 0 && (
                         <Select
                             label="Cargo Pai (Subordinado a)"
                             value={currentCargo.parentId || ''}

@@ -31,6 +31,95 @@ const edgeTypes = {
     customEdge: CustomEdge,
 };
 
+const CustomControls = () => {
+    const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+    return (
+        <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '8px',
+            padding: '8px 16px',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 5,
+            alignItems: 'center'
+        }}>
+            <button
+                onClick={() => zoomIn()}
+                style={{
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    color: '#555',
+                    transition: 'all 0.2s',
+                }}
+                onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                onMouseOut={e => e.currentTarget.style.background = 'white'}
+                title="Aumentar Zoom (+)"
+            >
+                +
+            </button>
+            <button
+                onClick={() => zoomOut()}
+                style={{
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    color: '#555',
+                    transition: 'all 0.2s',
+                }}
+                onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                onMouseOut={e => e.currentTarget.style.background = 'white'}
+                title="Diminuir Zoom (-)"
+            >
+                -
+            </button>
+            <button
+                onClick={() => fitView({ duration: 800 })}
+                style={{
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    color: '#555',
+                    transition: 'all 0.2s',
+                }}
+                onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                onMouseOut={e => e.currentTarget.style.background = 'white'}
+                title="Ajustar à Tela ([ ])"
+            >
+                ↔
+            </button>
+        </div>
+    );
+};
+
 const OrganogramaCanvasInner = ({
     organogramaData,
     onSavePositions,
@@ -1302,7 +1391,7 @@ const OrganogramaCanvasInner = ({
                 panOnScroll={true}
             >
                 <Background color="#aaa" gap={16} />
-                <Controls />
+                <CustomControls />
                 <MiniMap
                     nodeColor={nodeColor}
                     nodeStrokeWidth={3}

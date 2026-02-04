@@ -9,15 +9,38 @@ import { getNodeDimensions } from './layoutService.js';
 // ==========================================
 
 // Helper para garantir que a data seja uma string ISO válida ou um fallback seguro
-const safeDate = (d) => {
+const safeDate = (d, fallbackToNow = true) => {
     try {
-        if (!d) return new Date().toISOString();
-        const date = new Date(d);
-        if (isNaN(date.getTime())) return new Date().toISOString();
+        if (!d) return fallbackToNow ? new Date().toISOString() : null;
+
+        let dateStr = d;
+        if (typeof d === 'string') {
+            // Normalizar formato SQL (YYYY-MM-DD HH:MM:SS) para ISO
+            if (dateStr.includes(' ')) {
+                dateStr = dateStr.replace(' ', 'T');
+            }
+            // REMOVIDO: Não forçar 'Z' (UTC). Deixar como Local Time (Brasília)
+            // if (!dateStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+            //    dateStr += 'Z';
+            // }
+        }
+
+        const date = new Date(dateStr);
+        // console.log(`[SafeDate] In: "${d}" | Transformed: "${dateStr}" | Out: "${date.toISOString()}"`); 
+
+        if (isNaN(date.getTime())) return fallbackToNow ? new Date().toISOString() : null;
         return date.toISOString();
     } catch (e) {
-        return new Date().toISOString();
+        return fallbackToNow ? new Date().toISOString() : null;
     }
+};
+
+// Helper para formatar data BRASÍLIA para SQL (YYYY-MM-DD HH:MM:SS)
+const getBrasiliaTimeSQL = () => {
+    // Subtrair 3 horas do UTC para pegar o horário de Brasília "visual"
+    const now = new Date();
+    const brasiliaTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+    return brasiliaTime.toISOString().replace('T', ' ').slice(0, 19);
 };
 
 // ==========================================
@@ -33,7 +56,7 @@ export const listOrgaos = async () => {
             orgao: r.nome,
             categoria: r.categoria,
             ordem: r.ordem,
-            createdAt: r.created_at || new Date().toISOString(),
+            createdAt: safeDate(r.created_at, false) || safeDate(r.updated_at) || new Date().toISOString(),
             updatedAt: r.updated_at || new Date().toISOString()
         }));
     } catch (error) {
@@ -83,10 +106,10 @@ export const getOrgaoMetadata = async (orgaoId: string) => {
         return {
             id: row.id,
             orgao: row.nome,
-            createdAt: safeDate(row.created_at),
+            createdAt: safeDate(row.created_at, false) || safeDate(row.updated_at) || new Date().toISOString(),
             updatedAt: safeDate(row.updated_at),
             // Fallbacks legacy
-            created_at: safeDate(row.created_at),
+            created_at: safeDate(row.created_at, false) || safeDate(row.updated_at) || new Date().toISOString(),
             updated_at: safeDate(row.updated_at)
         };
     } catch (error) {
@@ -101,7 +124,7 @@ export const getOrganogramaEstruturalMeta = async (orgaoId) => {
         if (!row) return null;
         return {
             tamanhoFolha: row.tamanho_folha || 'A4',
-            createdAt: safeDate(row.created_at),
+            createdAt: safeDate(row.created_at, false) || safeDate(row.updated_at) || new Date().toISOString(),
             updatedAt: safeDate(row.updated_at)
         };
     } catch (error) {
@@ -115,6 +138,10 @@ export const getTamanhoFolha = async (orgaoId) => {
     return meta ? meta.tamanhoFolha : 'A4';
 };
 
+// Helper para formatar data UTC limpa para SQL (YYYY-MM-DD HH:MM:SS)
+const getSqlUTCDate = () => {
+    return new Date().toISOString().replace('T', ' ').slice(0, 19);
+};
 
 // ==========================================
 // FUNÇÕES DE ESCRITA (CREATE / UPDATE)
@@ -222,16 +249,19 @@ export const createOrUpdateOrgao = async (orgaoData) => {
         if (!setores || setores.length === 0) {
             await dbAsync.run('DELETE FROM organogramas_estruturais WHERE orgao_id = ?', [targetId]);
         } else {
-            const existingOrg = await dbAsync.get('SELECT orgao_id FROM organogramas_estruturais WHERE orgao_id = ?', [targetId]);
-            if (existingOrg) {
+            // Verifica se já existe
+            const exists = await dbAsync.get('SELECT orgao_id FROM organogramas_estruturais WHERE orgao_id = ?', [targetId]);
+
+            const now = getBrasiliaTimeSQL();
+            if (exists) {
                 await dbAsync.run(
-                    'UPDATE organogramas_estruturais SET tamanho_folha = ?, updated_at = CURRENT_TIMESTAMP WHERE orgao_id = ?',
-                    [tamanhoFolha || 'A4', targetId]
+                    'UPDATE organogramas_estruturais SET tamanho_folha = ?, updated_at = ? WHERE orgao_id = ?',
+                    [tamanhoFolha || 'A4', now, targetId]
                 );
             } else {
                 await dbAsync.run(
-                    'INSERT INTO organogramas_estruturais (orgao_id, tamanho_folha, created_at, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-                    [targetId, tamanhoFolha || 'A4']
+                    'INSERT INTO organogramas_estruturais (orgao_id, tamanho_folha, created_at, updated_at) VALUES (?, ?, ?, ?)',
+                    [targetId, tamanhoFolha || 'A4', now, now]
                 );
             }
         }
@@ -482,10 +512,21 @@ export const addOrganogramaFuncoes = async (orgaoId, nomeVersao, dados) => {
     try {
         await dbAsync.run("BEGIN TRANSACTION");
 
-        await dbAsync.run(
-            'INSERT INTO diagramas_funcionais (id, orgao_id, nome, tamanho_folha, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
-            [diagramaId, orgaoId, nomeVersao, tamanhoFolha || 'A4']
-        );
+        // Check exists
+        const exists = await dbAsync.get('SELECT id FROM diagramas_funcionais WHERE id = ?', [diagramaId]);
+
+        const now = getBrasiliaTimeSQL();
+        if (exists) {
+            await dbAsync.run(
+                'UPDATE diagramas_funcionais SET nome = ?, tamanho_folha = ?, updated_at = ? WHERE id = ?',
+                [nomeVersao, tamanhoFolha || 'A4', now, diagramaId]
+            );
+        } else {
+            await dbAsync.run(
+                'INSERT INTO diagramas_funcionais (id, orgao_id, nome, tamanho_folha, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+                [diagramaId, orgaoId, nomeVersao, tamanhoFolha || 'A4', now, now]
+            );
+        }
 
         if (cargos) {
             console.log(`[SQLite] Processando cargos... Recebidos: ${cargos && cargos.length}`);
@@ -664,7 +705,7 @@ export const getOrganogramaFuncoes = async (orgaoId, diagramaId) => {
         nome: diagrama.nome,
         tamanhoFolha: diagrama.tamanho_folha,
         cargos: tree,
-        createdAt: safeDate(diagrama.created_at),
+        createdAt: safeDate(diagrama.created_at, false) || safeDate(diagrama.updated_at) || new Date().toISOString(),
         updatedAt: safeDate(diagrama.updated_at)
     };
 };

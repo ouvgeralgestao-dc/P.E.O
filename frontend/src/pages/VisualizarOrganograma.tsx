@@ -44,6 +44,7 @@ function VisualizarOrganograma() {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return '-';
             return date.toLocaleString('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',

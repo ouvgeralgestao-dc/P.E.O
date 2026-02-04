@@ -42,6 +42,9 @@ function runMigrations() {
         // 2026-02-03: Data de criação e atualização para organogramas estruturais
         { table: 'organogramas_estruturais', column: 'created_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
         { table: 'organogramas_estruturais', column: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
+        // 2026-02-04: Data de criação e atualização para tabela de órgãos principal
+        { table: 'orgaos', column: 'created_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
+        { table: 'orgaos', column: 'updated_at', type: 'DATETIME', default: 'CURRENT_TIMESTAMP' },
     ];
 
     for (const m of migrations) {
