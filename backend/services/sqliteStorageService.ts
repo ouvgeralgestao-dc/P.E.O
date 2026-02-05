@@ -507,21 +507,31 @@ export const addOrganogramaFuncoes = async (orgaoId, nomeVersao, dados) => {
         }
     }
 
-    const diagramaId = uuidv4();
+    // [FIX] Buscar diagrama EXISTENTE para este órgão ao invés de criar um novo a cada save
+    // Isso preserva os dados de setor_ref e evita criação de múltiplas versões
+    const existingDiagrama = await dbAsync.get(
+        'SELECT id FROM diagramas_funcionais WHERE orgao_id = ? ORDER BY created_at DESC LIMIT 1',
+        [orgaoId]
+    );
+
+    const diagramaId = existingDiagrama?.id || uuidv4();
+    const isUpdate = !!existingDiagrama;
+    console.log(`[SQLite] Diagrama ${isUpdate ? 'EXISTENTE' : 'NOVO'}: ${diagramaId}`);
 
     try {
         await dbAsync.run("BEGIN TRANSACTION");
 
-        // Check exists
-        const exists = await dbAsync.get('SELECT id FROM diagramas_funcionais WHERE id = ?', [diagramaId]);
-
         const now = getBrasiliaTimeSQL();
-        if (exists) {
+        if (isUpdate) {
+            // Atualizar diagrama existente
             await dbAsync.run(
                 'UPDATE diagramas_funcionais SET nome = ?, tamanho_folha = ?, updated_at = ? WHERE id = ?',
                 [nomeVersao, tamanhoFolha || 'A4', now, diagramaId]
             );
+            // Deletar cargos antigos para substituir pelos novos
+            await dbAsync.run('DELETE FROM cargos_funcionais WHERE diagrama_id = ?', [diagramaId]);
         } else {
+            // Criar novo diagrama
             await dbAsync.run(
                 'INSERT INTO diagramas_funcionais (id, orgao_id, nome, tamanho_folha, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
                 [diagramaId, orgaoId, nomeVersao, tamanhoFolha || 'A4', now, now]
@@ -606,13 +616,20 @@ const reconstructTreeFuncional = (flatList) => {
         node.data = {
             label: node.nome_cargo,
             nomeCargo: node.nome_cargo, // Compatibilidade frontend
-            ...node // inclui outras props no data se necessário
+            ...node, // inclui outras props no data se necessário
+            // [FIX] Mapeamento explícito para camelCase (Frontend espera setorRef/nomeSetorRef)
+            setorRef: node.setor_ref,
+            nomeSetorRef: node.nome_setor_ref
         };
         node.label = node.nome_cargo; // Compatibilidade legado
         node.nomeCargo = node.nome_cargo; // Compatibilidade frontend (Stats)
         node.isAssessoria = !!node.is_assessoria; // MAPEAR PARA CAMELCASE
         node.isOperacional = !!node.is_operacional;
         node.type = 'customNode'; // Forçar tipo se necessário (ver frontend)
+
+        // [FIX] Expor também no nível raiz do nó para garantir leitura
+        node.setorRef = node.setor_ref;
+        node.nomeSetorRef = node.nome_setor_ref;
 
         node.position = pos;
         node.children = [];

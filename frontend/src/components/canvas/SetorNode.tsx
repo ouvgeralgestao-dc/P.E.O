@@ -222,12 +222,11 @@ const SetorNode = ({ data, selected }) => {
                 )}
 
                 {/* Setor de Referência (Cross-Filtering) */}
-                {/* Setor de Referência (Cross-Filtering) */}
-                {/* Setor de Referência (Cross-Filtering) */}
-                {(data.nomeSetorRef || data.setorRef) && (
+                {/* [FIX] Defensive check for data properties + Safe access */}
+                {(data?.nomeSetorRef || data?.setorRef) && (
                     <div className="node-setor-ref" style={{
                         fontSize: '10px',
-                        color: data.nomeSetorRef ? '#666' : 'red', // Vermelho se for só ID (Erro)
+                        color: data?.nomeSetorRef ? '#666' : 'red', // Vermelho se for só ID (Erro)
                         backgroundColor: 'rgba(255,255,255,0.7)',
                         padding: '2px 4px',
                         borderRadius: '4px',
@@ -237,7 +236,7 @@ const SetorNode = ({ data, selected }) => {
                         wordBreak: 'break-word',
                         lineHeight: '1.1'
                     }}>
-                        {data.nomeSetorRef || `[DEBUG] ID: ${data.setorRef}`}
+                        {data?.nomeSetorRef || `[DEBUG] ID: ${data?.setorRef}`}
                     </div>
                 )}
 

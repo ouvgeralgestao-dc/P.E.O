@@ -926,8 +926,9 @@ const OrganogramaCanvasInner = ({
                 simbolo: node.data.simbolo, // Enviar de volta para o backend
                 isOperacional: node.data.isOperacional, // [SYNC] Enviar flag de Operacional
                 quantidade: node.data.quantidade,
-                setorRef: node.data.setorRef,         // [FIX] Preservar referência de setor
-                nomeSetorRef: node.data.nomeSetorRef  // [FIX] Preservar nome do setor
+                // [FIX] Buscar setorRef de TODAS as fontes possíveis para evitar perda de dados
+                setorRef: node.data.setorRef || node.data.setor_ref || (node as any).setorRef || (node as any).setor_ref,
+                nomeSetorRef: node.data.nomeSetorRef || node.data.nome_setor_ref
             };
         });
 

@@ -152,7 +152,12 @@ function EditarOrganograma() {
             }
 
             // Fallback: array vazio para evitar erro no map()
-            return { ...c, simbolos: [] };
+            return {
+                ...c,
+                // [FIX CRÍTICO] Garantir mapeamento de setorRef para o Formulário de Edição
+                setorRef: c.setorRef || c.setor_ref,
+                simbolos: []
+            };
         });
     };
 
