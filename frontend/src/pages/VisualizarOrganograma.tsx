@@ -89,12 +89,11 @@ function VisualizarOrganograma() {
             setDisplayData({
                 orgao: fullData.orgao,
                 organogramaEstrutural: fullData.organogramaEstrutural,
-                // Não passamos organogramasFuncoes para evitar renderização duplicada
+                // [FIX] Garantir que setores de lookup estejam disponíveis (mesmo que duplicado)
+                setores: fullData.organogramaEstrutural.setores || []
             });
         } else if (tipoVisualizacao === 'funcoes' && fullData.organogramasFuncoes) {
             // Filtrar pelo ID se fornecido, ou pegar SOMENTE O PRIMEIRO (Latest)
-            // O backend retorna ordenado por createdAt DESC, então [0] é o atual.
-            // Exibir múltiplas versões ao mesmo tempo causa sobreposição e estatísticas incorretas.
             const funcoes = idVisualizacao
                 ? fullData.organogramasFuncoes.filter((f: any) => f.id === idVisualizacao)
                 : (fullData.organogramasFuncoes.length > 0 ? [fullData.organogramasFuncoes[0]] : []);
@@ -102,12 +101,15 @@ function VisualizarOrganograma() {
             setDisplayData({
                 orgao: fullData.orgao,
                 organogramasFuncoes: funcoes,
+                // [FIX CRÍTICO] Sempre passar a estrutura para permitir o lookup de NOMES de setores
+                // Sem isso, o canvas recebe apenas IDs (setorRef) e não sabe os nomes.
                 setores: fullData.organogramaEstrutural?.setores || [],
+
                 createdAt: funcoes.length > 0 ? funcoes[0].createdAt : null,
                 updatedAt: funcoes.length > 0 ? funcoes[0].updatedAt : null,
             });
         } else {
-            // Fallback: mostrar tudo (comportamento antigo) ou nada
+            // Fallback
             setDisplayData(fullData);
         }
     }, [fullData, tipoVisualizacao, idVisualizacao]);
@@ -272,7 +274,11 @@ function VisualizarOrganograma() {
                             simbolos: cargo.simbolos || [],
                             position: match?.position || cargo.position || { x: 0, y: 0 },
                             // CORREÇÃO: Verificar customStyle que vem do Canvas
-                            style: match?.customStyle || match?.style || cargo.style || cargo.customStyle || {}
+                            style: match?.customStyle || match?.style || cargo.style || cargo.customStyle || {},
+                            // [FIX CRÍTICO] Preservar campos que NÃO devem ser perdidos no auto-save de layout
+                            setorRef: cargo.setorRef || cargo.setor_ref || null,
+                            isOperacional: cargo.isOperacional || !!cargo.is_operacional || false,
+                            isAssessoria: cargo.isAssessoria || !!cargo.is_assessoria || false
                         };
 
                         if (cargo.children && cargo.children.length > 0) {

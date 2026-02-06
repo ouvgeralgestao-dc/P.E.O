@@ -595,7 +595,8 @@ const OrganogramaCanvasInner = ({
                 // Mapa de Cargos para busca de Pai
                 const cargoMap = new Map();
                 const positionMapFunc = new Map();
-                cargos.forEach(c => {
+                cargos.forEach((c, idx) => {
+                    if (idx === 0) console.log('[DEBUG CANVAS] Primeiro Cargo Raw:', c);
                     cargoMap.set(c.id, c);
                     if (c.position) positionMapFunc.set(c.id, c.position);
                 });
@@ -698,39 +699,52 @@ const OrganogramaCanvasInner = ({
                             isAssessoria: isAssessoriaNode,
                             isOperacional: cargo.isOperacional, // [SYNC] Persistir propriedade Operacional
                             nomeSetorRef: (() => {
+                                // 1. Tentar obter direto do objeto cargo (Prevalência Backend JOIN)
                                 const direct = cargo.nome_setor_ref || cargo.nomeSetorRef;
-                                if (direct) return direct;
-                                const refId = cargo.setor_ref || cargo.setorRef;
-                                let lookedUp = refId ? setorLookupMap.get(refId) : null;
 
-                                // [FALLBACK AUTOMÁTICO] Se não houve link explícito, tentar match por nome
+                                // DEBUG: Verificar dados crus
+                                // console.log(`[DEBUG CANVAS] Cargo: ${cargo.nomeCargo} | RefID: ${cargo.setor_ref || cargo.setorRef} | DirectName: ${direct}`);
+
+                                if (direct) return direct;
+
+                                // 2. Se falhar, tentar Lookup pelo ID
+                                const refId = cargo.setor_ref || cargo.setorRef;
+                                if (!refId) return null;
+
+                                let lookedUp = setorLookupMap.get(refId);
+
+                                // 3. Se falhar no Map, tentar busca direta no array (Fallback de segurança)
+                                if (!lookedUp && setoresParaLookup.length > 0) {
+                                    const found = setoresParaLookup.find(s => s.id === refId);
+                                    if (found) {
+                                        lookedUp = found.nomeSetor || found.nome;
+                                        console.log(`[CANVAS RECOVERY] Setor encontrado via busca linear: ${lookedUp}`);
+                                    }
+                                }
+
+                                // 4. Fallback Automático por Nome (Heurística)
                                 // Ex: Cargo "Diretor de Ouvidoria Geral" -> Setor "Ouvidoria Geral"
-                                if (!lookedUp && !direct && setorLookupMap.size > 0) {
+                                if (!lookedUp && setorLookupMap.size > 0) {
                                     const cargoNameNormalized = (cargo.nomeCargo || '').toLowerCase();
 
                                     // Converter mapa array e ordenar por comprimento do nome (decrescente)
-                                    // Para garantir que "Secretaria de Saúde Mental" seja encontrado antes de "Secretaria de Saúde"
                                     const candidates = Array.from(setorLookupMap.entries())
                                         .map(([id, nome]) => ({ id, nome: String(nome) }))
-                                        .filter(c => c.nome.length > 3) // Ignorar siglas muito curtas para evitar falsos positivos
+                                        .filter(c => c.nome.length > 3)
                                         .sort((a, b) => b.nome.length - a.nome.length);
 
                                     for (const candidate of candidates) {
                                         const sNomeNorm = candidate.nome.toLowerCase();
                                         if (cargoNameNormalized.includes(sNomeNorm)) {
                                             lookedUp = candidate.nome;
-                                            //console.log(`[AUTO-LINK] ${cargo.nomeCargo} -> ${candidate.nome}`);
-                                            break; // Encontrou o match mais longo
+                                            console.log(`[AUTO-LINK] Match por nome: ${cargo.nomeCargo} -> ${candidate.nome}`);
+                                            break;
                                         }
                                     }
                                 }
 
                                 if (refId && !lookedUp) {
-                                    console.warn(`[DEBUG] Lookup FALHOU para ${cargo.nomeCargo}. ID Buscado: ${refId}. Setores Disponíveis: ${setorLookupMap.size}`);
-                                } else if (refId && lookedUp) {
-                                    console.log(`[DEBUG] Lookup SUCESSO: ${cargo.nomeCargo} -> ${lookedUp}`);
-                                } else if (direct) {
-                                    console.log(`[DEBUG] Nome Setor Direto encontrado: ${cargo.nomeCargo} -> ${direct}`);
+                                    console.warn(`[DEBUG FAIL] Lookup FALHOU para ${cargo.nomeCargo}. ID: ${refId}. Setores Disp: ${setorLookupMap.size}`);
                                 }
 
                                 return lookedUp;

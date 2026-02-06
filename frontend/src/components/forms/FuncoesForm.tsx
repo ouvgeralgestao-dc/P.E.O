@@ -392,6 +392,7 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
             // CORREÇÃO: Assegurar que setorRef e parentId sejam carregados corretamente
             setorRef: cargo.setorRef || cargo.setor_ref || null,
             parentId: cargo.parentId === 'null' ? null : (cargo.parentId || null),
+            isOperacional: cargo.isOperacional || !!cargo.is_operacional || false,
             isEditing: true
         });
 

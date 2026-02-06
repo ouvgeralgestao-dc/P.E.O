@@ -40,3 +40,7 @@ ouvidoria-*.json
 *.pdf
 pending.txt
 user_dump.txt
+
+# arquivos temporarios de log do SQlit
+*.sqlite-shm
+*.sqlite-wal

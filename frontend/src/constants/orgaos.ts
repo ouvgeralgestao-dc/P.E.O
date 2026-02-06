@@ -264,7 +264,9 @@ export const CATEGORIAS_ORGAOS = {
     INSTITUTO: 'Instituto',
     EMPRESA_PUBLICA: 'Empresa Pública',
     SUBPREFEITURA: 'Subprefeitura',
-    CONSELHO: 'Conselho'
+    CONSELHO: 'Conselho',
+    OUVIDORIA: 'Ouvidoria',
+    PROCURADORIA: 'Procuradoria'
 };
 
 // Subprefeituras (para uso específico)

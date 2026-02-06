@@ -64,6 +64,21 @@ function EditarOrganograma() {
         }
     };
 
+    // [FIX CRÍTICO] Helper para preparar cargos para salvamento (CamelCase -> SnakeCase)
+    // Isso garante que o backend receba as chaves exatas que espera, independente da "mágica" interna
+    const prepareCargosForSave = (cargosFrontend) => {
+        if (!cargosFrontend) return [];
+        return cargosFrontend.map(c => ({
+            ...c,
+            // Mapeamento Explícito Frontend -> Backend
+            setor_ref: c.setorRef || c.setor_ref || null,
+            is_operacional: c.isOperacional ? 1 : 0,
+            is_assessoria: c.isAssessoria ? 1 : 0,
+            parent_id: c.parentId || c.parent_id || null,
+            nome_cargo: c.nomeCargo || c.nome_cargo
+        }));
+    };
+
     const handleSave = async (formData) => {
         try {
             logger.info('EditarOrganograma', 'Salvando alterações', formData);
@@ -79,9 +94,15 @@ function EditarOrganograma() {
                 };
             } else {
                 endpoint = `/organogramas/${encodeURIComponent(nomeOrgao)}/funcoes`;
+
+                // [FIX] Validar e preparar dados antes de enviar (Blindagem)
+                const cargosPrepared = prepareCargosForSave(formData.cargos);
+
+                logger.info('EditarOrganograma', 'Salvando Cargos (Prepared):', cargosPrepared.length);
+
                 payload = {
                     tamanhoFolha: formData.tamanhoFolha,
-                    cargos: formData.cargos
+                    cargos: cargosPrepared
                 };
             }
 
@@ -140,24 +161,29 @@ function EditarOrganograma() {
     const normalizeCargos = (cargosBackend) => {
         if (!cargosBackend) return [];
         return cargosBackend.map(c => {
-            // Se já tiver simbolos (array), mantém (formato frontend)
-            if (c.simbolos && Array.isArray(c.simbolos)) return c;
+            // [FIX CRÍTICO] SEMPRE mapear campos snake_case -> camelCase
+            // O mapeamento precisa acontecer para TODOS os cargos, não apenas os sem simbolos
+            const cargoNormalizado = {
+                ...c,
+                // Mapeamento OBRIGATÓRIO de campos para o frontend
+                setorRef: c.setorRef || c.setor_ref || c.data?.setorRef || null,
+                isOperacional: c.isOperacional || !!c.is_operacional || c.data?.isOperacional || false,
+                isAssessoria: c.isAssessoria || !!c.is_assessoria || false,
+                parentId: c.parentId || c.parent_id || null,
+                nomeCargo: c.nomeCargo || c.nome_cargo || c.label || 'Cargo',
+                hierarquia: c.hierarquia || c.nivel || '1'
+            };
 
-            // Se tiver simbolo (single), converte para array (formato backend -> frontend)
-            if (c.simbolo) {
-                return {
-                    ...c,
-                    simbolos: [{ tipo: c.simbolo, quantidade: c.quantidade || 1 }]
-                };
+            // Normalização de simbolos
+            if (c.simbolos && Array.isArray(c.simbolos)) {
+                cargoNormalizado.simbolos = c.simbolos;
+            } else if (c.simbolo) {
+                cargoNormalizado.simbolos = [{ tipo: c.simbolo, quantidade: c.quantidade || 1 }];
+            } else {
+                cargoNormalizado.simbolos = [];
             }
 
-            // Fallback: array vazio para evitar erro no map()
-            return {
-                ...c,
-                // [FIX CRÍTICO] Garantir mapeamento de setorRef para o Formulário de Edição
-                setorRef: c.setorRef || c.setor_ref,
-                simbolos: []
-            };
+            return cargoNormalizado;
         });
     };
 

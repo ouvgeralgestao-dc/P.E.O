@@ -470,9 +470,9 @@ const flattenCargos = (cargos, diagramaId, parentId = null) => {
             hierarquia: cargo.hierarquia ?? cargo.nivel ?? cargo.data?.hierarquia ?? cargo.data?.nivel ?? 0,
             // O parentId aqui refere-se ao ID Lógico do pai. Tratamento defensivo.
             parent_id: (parentId || cargo.parentId || cargo.parent_id), // Será higienizado abaixo
-            // is_assessoria...
-            is_assessoria: cargo.isAssessoria ? 1 : 0,
-            is_operacional: cargo.isOperacional ? 1 : 0,
+            // is_assessoria... [FIX] Aceitar snake_case também
+            is_assessoria: (cargo.isAssessoria || cargo.is_assessoria) ? 1 : 0,
+            is_operacional: (cargo.isOperacional || cargo.is_operacional) ? 1 : 0,
             setor_ref: cargo.setorRef || cargo.setor_ref || cargo.data?.setorRef || null,
             style_json: JSON.stringify(cargo.style || {}),
             position_json: JSON.stringify(cargo.position || {}),
@@ -493,6 +493,14 @@ export const addOrganogramaFuncoes = async (orgaoId, nomeVersao, dados) => {
 
     // CORREÇÃO: Extrair cargos IMEDIATAMENTE para evitar ReferenceError
     const cargos = dados?.cargos || [];
+
+    // [DEBUG] Log detalhado dos dados recebidos
+    if (cargos.length > 0) {
+        console.log('[DEBUG-BACKEND] Primeiro cargo recebido no payload:', JSON.stringify(cargos[0], null, 2));
+    } else {
+        console.warn('[DEBUG-BACKEND] Payload de cargos VAZIO/NULL');
+    }
+
     const tamanhoFolha = dados?.tamanhoFolha || 'A4';
 
     // Se veio vazio, deleta todas as versões funcionais deste órgão (Exclusão Total)
@@ -1610,6 +1618,17 @@ export const updateOrganogramaGeralFuncional = async () => {
 
         // 5. Carregar ocupantes
         geral.occupants = await getGeneralOccupants();
+
+        // 5.1 [FIX CRÍTICO] Injetar ocupantes nos cargos fixos para o frontend exibir
+        // O frontend espera `cargo.ocupante`, mas os cargos fixos são criados sem esse campo.
+        // IMPORTANTE: Usar `in` para verificar existência da chave, não o valor (strings vazias são válidas)
+        if (geral.occupants && Object.keys(geral.occupants).length > 0) {
+            geral.cargos.forEach(cargo => {
+                if (cargo.id in geral.occupants) {
+                    cargo.ocupante = geral.occupants[cargo.id];
+                }
+            });
+        }
 
         // 6. Aplicar Layout Personalizado (Posições X, Y)
         // Tentamos aplicar posições do 'geral' se os IDs baterem (ex: prefeito, gabinete, etc).
