@@ -267,19 +267,6 @@ Authorization: Bearer <token_jwt>
 
 ---
 
-## 📸 Screenshots
-
-### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
-
-### Editor de Organograma
-![Editor](docs/screenshots/editor.png)
-
-### Organograma Geral
-![Geral](docs/screenshots/geral.png)
-
----
-
 ## 🤝 Contribuição
 
 1. Faça um fork do projeto
