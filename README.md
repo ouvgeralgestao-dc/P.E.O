@@ -1,314 +1,289 @@
-# 🏛️ Gerador de Organogramas - PMDC
+# 🏛️ P.E.O - Plataforma de Estrutura Organizacional
 
-Sistema profissional para criação, visualização e exportação de organogramas da Prefeitura Municipal de Duque de Caxias.
+<div align="center">
 
-![Status](https://img.shields.io/badge/status-production-green)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-yellow)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-28-47848F?style=for-the-badge&logo=electron&logoColor=white)
 
----
+**Sistema profissional para criação, visualização e exportação de organogramas**
+*Prefeitura Municipal de Duque de Caxias*
 
-## 🤖 PARA AGENTES DE IA (LEITURA OBRIGATÓRIA)
+[Funcionalidades](#-funcionalidades) •
+[Tecnologias](#-stack-tecnológico) •
+[Instalação](#-instalação) •
+[Uso](#-como-usar) •
+[Arquitetura](#-arquitetura) •
+[API](#-api)
 
-**⚠️ INSTRUÇÃO CRÍTICA PARA QUALQUER AGENTE IA QUE TRABALHAR NESTE PROJETO:**
-
-### 📖 Auto-Load Mandatório
-
-**ANTES de executar QUALQUER tarefa neste projeto, você DEVE:**
-
-1. ✅ **LER COMPLETAMENTE:** `.cursorrules/rules.mdc`
-2. ✅ **CONSULTAR:** `.cursorrules/AUDITORIA.md` (histórico e estado atual)
-3. ✅ **VERIFICAR:** `.cursorrules/ERROR_LOG.md` (erros conhecidos e soluções)
-
-### 🧠 Brain Mode Ativo
-
-Este projeto opera em **BRAIN MODE** — um sistema de memória permanente e auto-aprendizagem que:
-- 🛡️ **Previne erros recorrentes** (cada erro resolvido = prevenção futura)
-- 📚 **Mantém contexto** entre sessões e agentes diferentes
-- ⚡ **Acelera desenvolvimento** (soluções já documentadas)
-- 🎯 **Garante consistência** arquitetural
-
-### 🚨 Regra Suprema
-
-**NUNCA:**
-- ❌ Causar perda permanente de dados
-- ❌ Quebrar estrutura fundamental do projeto
-- ❌ Introduzir vulnerabilidades críticas
-- ❌ Fazer mudanças irreversíveis sem backup
-
-**SEMPRE:**
-- ✅ Ler `.cursorrules/rules.mdc` antes de começar
-- ✅ Registrar todas as tarefas em `.cursorrules/AUDITORIA.md`
-- ✅ Documentar novos erros em `.cursorrules/ERROR_LOG.md`
-- ✅ Consultar histórico antes de reimplementar soluções
-
-**Localização dos Arquivos de Regras:** `.cursorrules/`
+</div>
 
 ---
 
-## ✨ Funcionalidades
+## 📋 Sobre o Projeto
 
-### 📊 Criação de Organogramas
-- **Estrutura Organizacional**: Hierarquia completa de setores (níveis 1-10)
-- **Funções e Cargos**: Mapeamento de cargos DAS e símbolos
-- **Assessorias**: Posicionamento lateral automático
-- **Validações Inteligentes**: Regras DAS e hierarquia
+O **P.E.O** (Plataforma de Estrutura Organizacional) é um sistema completo para gerenciamento de organogramas da Prefeitura Municipal de Duque de Caxias. Permite criar, editar, visualizar e exportar organogramas estruturais e funcionais de todos os órgãos municipais.
 
-### 🎨 Visualização Profissional
-- **ReactFlow**: Renderização interativa com zoom e pan
-- **Cores por Hierarquia**: Sistema visual de 11 cores
-- **Agrupamento Automático**: Níveis 5-10 agrupados por tipo
-- **MiniMap**: Navegação facilitada em organogramas grandes
+### ✨ Destaques
 
-### 🏛️ Organograma Geral
-- **Estrutura Fixa**: Prefeito + Gabinete + 4 Subprefeituras
-- **Agregação Automática**: Todas as Secretarias integradas
-- **Legenda Visual**: Cores explicadas
-- **Estatísticas**: Métricas em tempo real
-
-### 📷 Exportação de Alta Qualidade
-- **PNG**: 300 DPI para impressão profissional
-- **JPG**: Otimizado para compartilhamento
-- **PDF**: Dimensões corretas (A0-A6)
-- **Download Automático**: Um clique
-
-### 🎯 Dashboard Moderno
-- **Cards Estatísticos**: 4 métricas principais
-- **Busca em Tempo Real**: Filtro instantâneo
-- **Filtros Múltiplos**: Tipo, tamanho, ordenação
-- **Grid Visual**: Cards animados e interativos
+- 🎨 **Editor Visual Interativo** - Drag & drop para posicionamento de nós
+- 📊 **Dois Tipos de Organogramas** - Estrutural (setores) e Funcional (cargos)
+- 🖨️ **Exportação Profissional** - PDF em formatos A3 e A4
+- 🔐 **Controle de Acesso** - Sistema de autenticação com níveis de permissão
+- 💾 **Persistência Local** - Banco SQLite para armazenamento seguro
+- 🖥️ **Desktop App** - Versão Electron para uso offline
 
 ---
 
-## 🚀 Início Rápido
-
-### Pré-requisitos
-- Node.js 18+ 
-- npm ou yarn
-
-### Instalação
-
-```bash
-# Clone o repositório
-git clone https://github.com/pmdc/gerador-organogramas.git
-cd gerador-organogramas
-
-# Instale dependências do backend
-cd backend
-npm install
-
-# Instale dependências do frontend
-cd ../frontend
-npm install
-```
-
-### Configuração
-
-**Backend (.env):**
-```env
-PORT=6001
-NODE_ENV=development
-DATA_DIR=./data
-```
-
-**Frontend (vite.config.js):**
-```javascript
-server: {
-  port: 6002,
-  proxy: {
-    '/api': 'http://localhost:6001'
-  }
-}
-```
-
-### Executar
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-**Acesse:** `http://localhost:6002`
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-Criador_Organograma/
-├── backend/
-│   ├── controllers/          # Lógica de negócio
-│   ├── routes/               # Rotas da API
-│   ├── services/             # Serviços (storage, layout)
-│   ├── middleware/           # Validações
-│   ├── data/                 # Armazenamento JSON
-│   │   └── orgaos/          # 1 pasta por órgão
-│   └── server.js
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/      # Button, Input, Select, Card
-│   │   │   ├── forms/       # WizardForm, EstruturaForm, FuncoesForm
-│   │   │   ├── canvas/      # OrganogramaCanvas, SetorNode
-│   │   │   └── layout/      # Header
-│   │   ├── pages/           # Dashboard, CriarOrganograma, etc
-│   │   ├── services/        # API (axios)
-│   │   ├── utils/           # Helpers, validators
-│   │   ├── constants/       # Hierarquia, DAS, tamanhos
-│   │   └── styles/          # CSS global
-│   └── vite.config.js
-│
-└── rules/                    # Documentação do projeto
-    ├── TASK.md
-    ├── IMPLEMENTATION_PLAN.md
-    └── rules.mdc
-```
-
----
-
-## 🎨 Sistema de Cores
-
-| Hierarquia | Cor | Hex | Uso |
-|------------|-----|-----|-----|
-| Assessoria | Prata | `#C0C0C0` | Assessorias e Gabinete |
-| Nível 1 | Dourado | `#FFD700` | Secretarias e Prefeito |
-| Nível 2 | Vermelho | `#FF6B6B` | Subsecretarias |
-| Nível 3 | Turquesa | `#4ECDC4` | Diretorias |
-| Nível 4 | Azul Claro | `#45B7D1` | Coordenadorias |
-| Nível 5 | Verde Menta | `#96CEB4` | Gerências |
-| Nível 6 | Amarelo | `#FFEAA7` | Supervisões |
-| Nível 7 | Cinza Claro | `#DFE6E9` | Chefias |
-| Nível 8 | Roxo | `#A29BFE` | Seções |
-| Nível 9 | Rosa | `#FD79A8` | Setores |
-| Nível 10 | Laranja | `#FDCB6E` | Unidades |
-
----
-
-## 📊 Regras de Negócio
-
-### Hierarquia
-- **Níveis**: 1 (mais alto) a 10 (mais baixo)
-- **Assessoria**: Nível especial (0), posicionado lateralmente
-- **Fluxo**: Vertical descendente (1 → 2 → 3 → ... → 10)
-
-### Cargos DAS
-
-**Quantidade Máxima por Setor:**
-- DAS-S, DAS-9, DAS-8: **1 cargo**
-- DAS-1 a DAS-7, FC-1: **até 10.000 cargos**
-
-**Símbolos por Nível:**
-- Níveis 1, 2, 3: **1 símbolo apenas**
-- Níveis 4-10: **Ilimitado**
-- Assessoria: **Ilimitado**
-
-### Agrupamento Visual (Funções)
-- **Níveis 1-4**: Cada cargo = 1 nó individual
-- **Níveis 5-10**: Agrupar por tipo, exibir quantidade total
-  - Formato: `"Analista - DAS 5 (18)"`
-
----
-
-## 🔌 API Endpoints
+## 🚀 Funcionalidades
 
 ### Organogramas
 
-```http
-GET    /api/organogramas              # Listar todos
-GET    /api/organogramas/:nomeOrgao   # Buscar por nome
-GET    /api/organogramas/geral        # Organograma Geral
-POST   /api/organogramas/estrutural   # Criar estrutural
-POST   /api/organogramas/funcoes      # Criar funções
-PUT    /api/organogramas/:nomeOrgao/estrutura  # Editar estrutural
-PUT    /api/organogramas/:nomeOrgao/funcoes    # Editar funções
-DELETE /api/organogramas/:nomeOrgao   # Deletar
-```
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| **Organograma Estrutural** | Hierarquia de setores (Secretarias, Subsecretarias, Diretorias, etc.) |
+| **Organograma Funcional** | Estrutura de cargos com símbolos e quantidades |
+| **Visão Geral** | Consolidação de todos os órgãos em um único diagrama |
+| **Editor Visual** | Canvas interativo com React Flow |
+| **Customização** | Cores, estilos e posições personalizáveis |
 
-### Posições Customizadas
+### Sistema
 
-```http
-POST   /api/organogramas/:id/positions    # Salvar posições
-DELETE /api/organogramas/:id/positions    # Resetar layout
-```
-
----
-
-## 🧪 Testes
-
-### Teste Manual - Criar Organograma
-
-1. Acesse Dashboard
-2. Clique "Criar Novo Organograma"
-3. Selecione tipo "Estrutura Organizacional"
-4. Preencha:
-   - Nome do Órgão: "Secretaria de Teste"
-   - Tamanho: A4
-   - Senha: "teste123"
-5. Adicione setor:
-   - Tipo: Secretaria
-   - Nome: "Secretaria de Teste"
-   - Hierarquia: 1
-   - Cargo: DAS-9 (qtd: 1)
-6. Salve e visualize
-
-**Resultado Esperado:**
-- ✅ Organograma salvo
-- ✅ Nó dourado renderizado
-- ✅ Exportação funcional
-
-### Teste de Validação
-
-**Tentar adicionar 2 cargos DAS-9:**
-- ❌ Deve mostrar erro: "DAS-9 permite apenas 1 cargo"
-
-**Tentar adicionar 2 símbolos no Nível 1:**
-- ❌ Deve mostrar erro: "Nível 1 permite apenas 1 símbolo"
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| **Autenticação JWT** | Login seguro com tokens |
+| **Aprovação de Cadastros** | Workflow de autorização de novos usuários |
+| **Gestão de Órgãos** | CRUD completo de órgãos municipais |
+| **Configuração de Setores** | Tipos de setores e hierarquias |
+| **Sandbox** | Área de testes para organogramas |
 
 ---
 
-## 📦 Dependências Principais
-
-### Backend
-- `express`: ^4.18.2
-- `cors`: ^2.8.5
-- `uuid`: ^9.0.0
+## 🛠️ Stack Tecnológico
 
 ### Frontend
-- `react`: ^18.2.0
-- `react-router-dom`: ^6.20.0
-- `reactflow`: ^11.10.0
-- `axios`: ^1.6.2
-- `html2canvas`: ^1.4.1
-- `jspdf`: ^2.5.1
-- `file-saver`: ^2.0.5
+
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| **React** | 18.2 | Framework UI |
+| **TypeScript** | 5.3+ | Tipagem estática |
+| **Vite** | 5.0 | Build tool |
+| **React Flow** | 11.11 | Canvas de organogramas |
+| **React Router** | 6.20 | Navegação SPA |
+| **Axios** | 1.6 | Cliente HTTP |
+| **jsPDF** | 4.0 | Geração de PDFs |
+| **html2canvas** | 1.4 | Screenshot de elementos |
+
+### Backend
+
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| **Node.js** | 18+ | Runtime |
+| **Express** | 4.18 | Framework HTTP |
+| **TypeScript** | 5.3+ | Tipagem estática |
+| **SQLite** | 3 | Banco de dados |
+| **better-sqlite3** | 9.4 | Driver SQLite |
+| **JWT** | 9.0 | Autenticação |
+| **bcryptjs** | 3.0 | Hash de senhas |
+| **Nodemailer** | 7.0 | Envio de e-mails |
+
+### Desktop
+
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| **Electron** | 28 | App desktop |
+| **electron-builder** | 24 | Empacotamento |
 
 ---
 
-## 🎯 Roadmap
+## 📁 Arquitetura
 
-- [x] FASE 1-9: Funcionalidades principais
-- [ ] FASE 10: Testes e documentação
-- [ ] Autenticação de usuários
-- [ ] Histórico de versões
-- [ ] Comparação de organogramas
-- [ ] Importação de dados (Excel/CSV)
-- [ ] API pública
-- [ ] Deploy em produção
+```
+P.E.O/
+├── 📂 frontend/                 # Aplicação React
+│   ├── 📂 src/
+│   │   ├── 📂 components/       # Componentes React
+│   │   │   ├── 📂 canvas/       # Editor de organogramas
+│   │   │   ├── 📂 common/       # Componentes reutilizáveis
+│   │   │   ├── 📂 forms/        # Formulários
+│   │   │   ├── 📂 layout/       # Layout da aplicação
+│   │   │   └── 📂 modals/       # Modais
+│   │   ├── 📂 pages/            # Páginas da aplicação
+│   │   ├── 📂 services/         # Serviços (API, Auth)
+│   │   ├── 📂 constants/        # Constantes e configurações
+│   │   ├── 📂 utils/            # Utilitários
+│   │   └── 📂 styles/           # Estilos globais
+│   └── 📄 package.json
+│
+├── 📂 backend/                  # API Express
+│   ├── 📂 controllers/          # Controladores de rotas
+│   ├── 📂 routes/               # Definição de rotas
+│   ├── 📂 services/             # Lógica de negócio
+│   ├── 📂 middleware/           # Middlewares (auth, etc.)
+│   ├── 📂 database/             # Configuração do banco
+│   ├── 📂 migrations/           # Migrações do SQLite
+│   ├── 📂 data/                 # Arquivos do banco SQLite
+│   └── 📄 server.ts             # Ponto de entrada
+│
+├── 📂 electron/                 # Configuração Electron
+└── 📄 package.json              # Configuração raiz
+```
+
+### Banco de Dados (SQLite)
+
+| Tabela | Descrição |
+|--------|-----------|
+| `usuarios` | Usuários do sistema |
+| `orgaos` | Órgãos municipais |
+| `organogramas` | Organogramas estruturais |
+| `organogramas_funcoes` | Organogramas funcionais |
+| `setores` | Setores dos órgãos |
+| `cargos` | Cargos funcionais |
+| `tipos_setor` | Configuração de tipos de setor |
+| `simbolos_padrao` | Símbolos padrão de cargos |
+| `custom_positions` | Posições customizadas dos nós |
+| `ocupantes_gerais` | Ocupantes de cargos fixos |
 
 ---
 
-## 👥 Contribuindo
+## 📦 Instalação
 
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+### Pré-requisitos
+
+- **Node.js** 18 ou superior
+- **npm** ou **yarn**
+- **Git**
+
+### Passos
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/ouvgeralgestao-dc/P.E.O.git
+cd P.E.O
+
+# 2. Instale as dependências raiz
+npm install
+
+# 3. Instale as dependências do frontend
+cd frontend && npm install && cd ..
+
+# 4. Instale as dependências do backend
+cd backend && npm install && cd ..
+
+# 5. Configure o ambiente (copie e edite o .env)
+cp backend/.env.example backend/.env
+
+# 6. Inicie a aplicação
+npm start
+```
+
+### Variáveis de Ambiente
+
+Crie o arquivo `backend/.env` com:
+
+```env
+# Servidor
+PORT=6001
+NODE_ENV=development
+
+# JWT
+JWT_SECRET=sua_chave_secreta_aqui
+
+# E-mail (opcional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=seu_email@gmail.com
+SMTP_PASS=sua_senha_de_app
+```
+
+---
+
+## 💻 Como Usar
+
+### Iniciar em Desenvolvimento
+
+```bash
+# Inicia frontend (porta 6002) e backend (porta 6001)
+npm start
+```
+
+### Acessar a Aplicação
+
+- **Web:** http://localhost:6002
+- **API:** http://localhost:6001
+
+### Build para Produção
+
+```bash
+# Gerar build do frontend
+npm run build:frontend
+
+# Gerar build do backend
+npm run build:backend
+
+# Gerar executável Electron
+npm run dist
+```
+
+---
+
+## 🔌 API
+
+### Endpoints Principais
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/api/auth/login` | Autenticação |
+| `POST` | `/api/auth/register` | Registro de usuário |
+| `GET` | `/api/organogramas` | Listar organogramas |
+| `GET` | `/api/organogramas/:orgaoId` | Obter organograma |
+| `PUT` | `/api/organogramas/:orgaoId` | Atualizar organograma |
+| `GET` | `/api/organogramas/:orgaoId/funcoes` | Obter org. funcional |
+| `PUT` | `/api/organogramas/:orgaoId/funcoes` | Atualizar org. funcional |
+| `GET` | `/api/organogramas/geral` | Organograma geral estrutural |
+| `GET` | `/api/organogramas/geral-funcional` | Organograma geral funcional |
+| `GET` | `/api/orgaos` | Listar órgãos |
+| `GET` | `/api/tipos-setor` | Listar tipos de setor |
+| `GET` | `/api/simbolos` | Listar símbolos de cargos |
+
+### Autenticação
+
+Todas as rotas protegidas requerem o header:
+
+```
+Authorization: Bearer <token_jwt>
+```
+
+---
+
+## 👥 Níveis de Acesso
+
+| Nível | Permissões |
+|-------|------------|
+| **Admin** | Acesso total, aprovação de cadastros, configurações |
+| **Servidor** | Visualização e edição de organogramas do seu órgão |
+
+---
+
+## 📸 Screenshots
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Editor de Organograma
+![Editor](docs/screenshots/editor.png)
+
+### Organograma Geral
+![Geral](docs/screenshots/geral.png)
+
+---
+
+## 🤝 Contribuição
+
+1. Faça um fork do projeto
+2. Crie sua branch (`git checkout -b feature/nova-funcionalidade`)
 3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
 4. Push para a branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
@@ -321,20 +296,16 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-## 📞 Suporte
+## 📞 Contato
 
-- **Email**: suporte@pmdc.gov.br
-- **Issues**: [GitHub Issues](https://github.com/pmdc/gerador-organogramas/issues)
-- **Documentação**: [Wiki](https://github.com/pmdc/gerador-organogramas/wiki)
-
----
-
-## 🙏 Agradecimentos
-
-- Prefeitura Municipal de Duque de Caxias
-- Equipe de Desenvolvimento
-- Comunidade React e ReactFlow
+**Ouvidoria Geral - Gestão de Dados e Desenvolvimento**
+- GitHub: [@ouvgeralgestao-dc](https://github.com/ouvgeralgestao-dc)
+- E-mail: ouvgeral.gestao@gmail.com
 
 ---
 
-**Desenvolvido com ❤️ para a PMDC**
+<div align="center">
+
+**Desenvolvido com ❤️ para a Prefeitura Municipal de Duque de Caxias**
+
+</div>
