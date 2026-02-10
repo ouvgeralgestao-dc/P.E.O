@@ -15,7 +15,9 @@
     "prepack": "npm run build:backend && npm run build:frontend",
     "pack": "npm run prepack && electron-builder --dir",
     "dist": "npm run prepack && electron-builder",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "install:all": "node scripts/install_all.js",
+    "build": "npm run prepack"
   },
   "build": {
     "appId": "com.pmdc.organogramas",
