@@ -6,6 +6,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
+import Icons from '../components/common/Icons';
 import BackButton from '../components/common/BackButton';
 import { logger } from '../utils/logger';
 import { exportToPNG, exportToJPG, exportToPDF } from '../utils/exportHelpers';
@@ -414,7 +415,8 @@ function VisualizarOrganograma() {
             localStorage.setItem('printData', printData);
 
             // Abrir nova aba de impressão
-            window.open('/imprimir', '_blank');
+            // Abrir nova aba de impressão com o prefixo correto do aplicativo
+            window.open('/peo/imprimir', '_blank');
         } catch (error) {
             console.error('Erro ao abrir impressão:', error);
             alert('Erro ao preparar impressão.');
@@ -526,7 +528,7 @@ function VisualizarOrganograma() {
                     <Card title="Erro">
                         <p className="error-message">{error}</p>
                         <Button onClick={() => navigate('/')}>
-                            ← Voltar para Dashboard
+                            <Icons name="arrow-left" className="mr-2" /> Voltar para Dashboard
                         </Button>
                     </Card>
                 </div>
@@ -563,21 +565,21 @@ function VisualizarOrganograma() {
                         className="btn-action btn-print"
                         onClick={handlePrintPreview}
                     >
-                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                        <Icons name="printer" className="btn-icon-svg" /> Imprimir / PDF
                     </Button>
                     <Button
                         className="btn-action btn-edit"
                         variant="secondary"
                         onClick={handleEditClick}
                     >
-                        <span className="btn-icon">✏️</span> Editar
+                        <Icons name="edit" className="btn-icon-svg" /> Editar
                     </Button>
                     <Button
                         className="btn-action btn-delete"
                         variant="danger"
                         onClick={handleDeleteClick}
                     >
-                        <span className="btn-icon">🗑️</span> Deletar
+                        <Icons name="trash" className="btn-icon-svg" /> Deletar
                     </Button>
                 </div>
 

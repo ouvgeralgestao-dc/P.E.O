@@ -2,10 +2,9 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 
 // URL base da API
-// URL base da API
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_PORT = 6001;
-const API_BASE_URL = `http://${window.location.hostname}:${API_PORT}/api`;
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = isDev ? '/api' : (import.meta.env.VITE_API_URL || '/peo/api');
+
 
 // Criar instância do axios
 const api = axios.create({
@@ -23,7 +22,7 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         logger.api.request(config.method, config.url, config.data);
         return config;
     },
@@ -45,15 +44,15 @@ api.interceptors.response.use(
             error.config?.url || 'unknown',
             error
         );
-        
+
         // Tratar erros de autenticação
         if (error.response?.status === 401) {
             // Token expirado ou inválido
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            window.location.href = '/peo/login';
         }
-        
+
         return Promise.reject(error);
     }
 );

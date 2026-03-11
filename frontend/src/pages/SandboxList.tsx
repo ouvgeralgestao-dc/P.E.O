@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/common/Card';
+import Icons from '../components/common/Icons';
 import Select from '../components/common/Select';
 import Button from '../components/common/Button';
 import { logger } from '../utils/logger';
@@ -37,7 +38,7 @@ function SandboxList() {
     const loadData = async () => {
         try {
             setLoading(true);
-            
+
             // Carregar lista de órgãos gerais
             const orgaosRes = await api.get('/orgaos');
             const orgaosList = orgaosRes.data.data || [];
@@ -54,8 +55,8 @@ function SandboxList() {
                 const user = JSON.parse(userStr);
                 // Lógica simples: se o user.setor corresponder a um órgão, usar ele
                 if (user.setor) {
-                    const match = orgaosList.find((o: Orgao) => 
-                        user.setor.toLowerCase().includes(o.nome.toLowerCase()) || 
+                    const match = orgaosList.find((o: Orgao) =>
+                        user.setor.toLowerCase().includes(o.nome.toLowerCase()) ||
                         o.nome.toLowerCase().includes(user.setor.toLowerCase())
                     );
                     if (match) {
@@ -72,9 +73,9 @@ function SandboxList() {
                 setViewMode('list');
             }
 
-            logger.info('SandboxList', 'Dados carregados', { 
-                orgaos: orgaosList.length, 
-                sandboxes: sandboxes.length 
+            logger.info('SandboxList', 'Dados carregados', {
+                orgaos: orgaosList.length,
+                sandboxes: sandboxes.length
             });
 
         } catch (error) {
@@ -116,20 +117,20 @@ function SandboxList() {
     // Modo LISTA: Mostrar cards dos órgãos que já têm sandbox
     if (viewMode === 'list') {
         return (
-            <div className="criar-organograma">
+            <div className="criar-organograma textured-bg">
                 <div className="container">
                     <div className="header-section" style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#ffffff' }}>
+                        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                             Meus Rascunhos de Organograma
                         </h1>
-                        <p className="subtitle" style={{ color: '#e0e7ff' }}>
+                        <p className="subtitle" style={{ color: 'var(--text-secondary)' }}>
                             Gerencie seus organogramas em modo rascunho (Sandbox)
                         </p>
                     </div>
 
                     <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                         {/* Botão para Criar Novo */}
-                        <div 
+                        <div
                             className="card-new-sandbox"
                             onClick={() => setViewMode('create')}
                             style={{
@@ -145,7 +146,9 @@ function SandboxList() {
                                 transition: 'all 0.2s'
                             }}
                         >
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>➕</div>
+                            <div style={{ color: 'white', marginBottom: '1rem' }}>
+                                <Icons name="plus" size={48} />
+                            </div>
                             <h3 style={{ color: 'white' }}>Novo Rascunho</h3>
                         </div>
 
@@ -153,9 +156,9 @@ function SandboxList() {
                             <Card key={sb.orgaoId} className="sandbox-card">
                                 <div style={{ padding: '1.5rem' }}>
                                     <h3 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>{sb.nome}</h3>
-                                    <span style={{ 
-                                        display: 'inline-block', 
-                                        padding: '0.25rem 0.75rem', 
+                                    <span style={{
+                                        display: 'inline-block',
+                                        padding: '0.25rem 0.75rem',
                                         borderRadius: '999px',
                                         background: '#e0f2fe',
                                         color: '#0369a1',
@@ -168,22 +171,22 @@ function SandboxList() {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                         {sb.hasEstrutural ? (
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <Button 
+                                                <Button
                                                     style={{ flex: 1, fontSize: '0.9rem' }}
                                                     onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/estrutural`)}
                                                 >
                                                     Estrutural
                                                 </Button>
-                                                <Button 
+                                                <Button
                                                     variant="danger"
                                                     style={{ padding: '0.5rem' }}
                                                     onClick={() => handleDelete(sb.orgaoId, 'estrutural')}
                                                 >
-                                                    🗑️
+                                                    <Icons name="trash" size={16} />
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <Button 
+                                            <Button
                                                 variant="outline"
                                                 style={{ width: '100%', fontSize: '0.9rem', borderStyle: 'dashed' }}
                                                 onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/criar-estrutural`)}
@@ -194,22 +197,22 @@ function SandboxList() {
 
                                         {sb.hasFuncional ? (
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <Button 
+                                                <Button
                                                     style={{ flex: 1, fontSize: '0.9rem', background: '#ec4899', borderColor: '#ec4899' }}
                                                     onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/funcional`)}
                                                 >
                                                     Funcional
                                                 </Button>
-                                                <Button 
+                                                <Button
                                                     variant="danger"
                                                     style={{ padding: '0.5rem' }}
                                                     onClick={() => handleDelete(sb.orgaoId, 'funcional')}
                                                 >
-                                                    🗑️
+                                                    <Icons name="trash" size={16} />
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <Button 
+                                            <Button
                                                 variant="outline"
                                                 style={{ width: '100%', fontSize: '0.9rem', borderStyle: 'dashed' }}
                                                 onClick={() => navigate(`/criacao-livre/${encodeURIComponent(sb.nome)}/criar-funcional`)}
@@ -232,10 +235,10 @@ function SandboxList() {
         <div className="criar-organograma">
             <div className="container">
                 <div className="header-section" style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#ffffff' }}>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                         Criar Novo Organograma Livre
                     </h1>
-                    <p className="subtitle" style={{ color: '#e0e7ff' }}>
+                    <p className="subtitle" style={{ color: 'var(--text-secondary)' }}>
                         Selecione o órgão e crie organogramas de teste sem afetar dados institucionais
                     </p>
                 </div>
@@ -244,7 +247,9 @@ function SandboxList() {
                     <Card>
                         <div style={{ padding: '2rem' }}>
                             <div className="icon-section" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏢</div>
+                                <div style={{ color: '#2563eb', marginBottom: '1rem' }}>
+                                    <Icons name="folder" size={64} />
+                                </div>
                                 <h3 style={{ color: '#2563eb', marginBottom: '0.5rem' }}>Estrutura Organizacional</h3>
                                 <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
                                     Crie a hierarquia de setores do órgão, definindo a estrutura organizacional completa com níveis hierárquicos ajustados.
@@ -252,9 +257,9 @@ function SandboxList() {
                             </div>
 
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ 
-                                    display: 'block', 
-                                    marginBottom: '0.5rem', 
+                                <label style={{
+                                    display: 'block',
+                                    marginBottom: '0.5rem',
                                     fontWeight: 600,
                                     color: '#1e293b'
                                 }}>
@@ -269,9 +274,9 @@ function SandboxList() {
                                         label: o.nome
                                     }))}
                                     disabled={!!userOrgaoId} // Desabilita se detectou auto-seleção? Ou deixa livre?
-                                    // Usuário disse "n tem pq eu selecionar". Vamos deixar livre mas aviso.
-                                    // Se userOrgaoId setado, talvez travar?
-                                    // Vamos deixar habilitado para "Free Mode" (Sandbox real), mas pré-selecionado.
+                                // Usuário disse "n tem pq eu selecionar". Vamos deixar livre mas aviso.
+                                // Se userOrgaoId setado, talvez travar?
+                                // Vamos deixar habilitado para "Free Mode" (Sandbox real), mas pré-selecionado.
                                 />
                                 {userOrgaoId && (
                                     <small style={{ color: '#666' }}>
@@ -280,15 +285,15 @@ function SandboxList() {
                                 )}
                             </div>
 
-                            <div style={{ 
-                                padding: '1rem', 
-                                background: '#fef3c7', 
+                            <div style={{
+                                padding: '1rem',
+                                background: '#fef3c7',
                                 border: '1px solid #fbbf24',
                                 borderRadius: '8px',
                                 marginBottom: '1.5rem'
                             }}>
                                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'start' }}>
-                                    <span style={{ fontSize: '1.25rem' }}>🎨</span>
+                                    <Icons name="palette" size={20} style={{ color: '#92400e', marginTop: '2px' }} />
                                     <div>
                                         <strong style={{ color: '#92400e', display: 'block', marginBottom: '0.25rem' }}>
                                             Modo Teste
@@ -301,8 +306,8 @@ function SandboxList() {
                             </div>
 
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     onClick={() => {
                                         if (existingSandboxes.length > 0) {
                                             setViewMode('list');
@@ -313,8 +318,8 @@ function SandboxList() {
                                 >
                                     Cancelar
                                 </Button>
-                                <Button 
-                                    variant="primary" 
+                                <Button
+                                    variant="primary"
                                     onClick={handleCreateEstrutura}
                                     disabled={!selectedOrgao}
                                 >

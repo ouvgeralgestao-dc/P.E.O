@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Icons from './Icons';
 import './BackButton.css';
 
 /**
@@ -19,7 +20,7 @@ const BackButton = ({ to, className = '' }) => {
 
     return (
         <button className={`back-button ${className}`} onClick={handleClick}>
-            <span className="back-icon">←</span>
+            <Icons name="arrow-left" className="back-icon" />
             <span className="back-text">Voltar</span>
         </button>
     );

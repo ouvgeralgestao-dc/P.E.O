@@ -10,6 +10,7 @@ import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import { logger } from '../utils/logger';
 import api from '../services/api';
+import Icons from '../components/common/Icons';
 import { SUBPREFEITURAS, SUBPREFEITURAS_IDS } from '../constants/orgaos';
 import './OrganogramaGeral.css';
 
@@ -79,7 +80,7 @@ function OrganogramaGeral() {
             localStorage.setItem('printData', printData);
 
             // Abrir nova aba de impressão
-            window.open('/imprimir', '_blank');
+            window.open('/peo/imprimir', '_blank');
         } catch (error) {
             console.error('Erro ao abrir impressão:', error);
             alert('Erro ao preparar impressão.');
@@ -106,7 +107,7 @@ function OrganogramaGeral() {
                     <Card title="Erro">
                         <p className="error-message">{error as any}</p>
                         <Button onClick={() => navigate('/')}>
-                            ← Voltar para Dashboard
+                            <Icons name="arrow-left" className="mr-2" /> Voltar para Dashboard
                         </Button>
                     </Card>
                 </div>
@@ -115,7 +116,7 @@ function OrganogramaGeral() {
     }
 
     return (
-        <div className="organograma-geral">
+        <div className="organograma-geral textured-bg">
             <div className="container">
                 {/* Header */}
                 {/* Legenda */}
@@ -155,14 +156,14 @@ function OrganogramaGeral() {
                         className="btn-action btn-print"
                         onClick={handlePrintPreview}
                     >
-                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                        <Icons name="printer" className="mr-2" /> Imprimir / PDF
                     </Button>
                     <Button
                         className="btn-action btn-refresh"
                         variant="primary"
                         onClick={() => loadOrganogramaGeral(true)}
                     >
-                        <span className="btn-icon">🔄</span> Atualizar
+                        <Icons name="refresh" className="mr-2" /> Atualizar
                     </Button>
                 </div>
 

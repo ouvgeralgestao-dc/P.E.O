@@ -7,14 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import Icons from '../components/common/Icons';
 import Card from '../components/common/Card';
 import './ConfigurarOrgaos.css'; // Reutilizando estilos
 
 const ConfigurarPrefixos = () => {
     const navigate = useNavigate();
-    const [prefixos, setPrefixos] = useState([]);
+    const [prefixos, setPrefixos] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editando, setEditando] = useState(null);
+    const [editando, setEditando] = useState<number | null>(null);
     const [novoPrefixo, setNovoPrefixo] = useState({
         nome: ''
     });
@@ -53,14 +54,14 @@ const ConfigurarPrefixos = () => {
             const errorMsg = error.response?.data?.message || 'Erro ao criar prefixo';
             // Mensagem amigável para erro de duplicidade
             if (errorMsg.includes('UNIQUE constraint')) {
-                alert('⚠️ Este prefixo já existe! Escolha outro nome.');
+                alert('Este prefixo já existe! Escolha outro nome.');
             } else {
                 alert(errorMsg);
             }
         }
     };
 
-    const handleEditarPrefixo = async (id) => {
+    const handleEditarPrefixo = async (id: number) => {
         const prefixo = prefixos.find(p => p.id === id);
         if (!prefixo) return;
 
@@ -77,7 +78,7 @@ const ConfigurarPrefixos = () => {
         }
     };
 
-    const handleDeletarPrefixo = async (id) => {
+    const handleDeletarPrefixo = async (id: number) => {
         if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
@@ -90,7 +91,7 @@ const ConfigurarPrefixos = () => {
         }
     };
 
-    const handleChangePrefixo = (id, value) => {
+    const handleChangePrefixo = (id: number, value: string) => {
         setPrefixos(prev => prev.map(p =>
             p.id === id ? { ...p, nome: value } : p
         ));
@@ -109,7 +110,7 @@ const ConfigurarPrefixos = () => {
             <div className="page-header">
                 <h1>Configurar Prefixos de Cargos</h1>
                 <Button onClick={() => navigate('/configuracoes')} variant="secondary">
-                    ← Voltar
+                    <Icons name="arrow-left" className="mr-2" /> Voltar
                 </Button>
             </div>
 
@@ -124,7 +125,7 @@ const ConfigurarPrefixos = () => {
                     />
                     <div className="add-button">
                         <Button onClick={handleCriarPrefixo} variant="primary">
-                            + Adicionar Prefixo
+                            <Icons name="plus" className="mr-2" /> Adicionar Prefixo
                         </Button>
                     </div>
                 </div>
@@ -149,10 +150,10 @@ const ConfigurarPrefixos = () => {
                                             />
                                         </div>
                                         <div className="orgao-actions">
-                                            <Button onClick={() => handleEditarPrefixo(prefixo.id)} variant="primary" size="small">
+                                            <Button onClick={() => handleEditarPrefixo(prefixo.id)} variant="primary" size="sm">
                                                 Salvar
                                             </Button>
-                                            <Button onClick={() => setEditando(null)} variant="secondary" size="small">
+                                            <Button onClick={() => setEditando(null)} variant="secondary" size="sm">
                                                 Cancelar
                                             </Button>
                                         </div>
@@ -163,10 +164,10 @@ const ConfigurarPrefixos = () => {
                                             <h4>{prefixo.nome}</h4>
                                         </div>
                                         <div className="orgao-actions">
-                                            <Button onClick={() => setEditando(prefixo.id)} variant="secondary" size="small">
+                                            <Button onClick={() => setEditando(prefixo.id)} variant="secondary" size="sm">
                                                 Editar
                                             </Button>
-                                            <Button onClick={() => handleDeletarPrefixo(prefixo.id)} variant="danger" size="small">
+                                            <Button onClick={() => handleDeletarPrefixo(prefixo.id)} variant="danger" size="sm">
                                                 Deletar
                                             </Button>
                                         </div>

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Button from '../components/common/Button';
+import Icons from '../components/common/Icons';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Card from '../components/common/Card';
@@ -14,9 +15,9 @@ import './ConfigurarOrgaos.css';
 
 const ConfigurarOrgaos = () => {
     const navigate = useNavigate();
-    const [orgaos, setOrgaos] = useState([]);
+    const [orgaos, setOrgaos] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editando, setEditando] = useState(null);
+    const [editando, setEditando] = useState<number | null>(null);
     const [novoOrgao, setNovoOrgao] = useState({
         nome: '',
         categoria: 'SECRETARIA'
@@ -57,7 +58,7 @@ const ConfigurarOrgaos = () => {
         }
     };
 
-    const handleEditarOrgao = async (id) => {
+    const handleEditarOrgao = async (id: number) => {
         const orgao = orgaos.find(o => o.id === id);
         if (!orgao) return;
 
@@ -75,7 +76,7 @@ const ConfigurarOrgaos = () => {
         }
     };
 
-    const handleDeletarOrgao = async (id) => {
+    const handleDeletarOrgao = async (id: number) => {
         if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
@@ -88,7 +89,7 @@ const ConfigurarOrgaos = () => {
         }
     };
 
-    const handleChangeOrgao = (id, field, value) => {
+    const handleChangeOrgao = (id: number, field: string, value: any) => {
         setOrgaos(prev => prev.map(o =>
             o.id === id ? { ...o, [field]: value } : o
         ));
@@ -112,7 +113,7 @@ const ConfigurarOrgaos = () => {
             <div className="page-header">
                 <h1>Configurar Órgãos</h1>
                 <Button onClick={() => navigate('/configuracoes')} variant="secondary">
-                    ← Voltar
+                    <Icons name="arrow-left" className="mr-2" /> Voltar
                 </Button>
             </div>
 
@@ -133,7 +134,7 @@ const ConfigurarOrgaos = () => {
                     />
                     <div className="add-button">
                         <Button onClick={handleCriarOrgao} variant="primary">
-                            + Adicionar Órgão
+                            <Icons name="plus" className="mr-2" /> Adicionar Órgão
                         </Button>
                     </div>
                 </div>
@@ -163,10 +164,10 @@ const ConfigurarOrgaos = () => {
                                             />
                                         </div>
                                         <div className="orgao-actions">
-                                            <Button onClick={() => handleEditarOrgao(orgao.id)} variant="primary" size="small">
+                                            <Button onClick={() => handleEditarOrgao(orgao.id)} variant="primary" size="sm">
                                                 Salvar
                                             </Button>
-                                            <Button onClick={() => setEditando(null)} variant="secondary" size="small">
+                                            <Button onClick={() => setEditando(null)} variant="secondary" size="sm">
                                                 Cancelar
                                             </Button>
                                         </div>
@@ -178,10 +179,10 @@ const ConfigurarOrgaos = () => {
                                             <span className="orgao-categoria">{CATEGORIAS_ORGAOS[orgao.categoria]}</span>
                                         </div>
                                         <div className="orgao-actions">
-                                            <Button onClick={() => setEditando(orgao.id)} variant="secondary" size="small">
+                                            <Button onClick={() => setEditando(orgao.id)} variant="secondary" size="sm">
                                                 Editar
                                             </Button>
-                                            <Button onClick={() => handleDeletarOrgao(orgao.id)} variant="danger" size="small">
+                                            <Button onClick={() => handleDeletarOrgao(orgao.id)} variant="danger" size="sm">
                                                 Deletar
                                             </Button>
                                         </div>

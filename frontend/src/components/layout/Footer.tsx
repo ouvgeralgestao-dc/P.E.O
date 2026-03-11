@@ -8,7 +8,7 @@ function Footer() {
     return (
         <footer className="app-footer">
             <div className="footer-content">
-                <img src="/dc-logo.png" alt="Prefeitura de Duque de Caxias" className="footer-logo" />
+                <img src="/peo/dc-logo.png" alt="Prefeitura de Duque de Caxias" className="footer-logo" />
                 <p className="footer-text">
                     <span className="footer-label">Elaboração conjunta:</span>
                     Secretaria de Governo | Secretaria de Comunicação Social e Relações Públicas | Ouvidoria Geral do Município

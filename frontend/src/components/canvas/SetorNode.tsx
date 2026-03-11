@@ -7,6 +7,7 @@ import React from 'react';
 import { Handle, Position } from 'reactflow';
 import { HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
 import { DESCRICOES_DAS } from '../../constants/cargosDAS'; // Importar mapeamento
+import Icons from '../common/Icons';
 import StyleEditor from './StyleEditor';
 import './SetorNode.css';
 
@@ -172,7 +173,7 @@ const SetorNode = ({ data, selected }) => {
                         // Visibilidade controlada via CSS (SetorNode.css)
                     }}
                 >
-                    🎨
+                    <Icons name="palette" className="node-edit-icon-svg" size={14} />
                 </button>
             )}
             {showEditor && (

@@ -3,14 +3,17 @@
    ======================================== */
 
 :root {
-    --sidebar-width: 80px;
-    /* Controlado por JavaScript */
-    --sidebar-bg: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+    --sidebar-width: 72px;
+    --sidebar-collapsed: 72px;
+    --sidebar-expanded: 280px;
+    --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    --sidebar-border: #334155;
     --sidebar-text: #ffffff;
+    --sidebar-text-muted: rgba(255, 255, 255, 0.8);
     --sidebar-hover: rgba(255, 255, 255, 0.1);
-    --sidebar-active: rgba(255, 255, 255, 0.2);
-    --sidebar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --sidebar-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --sidebar-active: rgba(255, 255, 255, 0.15);
+    --sidebar-transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --sidebar-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Container da Sidebar */
@@ -21,6 +24,7 @@
     height: 100vh;
     width: var(--sidebar-width);
     background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
     box-shadow: var(--sidebar-shadow);
     transition: var(--sidebar-transition);
     z-index: 1000;
@@ -32,22 +36,21 @@
 
 /* Estados da Sidebar */
 .sidebar.collapsed {
-    width: 80px;
+    width: var(--sidebar-collapsed);
 }
 
 .sidebar.expanded {
-    width: 280px;
+    width: var(--sidebar-expanded);
 }
 
 /* Informações do Usuário */
 .user-info {
     padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--sidebar-border);
     display: flex;
     align-items: center;
     gap: 15px;
     animation: fadeIn 0.3s ease-in;
-    background-color: #1e3a8a;
 }
 
 .user-avatar {
@@ -160,6 +163,7 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -215,10 +219,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--sidebar-border);
     position: sticky;
     top: 0;
-    background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+    background: #1e293b;
     z-index: 10;
 }
 
@@ -259,14 +263,14 @@
     transform: scale(1);
 }
 
-/* Botão de Pin */
-.pin-button {
-    width: 32px;
-    height: 32px;
+/* Botão Hambúrguer (Toggle) */
+.hamburger-button {
+    width: 40px;
+    height: 40px;
     border: none;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--sidebar-hover);
     color: white;
-    font-size: 16px;
+    font-size: 20px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -274,26 +278,19 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-
-    /* Posicionamento Absoluto no Canto Superior Esquerdo */
-    position: absolute;
-    left: 16px;
-    top: 20px;
-    z-index: 20;
 }
 
-.pin-button:hover {
-    background: rgba(255, 255, 255, 0.2);
+.sidebar.collapsed .hamburger-button {
+    margin: 0 auto;
+}
+
+.sidebar.expanded .hamburger-button {
+    margin-left: 0;
+}
+
+.hamburger-button:hover {
+    background: var(--sidebar-active);
     transform: scale(1.05);
-}
-
-.pin-button.pinned {
-    background: rgba(255, 255, 255, 0.25);
-    transform: rotate(45deg);
-}
-
-.pin-button.pinned:hover {
-    transform: rotate(45deg) scale(1.05);
 }
 
 /* ========================================
@@ -348,11 +345,14 @@
     opacity: 0;
     transform: translateX(-10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
-    white-space: normal; /* Permite quebra de linha para nomes longos */
+    white-space: normal;
+    /* Permite quebra de linha para nomes longos */
     overflow: visible;
     text-overflow: clip;
-    line-height: 1.25; /* Melhor leitura em duas linhas */
-    max-width: 200px; /* Garante que não estoure a sidebar */
+    line-height: 1.25;
+    /* Melhor leitura em duas linhas */
+    max-width: 200px;
+    /* Garante que não estoure a sidebar */
 }
 
 .sidebar.expanded .sidebar-text {

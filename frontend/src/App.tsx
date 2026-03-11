@@ -33,27 +33,29 @@ import "./App.css";
 
 function AppContent() {
   const location = useLocation();
-  const isPrintPage = location.pathname === "/imprimir";
-  const isLoginPage = location.pathname === "/login";
+  // Com o basename="/peo", o location.pathname para a rota "/imprimir" será "/imprimir"
+  // mas para garantir, vamos verificar se termina com ou é exatamente o caminho.
+  const isPrintPage = location.pathname === "/imprimir" || location.pathname.endsWith("/imprimir");
+  const isLoginPage = location.pathname === "/login" || location.pathname.endsWith("/login");
 
   return (
     <div className="app">
       {!isPrintPage && !isLoginPage && <Sidebar />}
       <div
         className={
-          isPrintPage 
-            ? "print-layout" 
-            : isLoginPage 
-              ? "login-layout" 
+          isPrintPage
+            ? "print-layout"
+            : isLoginPage
+              ? "login-layout"
               : "app-layout"
         }
       >
         <main
           className={
-            isPrintPage 
-              ? "print-content" 
-              : isLoginPage 
-                ? "login-content-wrapper" 
+            isPrintPage
+              ? "print-content"
+              : isLoginPage
+                ? "login-content-wrapper"
                 : "main-content"
           }
         >
@@ -218,7 +220,7 @@ function App() {
   });
 
   return (
-    <Router>
+    <Router basename="/peo">
       <AppContent />
     </Router>
   );

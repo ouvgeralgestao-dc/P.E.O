@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Icons from '../components/common/Icons';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
@@ -198,10 +199,10 @@ const GerenciarAcesso = () => {
                 <h1>Gerenciar Acesso</h1>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <Button onClick={handleCreateClick} variant="primary">
-                        + Cadastrar Usuário
+                        <Icons name="plus" className="mr-2" /> Cadastrar Usuário
                     </Button>
                     <Button onClick={() => navigate('/configuracoes')} variant="secondary">
-                        Voltar
+                        <Icons name="arrow-left" className="mr-2" /> Voltar
                     </Button>
                 </div>
             </div>
@@ -233,7 +234,8 @@ const GerenciarAcesso = () => {
                                 <td>{user.setor}</td>
                                 <td>
                                     <span className={`perfil-badge ${user.tipo}`}>
-                                        {user.tipo === 'admin' ? '👑 Administrador' : '👤 Usuário'}
+                                        <Icons name={user.tipo === 'admin' ? 'lock' : 'user'} size={14} className="mr-1" />
+                                        {user.tipo === 'admin' ? 'Administrador' : 'Usuário'}
                                     </span>
                                 </td>
                                 <td>
@@ -256,7 +258,7 @@ const GerenciarAcesso = () => {
                                                 variant="secondary"
                                                 onClick={() => handlePermissoesClick(user)}
                                             >
-                                                🔐 Permissões
+                                                <Icons name="lock" size={14} className="mr-1" /> Permissões
                                             </Button>
                                         ) : (
                                             <Button
@@ -266,7 +268,7 @@ const GerenciarAcesso = () => {
                                                 title="Administradores possuem acesso total"
                                                 style={{ opacity: 0.5, cursor: 'not-allowed' }}
                                             >
-                                                🔐 Permissões
+                                                <Icons name="lock" size={14} className="mr-1" /> Permissões
                                             </Button>
                                         )}
                                         <Button
@@ -283,7 +285,7 @@ const GerenciarAcesso = () => {
                                             style={{ backgroundColor: '#e53e3e', borderColor: '#c53030' }}
                                             title="Excluir Permanentemente"
                                         >
-                                            🗑️
+                                            <Icons name="trash" size={14} />
                                         </Button>
                                     </div>
                                 </td>
@@ -406,7 +408,7 @@ const GerenciarAcesso = () => {
                 <div className="modal-overlay" onClick={() => setIsDeleteModalOpen(false)}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ borderColor: '#e53e3e', borderTopWidth: '8px' }}>
                         <div className="modal-header">
-                            <h2 style={{ color: '#c53030' }}>⚠️ EXCLUIR USUÁRIO?</h2>
+                            <h2 style={{ color: '#c53030' }}><Icons name="trash" className="mr-2" /> EXCLUIR USUÁRIO?</h2>
                         </div>
                         <div style={{ marginBottom: '24px', fontSize: '16px', lineHeight: '1.6' }}>
                             <p>Tem certeza que deseja excluir <strong>PERMANENTEMENTE</strong> o usuário <strong>{userToDelete.nome}</strong>?</p>

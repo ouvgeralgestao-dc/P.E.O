@@ -1,14 +1,15 @@
 /* Fundo da página agora é neutro para destacar o card */
 .login-container {
     min-height: 100vh;
-    background-color: #f0f2f5; 
+    background-color: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     position: relative;
-    overflow: hidden; /* Garante que ícones não vazem scroll */
+    overflow: hidden;
+    /* Garante que ícones não vazem scroll */
 }
 
 /* Container de Decoração */
@@ -18,24 +19,37 @@
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* Não interfere no clique */
+    pointer-events: none;
+    /* Não interfere no clique */
     z-index: 0;
 }
 
 /* Ícones Base */
 .bg-icon {
     position: absolute;
-    color: #1e3a8a; /* Azul base do tema */
-    opacity: 0.10; /* Aumentado para 10% */
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
-    animation: float 8s ease-in-out infinite; /* Tempo base reduzido para 8s (mais rápido) */
+    color: var(--bg-dark);
+    /* Slate 900 */
+    opacity: 0.10;
+    /* Aumentado para 10% */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+    animation: float 8s ease-in-out infinite;
+    /* Tempo base reduzido para 8s (mais rápido) */
 }
 
 /* Animação de Flutuação */
 @keyframes float {
-    0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-60px) rotate(10deg); } /* Movimento bem mais amplo */
-    100% { transform: translateY(0) rotate(0deg); }
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-60px) rotate(10deg);
+    }
+
+    /* Movimento bem mais amplo */
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
 }
 
 /* Posicionamento Específico e Variação de Ícones */
@@ -93,16 +107,20 @@
     border-radius: 16px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 900px; /* Aumentei para caber os dois lados */
+    max-width: 900px;
+    /* Aumentei para caber os dois lados */
     display: flex;
-    overflow: hidden; /* Garante que o fundo não vaze nas bordas arredondadas */
+    overflow: hidden;
+    /* Garante que o fundo não vaze nas bordas arredondadas */
     min-height: 550px;
 }
 
 /* --- LADO ESQUERDO (Branding) --- */
 .login-branding {
-    flex: 1; /* Ocupa 50% ou o espaço disponível */
-    background: linear-gradient(135deg, #1e3a8a 0%, #5278e0 100%);
+    flex: 1;
+    /* Ocupa 50% ou o espaço disponível */
+    background: linear-gradient(135deg, var(--bg-dark) 0%, #1e293b 100%);
+    /* Slate 900 -> Slate 800 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -116,7 +134,10 @@
 .login-branding::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+');
     opacity: 0.3;
 }
@@ -127,11 +148,12 @@
 }
 
 .branding-logo {
-    width: 280px; /* Aumentado para melhor visibilidade */
+    width: 280px;
+    /* Aumentado para melhor visibilidade */
     height: auto;
     margin-bottom: 30px;
     /* Sombras removidas para logo flat/clean ou ajustadas se necessário */
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 .login-branding h1 {
@@ -149,7 +171,8 @@
 
 /* --- LADO DIREITO (Conteúdo/Form) --- */
 .login-content {
-    flex: 1; /* Ocupa os outros 50% */
+    flex: 1;
+    /* Ocupa os outros 50% */
     padding: 50px;
     display: flex;
     flex-direction: column;
@@ -159,7 +182,8 @@
 
 .form-header {
     margin-bottom: 30px;
-    text-align: center; /* Garante centralização extra */
+    text-align: center;
+    /* Garante centralização extra */
 }
 
 .login-dc-logo {
@@ -195,7 +219,8 @@
     font-size: 15px;
     transition: all 0.3s ease;
     background-color: #f8fafc;
-    box-sizing: border-box; /* Importante para não quebrar o layout */
+    box-sizing: border-box;
+    /* Importante para não quebrar o layout */
 }
 
 .form-group input:focus {
@@ -219,7 +244,7 @@
 
 .login-button {
     width: 100%;
-    background: #1e3a8a;
+    background: var(--bg-dark);
     color: white;
     border: none;
     padding: 16px;
@@ -243,7 +268,8 @@
 /* --- RESPONSIVIDADE --- */
 @media (max-width: 768px) {
     .login-card {
-        flex-direction: column; /* Vira coluna em telas pequenas */
+        flex-direction: column;
+        /* Vira coluna em telas pequenas */
         max-width: 400px;
     }
 
@@ -259,7 +285,7 @@
     .login-branding h1 {
         font-size: 20px;
     }
-    
+
     .login-content {
         padding: 30px;
     }

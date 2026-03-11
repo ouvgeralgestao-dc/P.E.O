@@ -3,7 +3,6 @@
 .organograma-geral-funcional {
     min-height: calc(100vh - 80px);
     padding: 24px 0;
-    background: #f1f5f9;
 }
 
 .organograma-geral-funcional .container {

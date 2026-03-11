@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
+import Icons from '../components/common/Icons';
 import { logger } from '../utils/logger';
 import api from '../services/api';
 import './VisualizarOrganograma.css';
@@ -129,14 +130,14 @@ function SandboxEstrutural() {
                             variant="outline"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
-                            ← Voltar
+                            <Icons name="arrow-left" className="mr-2" /> Voltar
                         </Button>
-                        <h1>🏢 Organograma Estrutural - {nomeOrgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                        <h1><Icons name="folder" className="mr-2" /> Organograma Estrutural - {nomeOrgao} <span className="sandbox-badge">SANDBOX</span></h1>
                     </div>
 
                     <Card>
                         <div style={{ textAlign: 'center', padding: '3rem' }}>
-                            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📋</div>
+                            <div style={{ marginBottom: '1rem' }}><Icons name="folder" size={64} className="opacity-20" /></div>
                             <h2>Nenhum organograma estrutural criado</h2>
                             <p style={{ color: '#64748b', marginBottom: '2rem' }}>
                                 Comece criando a estrutura de setores do órgão
@@ -167,7 +168,7 @@ function SandboxEstrutural() {
         };
 
         localStorage.setItem('printData', JSON.stringify(printData));
-        navigate('/imprimir'); // Navega para a rota de impressão que lê do localStorage
+        window.open('/peo/imprimir', '_blank');
     };
 
     const handleDelete = async () => {
@@ -194,7 +195,7 @@ function SandboxEstrutural() {
                             className="btn-back"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
-                            <span className="btn-icon">←</span>
+                            <Icons name="arrow-left" className="btn-icon-svg mr-2" />
                             Voltar
                         </button>
                     </div>
@@ -202,7 +203,7 @@ function SandboxEstrutural() {
                     {/* Zona 2: Título Centralizado */}
                     <div className="header-zone-center">
                         <h1>
-                            <span>🏢</span>
+                            <Icons name="folder" className="mr-3" />
                             Organograma Estrutural - {organogramaData.orgao}
                             <span className="sandbox-badge">SANDBOX</span>
                         </h1>
@@ -218,7 +219,7 @@ function SandboxEstrutural() {
                             className="btn-action-primary"
                             onClick={handlePrint}
                         >
-                            <span className="btn-icon">🖨️</span>
+                            <Icons name="printer" className="btn-icon-svg mr-2" />
                             Imprimir
                         </button>
                         <button
@@ -226,7 +227,7 @@ function SandboxEstrutural() {
                             className="btn-action-secondary"
                             onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-estrutural`)}
                         >
-                            <span className="btn-icon">✏️</span>
+                            <Icons name="edit" className="btn-icon-svg mr-2" />
                             Editar
                         </button>
                         <button
@@ -234,7 +235,7 @@ function SandboxEstrutural() {
                             className="btn-action-danger"
                             onClick={handleDelete}
                         >
-                            <span className="btn-icon">🗑️</span>
+                            <Icons name="trash" className="btn-icon-svg mr-2" />
                             Excluir
                         </button>
                     </div>

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import api from './api';
 
-const API_BASE_URL = 'http://localhost:6001/api';
 
 export interface User {
     id: number;
@@ -40,7 +39,7 @@ export const authService = {
     logout() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = '/peo/login';
     },
 
     getToken(): string | null {

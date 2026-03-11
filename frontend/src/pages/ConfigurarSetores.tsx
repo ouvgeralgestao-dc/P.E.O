@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Button from '../components/common/Button';
+import Icons from '../components/common/Icons';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import Select from '../components/common/Select';
@@ -14,13 +15,13 @@ import './ConfigurarSetores.css';
 
 const ConfigurarSetores = () => {
     const navigate = useNavigate();
-    const [setores, setSetores] = useState([]);
+    const [setores, setSetores] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editando, setEditando] = useState(null); // Armazena o objeto completo sendo editado
+    const [editando, setEditando] = useState<any>(null); // Armazena o objeto completo sendo editado
     const [searchTerm, setSearchTerm] = useState('');
 
     // Estado para novo setor / edição
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{ nome: string, hierarquias: string[] }>({
         nome: '',
         hierarquias: []
     });
@@ -75,7 +76,7 @@ const ConfigurarSetores = () => {
         }
     };
 
-    const handleDeletarSetor = async (setor) => {
+    const handleDeletarSetor = async (setor: any) => {
         if (!confirm('TEM CERTEZA QUE DESEJA DELETAR?')) return;
 
         try {
@@ -88,7 +89,7 @@ const ConfigurarSetores = () => {
         }
     };
 
-    const startEditing = (setor) => {
+    const startEditing = (setor: any) => {
         setEditando(setor);
         setFormData({
             nome: setor.nome,
@@ -102,7 +103,7 @@ const ConfigurarSetores = () => {
         setFormData({ nome: '', hierarquias: [] });
     };
 
-    const toggleHierarquia = (nivel) => {
+    const toggleHierarquia = (nivel: any) => {
         setFormData(prev => {
             const nivelStr = nivel.toString();
             const exists = prev.hierarquias.includes(nivelStr);
@@ -136,7 +137,7 @@ const ConfigurarSetores = () => {
                     <p className="subtitle">Gerencie os nomes e níveis hierárquicos disponíveis nos formulários</p>
                 </div>
                 <Button onClick={() => navigate('/configuracoes')} variant="secondary">
-                    ← Voltar
+                    <Icons name="arrow-left" className="mr-2" /> Voltar
                 </Button>
             </div>
 
@@ -208,23 +209,23 @@ const ConfigurarSetores = () => {
                             <span className="col-niveis">Níveis Permitidos</span>
                             <span className="col-acoes">Ações</span>
                         </div>
-                        {filteredSetores.map((setor) => (
+                        {filteredSetores.map((setor: any) => (
                             <div key={setor.id} className="setor-item">
                                 <div className="setor-info col-nome">
                                     <h4>{setor.nome}</h4>
                                 </div>
                                 <div className="setor-niveis col-niveis">
-                                    {setor.hierarquias.map(h => (
+                                    {setor.hierarquias.map((h: string) => ( // Tipado o parâmetro h
                                         <span key={h} className="nivel-badge">
-                                            {HIERARCHY_LABELS[h] || h}
+                                            {HIERARCHY_LABELS[h as keyof typeof HIERARCHY_LABELS] || h}
                                         </span>
                                     ))}
                                 </div>
                                 <div className="setor-actions col-acoes">
-                                    <Button onClick={() => startEditing(setor)} variant="secondary" size="small">
+                                    <Button onClick={() => startEditing(setor)} variant="secondary" size="sm">
                                         Editar
                                     </Button>
-                                    <Button onClick={() => handleDeletarSetor(setor)} variant="danger" size="small" outline>
+                                    <Button onClick={() => handleDeletarSetor(setor)} variant="danger" size="sm">
                                         Excluir
                                     </Button>
                                 </div>
@@ -235,7 +236,7 @@ const ConfigurarSetores = () => {
             </Card>
 
             <div className="warning-box">
-                <p><strong>💡 Importante:</strong> As alterações feitas aqui afetam as opções exibidas nos formulários de criação e edição. Se você renomear um item, o sistema tentará atualizar os nomes em todos os organogramas existentes para manter a consistência.</p>
+                <p><strong><Icons name="info" size={16} className="mr-1" /> Importante:</strong> As alterações feitas aqui afetam as opções exibidas nos formulários de criação e edição. Se você renomear um item, o sistema tentará atualizar os nomes em todos os organogramas existentes para manter a consistência.</p>
             </div>
         </div>
     );

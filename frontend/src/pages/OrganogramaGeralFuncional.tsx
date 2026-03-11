@@ -10,6 +10,7 @@ import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import { logger } from '../utils/logger';
 import api from '../services/api';
+import Icons from '../components/common/Icons';
 import './OrganogramaGeralFuncional.css';
 
 import Input from '../components/common/Input';
@@ -95,7 +96,7 @@ function OrganogramaGeralFuncional() {
                 title: 'Organograma Geral de Funções - Prefeitura Municipal de Duque de Caxias'
             });
             localStorage.setItem('printData', printData);
-            window.open('/imprimir', '_blank');
+            window.open('/peo/imprimir', '_blank');
         } catch (error) {
             console.error('Erro ao abrir impressão:', error);
             alert('Erro ao preparar impressão.');
@@ -174,7 +175,7 @@ function OrganogramaGeralFuncional() {
                     <Card title="Erro">
                         <p className="error-message">{error as any}</p>
                         <Button onClick={() => navigate('/')}>
-                            ← Voltar para Dashboard
+                            <Icons name="arrow-left" className="mr-2" /> Voltar para Dashboard
                         </Button>
                     </Card>
                 </div>
@@ -183,13 +184,13 @@ function OrganogramaGeralFuncional() {
     }
 
     return (
-        <div className="organograma-geral-funcional">
+        <div className="organograma-geral-funcional textured-bg">
             <div className="container">
                 {/* Header */}
                 <div className="page-header">
                     <div className="header-left">
                         <Button variant="outline" onClick={() => navigate('/')}>
-                            ← Voltar
+                            <Icons name="arrow-left" className="mr-2" /> Voltar
                         </Button>
                         <div className="header-info">
                             <h2 className="page-title">Organograma Geral de Funções</h2>
@@ -205,20 +206,20 @@ function OrganogramaGeralFuncional() {
                         variant="secondary"
                         onClick={handleEditClick}
                     >
-                        <span className="btn-icon">✏️</span> Editar Ocupantes
+                        <Icons name="edit" className="mr-2" /> Editar Ocupantes
                     </Button>
                     <Button
                         className="btn-action btn-print"
                         onClick={handlePrintPreview}
                     >
-                        <span className="btn-icon">🖨️</span> Imprimir / PDF
+                        <Icons name="printer" className="mr-2" /> Imprimir / PDF
                     </Button>
                     <Button
                         className="btn-action btn-refresh"
                         variant="primary"
                         onClick={() => loadOrganogramaGeralFuncional(true)}
                     >
-                        <span className="btn-icon">🔄</span> Atualizar
+                        <Icons name="refresh" className="mr-2" /> Atualizar
                     </Button>
                 </div>
 
@@ -265,9 +266,6 @@ function OrganogramaGeralFuncional() {
 
                 {/* Estatísticas Expandidas */}
                 <div className="stats-footer-expanded">
-                    {/* ... conteúdo existente mantido ... */}
-                    {/* Vou simplificar para não repetir tudo aqui, mas o replace deve manter o resto se eu usar chunk ou overwrite cuidado. */}
-                    {/* Como estou substituindo o arquivo quase todo, vou recolocar o footer. */}
                     <div className="stats-row">
                         <div className="stat-item">
                             <span className="stat-label">Total de Cargos:</span>
@@ -323,12 +321,12 @@ function OrganogramaGeralFuncional() {
                                             (organogramaData as any).estatisticas.simbolos.map((item: any, index: number) => (
                                                 <tr key={index}>
                                                     <td className="simbolo-name">{item.simbolo}</td>
-                                                    <td className="simbolo-count">{item.quantidade}</td>
+                                                    <td className="simbolo-count">{String(item.quantidade)}</td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="2" className="no-data">Nenhum símbolo encontrado</td>
+                                                <td colSpan={2} className="no-data">Nenhum símbolo encontrado</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -351,12 +349,12 @@ function OrganogramaGeralFuncional() {
                                             (organogramaData as any).estatisticas.cargos.map((item: any, index: number) => (
                                                 <tr key={index}>
                                                     <td className="setor-name">{item.nome}</td>
-                                                    <td className="setor-count">{item.quantidade}</td>
+                                                    <td className="setor-count">{String(item.quantidade)}</td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="2" className="no-data">Nenhum cargo encontrado</td>
+                                                <td colSpan={2} className="no-data">Nenhum cargo encontrado</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -365,80 +363,79 @@ function OrganogramaGeralFuncional() {
                         </div>
                     </div>
                 </div>
+            </div>
 
-
-                {showEditModal && (
-                    <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-                            <div className="modal-header">
-                                <h3>Editar Ocupantes Fixos</h3>
-                                <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
-                            </div>
-                            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <Input
-                                        id="prefeito-cargo"
-                                        name="prefeito-cargo"
-                                        label="Prefeito Municipal"
-                                        value={editData['prefeito-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('prefeito-cargo', e.target.value)}
-                                        placeholder="Nome do Prefeito"
-                                    />
-                                    <Input
-                                        id="gabinete-cargo"
-                                        name="gabinete-cargo"
-                                        label="Gabinete do Prefeito"
-                                        value={editData['gabinete-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('gabinete-cargo', e.target.value)}
-                                        placeholder="Nome do Chefe de Gabinete ou Responsável"
-                                    />
-                                    <div style={{ height: '1px', background: '#eee', margin: '5px 0' }}></div>
-                                    <Input
-                                        id="subprefeitura-1-cargo"
-                                        name="subprefeitura-1-cargo"
-                                        label="Subprefeito(a) - 1º Distrito"
-                                        value={editData['subprefeitura-1-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('subprefeitura-1-cargo', e.target.value)}
-                                        placeholder="Nome do Subprefeito(a)"
-                                    />
-                                    <Input
-                                        id="subprefeitura-2-cargo"
-                                        name="subprefeitura-2-cargo"
-                                        label="Subprefeito(a) - 2º Distrito"
-                                        value={editData['subprefeitura-2-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('subprefeitura-2-cargo', e.target.value)}
-                                        placeholder="Nome do Subprefeito(a)"
-                                    />
-                                    <Input
-                                        id="subprefeitura-3-cargo"
-                                        name="subprefeitura-3-cargo"
-                                        label="Subprefeito(a) - 3º Distrito"
-                                        value={editData['subprefeitura-3-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('subprefeitura-3-cargo', e.target.value)}
-                                        placeholder="Nome do Subprefeito(a)"
-                                    />
-                                    <Input
-                                        id="subprefeitura-4-cargo"
-                                        name="subprefeitura-4-cargo"
-                                        label="Subprefeito(a) - 4º Distrito"
-                                        value={editData['subprefeitura-4-cargo'] || ''}
-                                        onChange={(e: any) => handleInputChange('subprefeitura-4-cargo', e.target.value)}
-                                        placeholder="Nome do Subprefeito(a)"
-                                    />
-                                </div>
-                            </div>
-                            <div className="modal-actions">
-                                <Button variant="outline" onClick={() => setShowEditModal(false)}>
-                                    Cancelar
-                                </Button>
-                                <Button variant="primary" onClick={handleSaveOccupants} disabled={saving}>
-                                    {saving ? 'Salvando...' : 'Salvar Alterações'}
-                                </Button>
+            {showEditModal && (
+                <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                        <div className="modal-header">
+                            <h3>Editar Ocupantes Fixos</h3>
+                            <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
+                        </div>
+                        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <Input
+                                    id="prefeito-cargo"
+                                    name="prefeito-cargo"
+                                    label="Prefeito Municipal"
+                                    value={editData['prefeito-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('prefeito-cargo', e.target.value)}
+                                    placeholder="Nome do Prefeito"
+                                />
+                                <Input
+                                    id="gabinete-cargo"
+                                    name="gabinete-cargo"
+                                    label="Gabinete do Prefeito"
+                                    value={editData['gabinete-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('gabinete-cargo', e.target.value)}
+                                    placeholder="Nome do Chefe de Gabinete ou Responsável"
+                                />
+                                <div style={{ height: '1px', background: '#eee', margin: '5px 0' }}></div>
+                                <Input
+                                    id="subprefeitura-1-cargo"
+                                    name="subprefeitura-1-cargo"
+                                    label="Subprefeito(a) - 1º Distrito"
+                                    value={editData['subprefeitura-1-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('subprefeitura-1-cargo', e.target.value)}
+                                    placeholder="Nome do Subprefeito(a)"
+                                />
+                                <Input
+                                    id="subprefeitura-2-cargo"
+                                    name="subprefeitura-2-cargo"
+                                    label="Subprefeito(a) - 2º Distrito"
+                                    value={editData['subprefeitura-2-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('subprefeitura-2-cargo', e.target.value)}
+                                    placeholder="Nome do Subprefeito(a)"
+                                />
+                                <Input
+                                    id="subprefeitura-3-cargo"
+                                    name="subprefeitura-3-cargo"
+                                    label="Subprefeito(a) - 3º Distrito"
+                                    value={editData['subprefeitura-3-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('subprefeitura-3-cargo', e.target.value)}
+                                    placeholder="Nome do Subprefeito(a)"
+                                />
+                                <Input
+                                    id="subprefeitura-4-cargo"
+                                    name="subprefeitura-4-cargo"
+                                    label="Subprefeito(a) - 4º Distrito"
+                                    value={editData['subprefeitura-4-cargo'] || ''}
+                                    onChange={(e: any) => handleInputChange('subprefeitura-4-cargo', e.target.value)}
+                                    placeholder="Nome do Subprefeito(a)"
+                                />
                             </div>
                         </div>
+                        <div className="modal-actions">
+                            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                                Cancelar
+                            </Button>
+                            <Button variant="primary" onClick={handleSaveOccupants} disabled={saving}>
+                                {saving ? 'Salvando...' : 'Salvar Alterações'}
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

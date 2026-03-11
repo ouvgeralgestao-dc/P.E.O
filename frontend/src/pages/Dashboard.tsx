@@ -7,6 +7,8 @@ import ChartCard from '../components/common/ChartCard';
 import DetailedTableCard from '../components/common/DetailedTableCard';
 import ConsolidatedTableCard from '../components/common/ConsolidatedTableCard';
 import Button from '../components/common/Button';
+import BackButton from '../components/common/BackButton';
+import Icons from '../components/common/Icons';
 import ViewSelectionModal from '../components/common/ViewSelectionModal';
 import { DESCRICOES_DAS } from '../constants/cargosDAS';
 import './Dashboard.css';
@@ -291,9 +293,9 @@ const Dashboard = () => {
                 <div className="orgao-card-body">
                     <h3 className="orgao-name">{formatOrgaoName(org.orgao)}</h3>
                     <div className="orgao-stats">
-                        <span>📅 {formatDate(org.updatedAt || org.createdAt)}</span>
-                        <span>🏢 {org.stats.setoresCount} setores</span>
-                        <span>👥 {org.stats.cargosCount} cargos</span>
+                        <span><Icons name="refresh" size={14} className="mr-1" /> {formatDate(org.updatedAt || org.createdAt)}</span>
+                        <span><Icons name="chart" size={14} className="mr-1" /> {org.stats.setoresCount} setores</span>
+                        <span><Icons name="printer" size={14} className="mr-1" /> {org.stats.simbolosCount} símbolos</span>
                     </div>
                 </div>
                 <div className="orgao-card-actions">
@@ -303,10 +305,7 @@ const Dashboard = () => {
                         className="btn-visualizar-full"
                         onClick={() => onVisualize(org)}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                            <circle cx="12" cy="12" r="3" />
-                        </svg>
+                        <Icons name="eye" className="mr-2" />
                         Visualizar
                     </Button>
 
@@ -321,12 +320,7 @@ const Dashboard = () => {
                                 navigate(`/criar?tipo=funcoes&orgao=${encodeURIComponent(org.orgao)}`);
                             }}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <line x1="19" y1="8" x2="19" y2="14" />
-                                <line x1="16" y1="11" x2="22" y2="11" />
-                            </svg>
+                            <Icons name="plus" className="mr-2" />
                             CRIAR ORGANOGRAMA FUNCIONAL
                         </Button>
                     )}
@@ -382,42 +376,42 @@ const Dashboard = () => {
         return (
             <div className="stats-grid" style={{ marginTop: '32px' }}>
                 <div className="stat-card stat-info">
-                    <div className="stat-icon">📊</div>
+                    <div className="stat-icon"><Icons name="chart" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{stats.estruturais}</div>
                         <div className="stat-label">ORGANOGRAMAS ESTRUTURAIS</div>
                     </div>
                 </div>
                 <div className="stat-card stat-purple">
-                    <div className="stat-icon">📂</div>
+                    <div className="stat-icon"><Icons name="printer" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{stats.funcoes}</div>
                         <div className="stat-label">ORGANOGRAMAS FUNCIONAIS</div>
                     </div>
                 </div>
                 <div className="stat-card stat-primary">
-                    <div className="stat-icon">🏛️</div>
+                    <div className="stat-icon"><Icons name="eye" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{stats.total}</div>
                         <div className="stat-label">Total de Órgãos</div>
                     </div>
                 </div>
                 <div className="stat-card stat-warning">
-                    <div className="stat-icon">📋</div>
+                    <div className="stat-icon"><Icons name="palette" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{totalSetores}</div>
                         <div className="stat-label">Total de Setores</div>
                     </div>
                 </div>
                 <div className="stat-card stat-indigo">
-                    <div className="stat-icon">🏷️</div>
+                    <div className="stat-icon"><Icons name="edit" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{totalSimbolosFull}</div>
                         <div className="stat-label">Total de Símbolos</div>
                     </div>
                 </div>
                 <div className="stat-card stat-success">
-                    <div className="stat-icon">👥</div>
+                    <div className="stat-icon"><Icons name="plus" size={32} /></div>
                     <div className="stat-content">
                         <div className="stat-value">{totalCargosFull}</div>
                         <div className="stat-label">Total de Cargos</div>
@@ -741,8 +735,22 @@ const Dashboard = () => {
     }, [filteredOrganogramas, formatOrgaoName, selectedSetores, selectedSimbolos, sortSymbolsByRank]);
 
     const handleVisualizeClick = useCallback((org: Organograma) => {
-        setViewSelectionOrg(org);
-    }, []);
+        const hasEstrutural = !!org.organogramaEstrutural;
+        const hasFuncional = !!(org.organogramasFuncoes && org.organogramasFuncoes.length > 0);
+
+        // Se tiver apenas UM tipo, navega direto
+        if (hasEstrutural && !hasFuncional) {
+            navigate(`/visualizar/${encodeURIComponent(org.orgao)}?tipo=estrutura`);
+        } else if (!hasEstrutural && hasFuncional) {
+            navigate(`/visualizar/${encodeURIComponent(org.orgao)}?tipo=funcoes`);
+        } else if (hasEstrutural && hasFuncional) {
+            // Se tiver os dois, abre o modal de escolha
+            setViewSelectionOrg(org);
+        } else {
+            logger.warn('Dashboard', 'Órgão sem visualizações disponíveis', { orgao: org.orgao });
+            alert('Nenhuma visualização disponível para este órgão.');
+        }
+    }, [navigate]);
 
     const handleViewSelection = useCallback((tipo: string) => {
         if (!viewSelectionOrg) return;
@@ -756,7 +764,7 @@ const Dashboard = () => {
     if (error) return <div className="error-container" style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>{error}</div>;
 
     return (
-        <div className="dashboard">
+        <div className="dashboard textured-bg">
             <div className="container">
                 <header className="dashboard-header" style={{ marginBottom: '32px' }}>
                     <h2 className="welcome-title">ESTRUTURA ORGANIZACIONAL</h2>
@@ -765,19 +773,27 @@ const Dashboard = () => {
 
                 {/* 1. GRID DE ÓRGÃOS (PREMIUM CARDS) */}
                 <div className="organogramas-grid">
-                    {organogramasComStats.length > 0 ? (
-                        organogramasComStats.map(org => (
-                            <OrgaoCard
-                                key={org.orgaoId || org.id}
-                                org={org}
-                                onVisualize={handleVisualizeClick}
-                                formatDate={formatDate}
-                                formatOrgaoName={formatOrgaoName}
-                            />
-                        ))
+                    {filteredOrganogramas.length > 0 ? (
+                        filteredOrganogramas.map(org => {
+                            // Pegar os stats memoizados para este órgão específico
+                            // (ou calcular on-the-fly se preferir, mas aqui usamos a lógica de stats que já temos)
+                            const orgWithStats = {
+                                ...org,
+                                stats: getOrgaoStats(org)
+                            };
+                            return (
+                                <OrgaoCard
+                                    key={org.orgaoId || org.id}
+                                    org={orgWithStats}
+                                    onVisualize={handleVisualizeClick}
+                                    formatDate={formatDate}
+                                    formatOrgaoName={formatOrgaoName}
+                                />
+                            );
+                        })
                     ) : (
                         <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
-                            <div className="empty-icon">📂</div>
+                            <div className="empty-icon"><Icons name="info" size={48} /></div>
                             <h3>Nenhum Órgão Encontrado</h3>
                             <p>Tente ajustar os filtros acima para encontrar o que procura.</p>
                         </div>

@@ -4,6 +4,7 @@ import 'reactflow/dist/style.css';
 import SetorNode from '../components/canvas/SetorNode';
 import CustomEdge from '../components/canvas/CustomEdge';
 import { logger } from '../utils/logger';
+import Icons from '../components/common/Icons';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -15,7 +16,7 @@ const nodeTypes = {
 
 const edgeTypes = {
     customEdge: CustomEdge
-};
+} as any;
 
 // Dimensões ISO A em mm (horizontal)
 const PAPER_SIZES = {
@@ -44,14 +45,14 @@ function PrintPreviewContent() {
                 const { nodes: savedNodes, edges: savedEdges, title: savedTitle } = JSON.parse(printData);
 
                 // Limpar interação
-                const cleanNodes = savedNodes.map(n => ({
+                const cleanNodes = savedNodes.map((n: any) => ({
                     ...n,
                     selected: false,
                     draggable: false,
                     data: { ...n.data, isPrintMode: true }
                 }));
 
-                const cleanEdges = savedEdges.map(e => ({
+                const cleanEdges = savedEdges.map((e: any) => ({
                     ...e,
                     selected: false,
                     animated: false,
@@ -65,10 +66,10 @@ function PrintPreviewContent() {
                 // Pequeno delay para garantir que nodes foram setados no store interno se necessário
                 // Mas aqui podemos estimar pelas posições dos savedNodes
                 if (savedNodes.length > 0) {
-                    const minX = Math.min(...savedNodes.map(n => n.position.x));
-                    const maxX = Math.max(...savedNodes.map(n => n.position.x + (n.width || 180)));
-                    const minY = Math.min(...savedNodes.map(n => n.position.y));
-                    const maxY = Math.max(...savedNodes.map(n => n.position.y + (n.height || 100)));
+                    const minX = Math.min(...savedNodes.map((n: any) => n.position.x));
+                    const maxX = Math.max(...savedNodes.map((n: any) => n.position.x + (n.width || 180)));
+                    const minY = Math.min(...savedNodes.map((n: any) => n.position.y));
+                    const maxY = Math.max(...savedNodes.map((n: any) => n.position.y + (n.height || 100)));
 
                     const width = maxX - minX;
                     const height = maxY - minY;
@@ -88,10 +89,10 @@ function PrintPreviewContent() {
     }, [setNodes, setEdges]);
 
     // Calcular dimensões baseadas na orientação
-    const baseSize = PAPER_SIZES[selectedSize];
+    const paperSize = PAPER_SIZES[selectedSize as keyof typeof PAPER_SIZES] || PAPER_SIZES.A4;
     const isLandscape = orientation === 'landscape';
-    const paperWidth = isLandscape ? baseSize.width : baseSize.height;
-    const paperHeight = isLandscape ? baseSize.height : baseSize.width;
+    const paperWidth = isLandscape ? paperSize.width : paperSize.height;
+    const paperHeight = isLandscape ? paperSize.height : paperSize.width;
 
     // Calcular escala visual para caber na tela
     useEffect(() => {
@@ -161,7 +162,7 @@ function PrintPreviewContent() {
     const handleSavePDF = async () => {
         // [INSIGHT] Bibliotecas de captura (html2canvas) falham em renderizar SVGs e arestas do React Flow com 100% de precisão.
         // A função nativa do navegador (Salvar como PDF) é infinitamente superior em fidelidade e performance.
-        handlePrint(); 
+        handlePrint();
     };
 
     return (
@@ -191,18 +192,18 @@ function PrintPreviewContent() {
                 </div>
 
                 <div className="toolbar-info">
-                    ℹ️ Dica: Selecione o mesmo papel ao imprimir.
+                    <Icons name="info" size={14} className="mr-1" /> Dica: Selecione o mesmo papel ao imprimir.
                 </div>
 
                 <div className="toolbar-actions">
                     <button className="btn-secondary" onClick={handleBack}>
-                        Voltar
+                        <Icons name="arrow-left" className="mr-2" /> Voltar
                     </button>
                     <button className="btn-pdf" onClick={handleSavePDF}>
-                        📄 PDF
+                        <Icons name="file-text" className="mr-2" /> PDF
                     </button>
                     <button className="btn-print" onClick={handlePrint}>
-                        🖨️ Imprimir
+                        <Icons name="printer" className="mr-2" /> Imprimir
                     </button>
                 </div>
             </div>
@@ -315,21 +316,21 @@ function PrintPreviewContent() {
                 }
                 
                 .btn-print { 
-                    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); 
+                    background: var(--primary-color);
                     color: white;
-                    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 }
 
                 .btn-pdf { 
-                    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); 
+                    background: var(--error-color);
                     color: white;
-                    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 }
 
                 .btn-secondary { 
-                    background: #4a4a4a; 
+                    background: var(--secondary-color);
                     color: white;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 }
 
                 .btn-print:hover, .btn-pdf:hover, .btn-secondary:hover {

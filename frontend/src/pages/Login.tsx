@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authService, LoginResponse } from '../services/authService';
 import api from '../services/api';
+import Icons from '../components/common/Icons';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -35,7 +36,7 @@ const Login: React.FC = () => {
     const handleCadastroSubmit = async (e: React.FormEvent, force = false) => {
         if (e && e.preventDefault) e.preventDefault();
         setError('');
-        
+
         if (!force && cadastroData.senha !== cadastroData.confirmarSenha) {
             alert('Senhas não conferem!');
             return;
@@ -68,7 +69,7 @@ const Login: React.FC = () => {
 
     const handleConfirmResend = () => {
         // Tentar novamente forçando atualização
-        handleCadastroSubmit({ preventDefault: () => {} } as React.FormEvent, true);
+        handleCadastroSubmit({ preventDefault: () => { } } as React.FormEvent, true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -79,7 +80,7 @@ const Login: React.FC = () => {
         try {
             const response: LoginResponse = await authService.login(matricula, senha);
             authService.saveAuthData(response.token, response.user);
-            window.location.href = '/';
+            window.location.href = '/peo/';
         } catch (err: any) {
             setError(err.response?.data?.error || 'Erro ao fazer login');
         } finally {
@@ -93,7 +94,7 @@ const Login: React.FC = () => {
             <div className="login-background-decor">
                 {/* Ícone 1: Organograma / Estrutura */}
                 <svg className="bg-icon icon-structure" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                    <path d="M12 3V5M12 21V19M5 9V11M19 9V11M5 19V17C5 15.8954 5.89543 15 7 15H17C18.1046 15 19 15.8954 19 17V19M5 5H19" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 3V5M12 21V19M5 9V11M19 9V11M5 19V17C5 15.8954 5.89543 15 7 15H17C18.1046 15 19 15.8954 19 17V19M5 5H19" strokeLinecap="round" strokeLinejoin="round" />
                     <circle cx="12" cy="7" r="2" />
                     <circle cx="5" cy="13" r="2" />
                     <circle cx="19" cy="13" r="2" />
@@ -131,11 +132,11 @@ const Login: React.FC = () => {
             </div>
 
             <div className="login-card">
-                
+
                 {/* LADO ESQUERDO: Visual / Logo */}
                 <div className="login-branding">
                     <div className="branding-content">
-                        <img src="/assets/logo-peo-white.png" alt="Planejador de Estrutura Organizacional" className="branding-logo" />
+                        <img src="/peo/assets/logo-peo-white.png" alt="Planejador de Estrutura Organizacional" className="branding-logo" />
                         <h1>Planejador de<br />Estrutura Organizacional</h1>
                         <p>Prefeitura Municipal de Duque de Caxias</p>
                     </div>
@@ -144,7 +145,7 @@ const Login: React.FC = () => {
                 {/* LADO DIREITO: Inputs */}
                 <div className="login-content">
                     <div className="form-header">
-                        <img src="/assets/dc-logo-login.png" alt="Prefeitura de Duque de Caxias" className="login-dc-logo" />
+                        <img src="/peo/assets/dc-logo-login.png" alt="Prefeitura de Duque de Caxias" className="login-dc-logo" />
                         <h2>Bem-vindo</h2>
                         <span>Faça login para continuar</span>
                     </div>
@@ -181,28 +182,39 @@ const Login: React.FC = () => {
                         </button>
                     </form>
 
-                        <div style={{ marginTop: '15px', textAlign: 'center' }}>
-                            <span 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShowCadastroModal(true);
-                                }}
-                                style={{ 
-                                    color: '#64748b', 
-                                    cursor: 'pointer', 
-                                    textDecoration: 'underline',
-                                    fontSize: '14px',
-                                    display: 'inline-block'
-                                }}
-                                role="button"
-                                tabIndex={0}
-                            >
-                                Solicite seu cadastro
-                            </span>
-                        </div>
+                    <div style={{ marginTop: '15px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+                        <span
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowCadastroModal(true);
+                            }}
+                            style={{
+                                color: '#64748b',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                fontSize: '14px',
+                                display: 'inline-block'
+                            }}
+                            role="button"
+                            tabIndex={0}
+                        >
+                            Solicite seu cadastro
+                        </span>
+                        <a
+                            href="http://ogm.duquedecaxias.rj.gov.br:8059/"
+                            style={{
+                                color: '#64748b',
+                                textDecoration: 'none',
+                                fontSize: '14px',
+                                fontWeight: '600'
+                            }}
+                        >
+                            ⬅ Voltar ao Hub CSG
+                        </a>
                     </div>
                 </div>
+            </div>
 
 
             {/* Modal de Cadastro */}
@@ -220,11 +232,13 @@ const Login: React.FC = () => {
                     }}>
                         {showResendConfirm ? (
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '48px', marginBottom: '10px' }}>⚠️</div>
+                                <div style={{ marginBottom: '10px', color: '#eab308' }}>
+                                    <Icons name="alert" size={48} />
+                                </div>
                                 <h3 style={{ color: '#1e3a8a', marginBottom: '10px' }}>Solicitação Duplicada</h3>
                                 <p style={{ color: '#4b5563', marginBottom: '20px' }}>
                                     Já existe uma solicitação pendente para estes dados (Matrícula/E-mail).
-                                    <br/><br/>
+                                    <br /><br />
                                     Deseja reenviar o pedido e receber um novo link por e-mail?
                                 </p>
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -237,23 +251,23 @@ const Login: React.FC = () => {
                         ) : (
                             <>
                                 <h2 style={{ color: '#1e3a8a', marginBottom: '20px' }}>Solicitar Cadastro</h2>
-                                
+
                                 <form onSubmit={(e) => handleCadastroSubmit(e, false)}>
                                     <div className="form-group">
                                         <label>Nome Completo</label>
-                                        <input required type="text" value={cadastroData.nome} onChange={e => setCadastroData({...cadastroData, nome: e.target.value})} />
+                                        <input required type="text" value={cadastroData.nome} onChange={e => setCadastroData({ ...cadastroData, nome: e.target.value })} />
                                     </div>
                                     <div className="form-group">
                                         <label>Matrícula</label>
-                                        <input required type="text" value={cadastroData.matricula} onChange={e => setCadastroData({...cadastroData, matricula: e.target.value})} />
+                                        <input required type="text" value={cadastroData.matricula} onChange={e => setCadastroData({ ...cadastroData, matricula: e.target.value })} />
                                     </div>
                                     <div className="form-group">
                                         <label>E-mail</label>
-                                        <input required type="email" value={cadastroData.email} onChange={e => setCadastroData({...cadastroData, email: e.target.value})} />
+                                        <input required type="email" value={cadastroData.email} onChange={e => setCadastroData({ ...cadastroData, email: e.target.value })} />
                                     </div>
                                     <div className="form-group">
                                         <label>Órgão</label>
-                                        <select required value={cadastroData.orgao_id} onChange={e => setCadastroData({...cadastroData, orgao_id: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                        <select required value={cadastroData.orgao_id} onChange={e => setCadastroData({ ...cadastroData, orgao_id: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                                             <option value="">Selecione o órgão...</option>
                                             {orgaos.map(org => (
                                                 <option key={org.id} value={org.id}>{org.nome}</option>
@@ -262,11 +276,11 @@ const Login: React.FC = () => {
                                     </div>
                                     <div className="form-group">
                                         <label>Senha</label>
-                                        <input required type="password" value={cadastroData.senha} onChange={e => setCadastroData({...cadastroData, senha: e.target.value})} />
+                                        <input required type="password" value={cadastroData.senha} onChange={e => setCadastroData({ ...cadastroData, senha: e.target.value })} />
                                     </div>
                                     <div className="form-group">
                                         <label>Repetir Senha</label>
-                                        <input required type="password" value={cadastroData.confirmarSenha} onChange={e => setCadastroData({...cadastroData, confirmarSenha: e.target.value})} />
+                                        <input required type="password" value={cadastroData.confirmarSenha} onChange={e => setCadastroData({ ...cadastroData, confirmarSenha: e.target.value })} />
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>

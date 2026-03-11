@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import OrganogramaCanvas from '../components/canvas/OrganogramaCanvas';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
+import Icons from '../components/common/Icons';
 import { logger } from '../utils/logger';
 import api from '../services/api';
 import './VisualizarOrganograma.css';
@@ -126,7 +127,7 @@ function SandboxFuncional() {
         };
 
         localStorage.setItem('printData', JSON.stringify(printData));
-        navigate('/imprimir');
+        window.open('/peo/imprimir', '_blank');
     };
 
     const handleDelete = async () => {
@@ -171,14 +172,14 @@ function SandboxFuncional() {
                             variant="outline"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
-                            ← Voltar
+                            <Icons name="arrow-left" className="mr-2" /> Voltar
                         </Button>
-                        <h1>👥 Organograma Funcional - {nomeOrgao} <span className="sandbox-badge">SANDBOX</span></h1>
+                        <h1><Icons name="user" className="mr-2" /> Organograma Funcional - {nomeOrgao} <span className="sandbox-badge">SANDBOX</span></h1>
                     </div>
 
                     <Card>
                         <div style={{ textAlign: 'center', padding: '3rem' }}>
-                            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👥</div>
+                            <div style={{ marginBottom: '1rem' }}><Icons name="user" size={64} className="opacity-20" /></div>
                             <h2>Nenhum organograma funcional criado</h2>
                             <p style={{ color: '#64748b', marginBottom: '2rem' }}>
                                 Comece criando os cargos e funções do órgão
@@ -207,7 +208,7 @@ function SandboxFuncional() {
                             className="btn-back"
                             onClick={() => navigate(`/criacao-livre`)}
                         >
-                            <span className="btn-icon">←</span>
+                            <Icons name="arrow-left" className="btn-icon-svg mr-2" />
                             Voltar
                         </button>
                     </div>
@@ -215,7 +216,7 @@ function SandboxFuncional() {
                     {/* Zona 2: Título Centralizado */}
                     <div className="header-zone-center">
                         <h1>
-                            <span>👥</span>
+                            <Icons name="user" className="mr-3" />
                             Organograma Funcional - {organogramaData.orgao}
                             <span className="sandbox-badge">SANDBOX</span>
                         </h1>
@@ -231,7 +232,7 @@ function SandboxFuncional() {
                             className="btn-action-primary"
                             onClick={handlePrint}
                         >
-                            <span className="btn-icon">🖨️</span>
+                            <Icons name="printer" className="btn-icon-svg mr-2" />
                             Imprimir
                         </button>
                         <button
@@ -239,7 +240,7 @@ function SandboxFuncional() {
                             className="btn-action-secondary"
                             onClick={() => navigate(`/criacao-livre/${encodeURIComponent(nomeOrgao || '')}/criar-funcional`)}
                         >
-                            <span className="btn-icon">✏️</span>
+                            <Icons name="edit" className="btn-icon-svg mr-2" />
                             Editar
                         </button>
                         <button
@@ -247,7 +248,7 @@ function SandboxFuncional() {
                             className="btn-action-danger"
                             onClick={handleDelete}
                         >
-                            <span className="btn-icon">🗑️</span>
+                            <Icons name="trash" className="btn-icon-svg mr-2" />
                             Excluir
                         </button>
                     </div>

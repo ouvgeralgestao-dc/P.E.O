@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
+import Icons from '../common/Icons';
 import './WizardForm.css';
 
 const WizardForm = ({
@@ -107,7 +108,7 @@ const WizardForm = ({
                     className={`wizard-progress-step ${index === currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}
                 >
                     <div className="wizard-progress-circle">
-                        {index < currentStep ? '✓' : index + 1}
+                        {index < currentStep ? <Icons name="check" size={14} /> : index + 1}
                     </div>
                     <div className="wizard-progress-label">{step.title}</div>
                 </div>
@@ -136,7 +137,7 @@ const WizardForm = ({
                                 variant="success"
                                 onClick={handleComplete}
                             >
-                                ✓ Finalizar
+                                <Icons name="check" className="mr-2" /> Finalizar
                             </Button>
                         )}
                     </div>
@@ -172,7 +173,7 @@ const WizardForm = ({
                             variant="secondary"
                             onClick={handlePrevious}
                         >
-                            ← Anterior
+                            <Icons name="arrow-left" className="mr-2" /> Anterior
                         </Button>
                     )}
                     {!isLastStep && (
@@ -180,7 +181,7 @@ const WizardForm = ({
                             variant="primary"
                             onClick={handleNext}
                         >
-                            Próximo →
+                            Próximo <Icons name="arrow-left" className="ml-2" style={{ transform: 'rotate(180deg)' }} />
                         </Button>
                     )}
                     {isLastStep && (
@@ -188,7 +189,7 @@ const WizardForm = ({
                             variant="success"
                             onClick={handleComplete}
                         >
-                            ✓ Finalizar
+                            <Icons name="check" className="mr-2" /> Finalizar
                         </Button>
                     )}
                 </div>

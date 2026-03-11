@@ -21,7 +21,7 @@ const Logo = ({ size = 'medium', variant = 'blue', className = '', showText = tr
     const pixelSize = sizeMap[size] || sizeMap.medium;
 
     // Seleciona a logo apropriada baseada na variante
-    const logoSrc = variant === 'white' ? '/logo-white.png' : '/logo-blue.png';
+    const logoSrc = variant === 'white' ? '/peo/logo-white.png' : '/peo/logo-blue.png';
     const altText = 'Planejador de Estrutura Organizacional - PMDC';
 
     return (

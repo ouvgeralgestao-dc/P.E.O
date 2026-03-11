@@ -5,11 +5,11 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 6002, // Porta fixa - Frontend conforme regra rules.mdc
+    port: 5001,
     strictPort: true, // Impede mudança automática de porta se estiver ocupada
     proxy: {
       "/api": {
-        target: "http://localhost:6001",
+        target: "http://localhost:5000",
         changeOrigin: true,
       },
     },
@@ -21,5 +21,5 @@ export default defineConfig({
     // em producao (instalador)
   },
   // Base absoluta para garantir carregamento correto de assets em rotas profundas
-  base: "/",
+  base: "/peo/",
 });

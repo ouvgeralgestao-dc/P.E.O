@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
 
         // Validar solicitações pendentes
         const existingReq = client.prepare("SELECT * FROM solicitacoes_cadastro WHERE (matricula = ? OR email = ? OR nome = ?) AND status = 'pendente'").get(matricula, email, nome);
-        
+
         let tokenId = uuidv4(); // Novo token por padrão
         let reqId = uuidv4();
 
@@ -30,17 +30,17 @@ router.post('/register', async (req, res) => {
                 tokenId = uuidv4(); // Gerar novo token para invalidar anterior
                 const salt = await bcrypt.genSalt(10);
                 const hashedPassword = await bcrypt.hash(senha, salt);
-                
+
                 client.prepare(`
                     UPDATE solicitacoes_cadastro 
                     SET nome = ?, matricula = ?, orgao_id = ?, email = ?, senha = ?, token = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 `).run(nome, matricula, orgao_id, email, hashedPassword, tokenId, existingReq.id);
-                
+
                 reqId = existingReq.id; // Manter ID original
                 console.log(`[Solicitacao] Atualizando solicitação existente para ${email}`);
             } else {
-                return res.status(409).json({ 
+                return res.status(409).json({
                     error: 'Já existe uma solicitação pendente para este usuário.',
                     code: 'PENDING_EXISTS'
                 });
@@ -57,19 +57,19 @@ router.post('/register', async (req, res) => {
             `);
             stmt.run(reqId, nome, matricula, orgao_id, email, hashedPassword, tokenId);
         }
-        
-        const token = tokenId; // Usar o token definido (novo ou atualizado)
-        
-        // Obter IP Local ou usar Configuração Fixa (Intranet)
-        const localIP = process.env.APP_HOST || getNetworkAddress();
-        
-        const frontendUrl = `http://${localIP}:6002`; // Porta correta do Vite no projeto
-        const backendUrl = `http://${localIP}:${process.env.PORT || 6001}`;
 
-        const linkPainel = `${frontendUrl}/admin/aprovar-cadastro/${token}`;
-        const linkAprovarRapido = `${backendUrl}/api/solicitacoes/quick-action?token=${token}&acao=aprovar`;
-        const linkRejeitarRapido = `${backendUrl}/api/solicitacoes/quick-action?token=${token}&acao=rejeitar`;
-        
+        const token = tokenId; // Usar o token definido (novo ou atualizado)
+
+        // Configuração de URLs Públicas (Gateway / Nginx)
+        const GATEWAY_URL = 'http://ogm.duquedecaxias.rj.gov.br';
+
+        // Link para o Painel (Frontend) - Passa pelo Nginx /peo/
+        const linkPainel = `${GATEWAY_URL}/peo/admin/aprovar-cadastro/${token}`;
+
+        // Links para API (Backend) - Passa pelo Nginx /peo/api/
+        const linkAprovarRapido = `${GATEWAY_URL}/peo/api/solicitacoes/quick-action?token=${token}&acao=aprovar`;
+        const linkRejeitarRapido = `${GATEWAY_URL}/peo/api/solicitacoes/quick-action?token=${token}&acao=rejeitar`;
+
         await emailService.sendEmail({
             to: 'ouvgeral.gestao@gmail.com',
             subject: 'Nova Solicitação de Cadastro - P.E.O',
@@ -89,8 +89,14 @@ router.post('/register', async (req, res) => {
                     <p style="font-size: 14px; color: #64748b;">(Clique para processar imediatamente)</p>
                     
                     <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                        <a href="${linkPainel}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">🔍 ANALISAR SOLICITAÇÃO</a>
-                        <a href="${linkRejeitarRapido}" style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">❌ REJEITAR</a>
+                        <a href="${linkPainel}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            ANALISAR SOLICITAÇÃO
+                        </a>
+                        <a href="${linkRejeitarRapido}" style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                            REJEITAR
+                        </a>
                     </div>
 
                     <p style="font-size: 13px; color: #94a3b8; margin-top: 20px;">
@@ -114,13 +120,22 @@ router.get('/quick-action', async (req, res) => {
         const { token, acao } = req.query;
 
         const request = client.prepare("SELECT * FROM solicitacoes_cadastro WHERE token = ?").get(token);
-        
+
         // Templates HTML de Resposta
         const htmlResponse = (title: string, msg: string, color: string) => `
             <html>
                 <body style="font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f1f5f9; margin: 0;">
                     <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); text-align: center; max-width: 400px;">
-                        <div style="font-size: 48px; margin-bottom: 20px;">${title}</div>
+                        <div style="margin-bottom: 20px;">
+                            ${title === 'CHECK' ?
+                `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>` :
+                title === 'X' ?
+                    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>` :
+                    title === 'INFO' ?
+                        `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>` :
+                        `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`
+            }
+                        </div>
                         <h2 style="color: ${color}; margin-bottom: 15px;">${msg}</h2>
                         <p style="color: #64748b;">Você pode fechar esta janela.</p>
                     </div>
@@ -129,16 +144,16 @@ router.get('/quick-action', async (req, res) => {
         `;
 
         if (!request) {
-            return res.send(htmlResponse('❓', 'Solicitação inválida ou expirada.', '#ef4444'));
+            return res.send(htmlResponse('QUESTION', 'Solicitação inválida ou expirada.', '#ef4444'));
         }
 
         if (request.status !== 'pendente') {
-            return res.send(htmlResponse('ℹ️', `Esta solicitação já foi ${request.status}.`, '#3b82f6'));
+            return res.send(htmlResponse('INFO', `Esta solicitação já foi ${request.status}.`, '#3b82f6'));
         }
 
         if (acao === 'rejeitar') {
             client.prepare("UPDATE solicitacoes_cadastro SET status = 'rejeitado' WHERE id = ?").run(request.id);
-            return res.send(htmlResponse('🚫', 'Solicitação REJEITADA com sucesso.', '#ef4444'));
+            return res.send(htmlResponse('X', 'Solicitação REJEITADA com sucesso.', '#ef4444'));
         }
 
         if (acao === 'aprovar') {
@@ -156,7 +171,7 @@ router.get('/quick-action', async (req, res) => {
             );
 
             client.prepare("UPDATE solicitacoes_cadastro SET status = 'aprovado' WHERE id = ?").run(request.id);
-            
+
             return res.send(htmlResponse('✅', 'Solicitação APROVADA com sucesso!', '#10b981'));
         }
 
@@ -214,7 +229,7 @@ router.post('/approve', async (req, res) => {
                 INSERT INTO usuarios (matricula, email, senha, nome, orgao_id, tipo, setor, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             `);
-            
+
             insertUser.run(
                 request.matricula,
                 request.email,

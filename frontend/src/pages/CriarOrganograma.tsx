@@ -213,7 +213,7 @@ function CriarOrganograma() {
     // Renderizar seleção de tipo
     if (!tipoOrganograma) {
         return (
-            <div className="criar-organograma">
+            <div className="criar-organograma textured-bg">
                 <div className="container">
                     <h2 className="page-title-main">Criar Novo Organograma</h2>
                     <p className="page-description">

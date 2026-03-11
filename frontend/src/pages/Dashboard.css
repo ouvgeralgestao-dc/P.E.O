@@ -1,7 +1,6 @@
 /* Dashboard Styles */
 .dashboard {
     min-height: 100vh;
-    background-color: #f8fafc;
     padding-top: 20px;
 }
 
@@ -131,6 +130,20 @@
     color: #8b5cf6;
 }
 
+.stat-indigo .stat-icon {
+    background-color: #eef2ff;
+    color: #4f46e5;
+}
+
+.stat-info .stat-icon {
+    background-color: #f0f9ff;
+    color: #0284c7;
+}
+
+.stat-icon svg {
+    stroke-width: 1.5px;
+}
+
 .stat-content {
     flex: 1;
     min-width: 0;
@@ -234,9 +247,28 @@
 .orgao-stats {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    font-size: 13px;
-    color: #64748b;
+    gap: 8px;
+    font-size: 14px;
+    color: #475569;
+    margin-top: 8px;
+}
+
+.orgao-stats span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mr-1 {
+    margin-right: 4px;
+}
+
+.mr-2 {
+    margin-right: 8px;
+}
+
+.ml-2 {
+    margin-left: 8px;
 }
 
 .orgao-card-actions {

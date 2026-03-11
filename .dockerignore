@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archives and old files
+archive/
+*/archive/
+docs/archive/
+docs/planning/
+docs/cleanup/
+
+# Desktop installer (not needed for web deploy)
+P.E.O-Install/
+
+# Temporary files
+*.log
+*.tmp
+*.sqlite-wal
+*.sqlite-shm
+*.bak
+temp/
+tmp/
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional - uncomment to exclude)
+# *.md
+# !README.md
+# !QUICK_START.md
+
+# Test files
+coverage/
+.nyc_output/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

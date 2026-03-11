@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { logger } from '../../utils/logger';
 import { authService } from '../../services/authService';
 import api from '../../services/api';
+import Icons from '../common/Icons';
 import Logo from '../common/Logo';
 import './Sidebar.css';
 
@@ -140,23 +141,17 @@ function Sidebar() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
-            {/* Header da Sidebar com Logo */}
+            {/* Header da Sidebar com Toggle e Logo */}
             <div className="sidebar-header">
-                {/* Botão de Pin (Esquerda) */}
                 <button
-                    className={`pin-button ${isPinned ? 'pinned' : ''}`}
+                    className="hamburger-button"
                     onClick={togglePin}
                     title={isPinned ? 'Desafixar menu' : 'Fixar menu aberto'}
                 >
-                    📌
+                    <Icons name="menu" />
                 </button>
 
                 <Link to="/" className="sidebar-brand">
-                    <Logo
-                        size={shouldShowExpanded ? "large" : "small"}
-                        variant="white"
-                        showText={false}
-                    />
                     {shouldShowExpanded && (
                         <div className="app-badge">P.E.O</div>
                     )}
@@ -176,7 +171,7 @@ function Sidebar() {
                         </div>
                         <div className="user-sector">{user.setor || 'Setor não definido'}</div>
                         <div className={`user-type ${user.tipo}`}>
-                            {user.tipo === 'admin' ? '👑 Administrador' : '👤 Usuário'}
+                            {user.tipo === 'admin' ? 'Administrador' : 'Usuário'}
                         </div>
                     </div>
                 </div>
@@ -185,19 +180,19 @@ function Sidebar() {
             {/* Navegação */}
             <nav className="sidebar-nav">
                 <Link to="/" className="sidebar-link">
-                    <span className="sidebar-icon">🏠</span>
+                    <Icons name="home" className="sidebar-icon-svg" />
                     {shouldShowExpanded && <span className="sidebar-text">Home</span>}
                 </Link>
 
                 {/* Criar Organograma Institucional - Verifica permissão */}
                 {hasPermission('criar_institucional') ? (
                     <Link to="/criar" className="sidebar-link">
-                        <span className="sidebar-icon">➕</span>
+                        <Icons name="plus" className="sidebar-icon-svg" />
                         {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
                     </Link>
                 ) : (
                     <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
-                        <span className="sidebar-icon">🔒</span>
+                        <Icons name="plus" className="sidebar-icon-svg opacity-50" />
                         {shouldShowExpanded && <span className="sidebar-text">Criar Organograma Institucional</span>}
                     </div>
                 )}
@@ -205,12 +200,12 @@ function Sidebar() {
                 {/* Criação Livre (Sandbox) - Verifica permissão */}
                 {hasPermission('criacao_livre') ? (
                     <Link to="/criacao-livre" className="sidebar-link">
-                        <span className="sidebar-icon">🎨</span>
+                        <Icons name="palette" className="sidebar-icon-svg" />
                         {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
                     </Link>
                 ) : (
                     <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
-                        <span className="sidebar-icon">🔒</span>
+                        <Icons name="palette" className="sidebar-icon-svg opacity-50" />
                         {shouldShowExpanded && <span className="sidebar-text">Criação Livre de Organograma</span>}
                     </div>
                 )}
@@ -218,12 +213,12 @@ function Sidebar() {
                 {/* Organograma Geral Estrutural */}
                 {hasPermission('geral_estrutural') ? (
                     <Link to="/geral" className="sidebar-link">
-                        <span className="sidebar-icon">🏛️</span>
+                        <Icons name="chart" className="sidebar-icon-svg" />
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Estrutural</span>}
                     </Link>
                 ) : (
                     <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
-                        <span className="sidebar-icon">🔒</span>
+                        <Icons name="chart" className="sidebar-icon-svg opacity-50" />
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Estrutural</span>}
                     </div>
                 )}
@@ -231,12 +226,12 @@ function Sidebar() {
                 {/* Organograma Geral Funcional */}
                 {hasPermission('geral_funcional') ? (
                     <Link to="/geral-funcional" className="sidebar-link">
-                        <span className="sidebar-icon">📋</span>
+                        <Icons name="printer" className="sidebar-icon-svg" />
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Funcional</span>}
                     </Link>
                 ) : (
                     <div className="sidebar-link disabled-link" title="Você não possui permissão para acessar este módulo">
-                        <span className="sidebar-icon">🔒</span>
+                        <Icons name="printer" className="sidebar-icon-svg opacity-50" />
                         {shouldShowExpanded && <span className="sidebar-text">Organograma Geral Funcional</span>}
                     </div>
                 )}
@@ -247,14 +242,14 @@ function Sidebar() {
                 {/* Botão de Configurações */}
                 {hasPermission('configuracoes') && (
                     <a href="#" onClick={handleConfiguracoesClick} className="sidebar-link config-link">
-                        <span className="sidebar-icon">⚙️</span>
+                        <Icons name="settings" className="sidebar-icon-svg" />
                         {shouldShowExpanded && <span className="sidebar-text">Configurações</span>}
                     </a>
                 )}
 
                 {/* Botão de Logout */}
                 <button onClick={handleLogout} className="sidebar-link logout-link">
-                    <span className="sidebar-icon">🚪</span>
+                    <Icons name="log-out" className="sidebar-icon-svg" />
                     {shouldShowExpanded && <span className="sidebar-text">Sair</span>}
                 </button>
             </nav>
@@ -262,7 +257,7 @@ function Sidebar() {
             {/* Logo da Prefeitura - Centro da Sidebar */}
             {shouldShowExpanded && (
                 <div className="sidebar-city-logo">
-                    <img src="/dc-logo.png" alt="Prefeitura de Duque de Caxias" className="city-logo" />
+                    <img src="/peo/dc-logo.png" alt="Prefeitura de Duque de Caxias" className="city-logo" />
                 </div>
             )}
 
@@ -272,7 +267,7 @@ function Sidebar() {
                     <h2 className="footer-title">Planejador de Estrutura Organizacional</h2>
                     <p className="footer-subtitle">Prefeitura Municipal de Duque de Caxias</p>
                     <div className="footer-indicator">
-                        <span className="indicator-icon">{isPinned ? '📌' : '🖱️'}</span>
+                        <Icons name="info" className="indicator-icon" size={14} />
                         <span className="indicator-text">{isPinned ? 'Fixado' : 'Desafixado'}</span>
                     </div>
                 </div>

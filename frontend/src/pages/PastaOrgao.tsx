@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '../components/common/Card';
+import Icons from '../components/common/Icons';
 import Button from '../components/common/Button';
 import { logger } from '../utils/logger';
 import api from '../services/api';
@@ -52,8 +53,10 @@ function PastaOrgao() {
         <div className="pasta-orgao">
             <div className="container">
                 <div className="header-section">
-                    <Button variant="outline" onClick={() => navigate('/')}>← Voltar</Button>
-                    <h1>📂 {orgaoData?.orgao}</h1>
+                    <Button variant="outline" onClick={() => navigate('/')}><Icons name="arrow-left" className="mr-2" /> Voltar</Button>
+                    <h1 style={{ display: 'flex', alignItems: 'center' }}>
+                        <Icons name="folder" size={32} className="mr-3" /> {orgaoData?.orgao}
+                    </h1>
                     <p className="subtitle">Gerencie os organogramas deste órgão</p>
                 </div>
 
@@ -65,7 +68,9 @@ function PastaOrgao() {
                             className="item-card"
                             onClick={handleOpenEstrutura}
                         >
-                            <div className="icon">🏢</div>
+                            <div className="icon" style={{ color: '#2563eb' }}>
+                                <Icons name="folder" size={48} />
+                            </div>
                             <h3>Estrutura Organizacional</h3>
                             <p>Organograma hierárquico principal</p>
                             <div className="meta">
@@ -76,14 +81,16 @@ function PastaOrgao() {
                     )}
 
                     {/* Organogramas de Funções */}
-                    {orgaoData?.organogramasFuncoes?.map((func, idx) => (
+                    {orgaoData?.organogramasFuncoes?.map((func: any, idx: number) => (
                         <Card
                             key={func.id || idx}
                             hoverable
                             className="item-card"
                             onClick={() => handleOpenFuncoes(func.id)}
                         >
-                            <div className="icon">👥</div>
+                            <div className="icon" style={{ color: '#ec4899' }}>
+                                <Icons name="user" size={48} />
+                            </div>
                             <h3>Funções e Cargos</h3>
                             <p>Detalhamento de cargos e funções</p>
                             <div className="meta">
@@ -100,13 +107,15 @@ function PastaOrgao() {
                             className="item-card add-card functional-add-card"
                             onClick={() => navigate(`/criar?tipo=funcoes&orgao=${encodeURIComponent(nomeOrgao)}`)}
                         >
-                            <div className="icon">👥</div>
+                            <div className="icon">
+                                <Icons name="plus" size={48} />
+                            </div>
                             <h3>CRIAR ORGANOGRAMA FUNCIONAL</h3>
                             <p>Clique para detalhar cargos e funções</p>
                         </Card>
                     )}
                 </div>
-            </div>
+            </div >
             <style>{`
                 .pasta-orgao { padding: 2rem 0; min-height: 100vh; background: #f8fafc; }
                 .header-section { margin-bottom: 2rem; }
@@ -134,7 +143,7 @@ function PastaOrgao() {
                 }
                 .functional-add-card h3 { color: #059669; font-weight: 800; font-size: 1.1rem; }
             `}</style>
-        </div>
+        </div >
     );
 }
 

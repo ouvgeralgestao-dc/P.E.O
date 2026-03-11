@@ -3,8 +3,6 @@
 .organograma-geral {
     min-height: calc(100vh - 80px);
     padding: 24px 0;
-    background: #f1f5f9;
-    /* Mantendo consistência com visualizar */
 }
 
 .organograma-geral .container {

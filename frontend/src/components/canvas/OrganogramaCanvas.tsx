@@ -21,6 +21,7 @@ import SetorNode from './SetorNode';
 import CustomEdge from './CustomEdge';
 import { HIERARCHY_COLORS } from '../../constants/hierarchyLevels';
 import { applyAutoLayout } from '../../utils/layoutHelpers';
+import Icons from '../common/Icons';
 import './OrganogramaCanvas.css';
 
 const nodeTypes = {
@@ -1020,30 +1021,9 @@ const OrganogramaCanvasInner = ({
             console.log('[Reset] Usando estado atual dos nós para preservar edições:', nodes.length);
 
             itemsToLayout = nodes.map(node => ({
+                ...node.data, // [ROBUST FIX] Preservar TODO o objeto data (nomes, cargos, refs, etc.)
                 id: node.id,
-                parentId: node.data.parentId,
-                // Mapear campos de dados essenciais
-                nomeSetor: node.data.nomeSetor,
-                tipoSetor: node.data.tipoSetor,
-                nomeCargo: node.data.nomeCargo,
-                ocupante: node.data.ocupante,
-                simbolos: node.data.simbolos,
-                simbolo: node.data.simbolo,
-                quantidade: node.data.quantidade,
-
-                // CRÍTICO: Preservar referências de setor que o usuário acabou de adicionar
-                setorRef: node.data.setorRef,
-                nomeSetorRef: node.data.nomeSetorRef,
-                isOperacional: node.data.isOperacional,
-
-                // Hierarquia
-                hierarquia: node.data.hierarquia,
-
-                // Flags de Controle
-                isAssessoria: node.data.isAssessoria,
-                _isNested: node.data._isNested,
-
-                // Resetar Posição e Estilo para o Layout Automático
+                // Resetar apenas o que deve ser recalculado
                 position: { x: 0, y: 0 },
                 style: {},
                 customStyle: {}
@@ -1054,7 +1034,13 @@ const OrganogramaCanvasInner = ({
             const flattenHelper = (items, result = []) => {
                 items.forEach(item => {
                     const { children, ...rest } = item;
-                    result.push({ ...rest, position: { x: 0, y: 0 }, style: {}, customStyle: {} });
+                    result.push({
+                        ...rest,
+                        position: { x: 0, y: 0 },
+                        style: {},
+                        customStyle: {},
+                        editable: editable
+                    });
                     if (children && children.length) flattenHelper(children, result);
                 });
                 return result;
@@ -1064,7 +1050,13 @@ const OrganogramaCanvasInner = ({
             const flattenHelper = (items, result = []) => {
                 items.forEach(item => {
                     const { children, ...rest } = item;
-                    result.push({ ...rest, position: { x: 0, y: 0 }, style: {}, customStyle: {} });
+                    result.push({
+                        ...rest,
+                        position: { x: 0, y: 0 },
+                        style: {},
+                        customStyle: {},
+                        editable: editable
+                    });
                     if (children && children.length) flattenHelper(children, result);
                 });
                 return result;
@@ -1120,7 +1112,7 @@ const OrganogramaCanvasInner = ({
         itemsLayouted.forEach(item => itemMap.set(item.id, item));
 
         // 4. Converter para Nodes do React Flow (idêntico ao mapeamento inicial)
-        const newNodes = itemsLayouted.map(item => {
+        const newNodes = itemsLayouted.map((item: any) => {
             // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual) - Reset Layout
             // [FORCE FIX VISUAL REPLICADO] Superintendência/Diretoria/Subsecretaria NUNCA é assessoria lateral
             const nomeLower = (item.nomeSetor || item.nomeCargo || '').toLowerCase();
@@ -1131,7 +1123,13 @@ const OrganogramaCanvasInner = ({
                 nomeLower.includes('gerencia') ||
                 nomeLower.includes('coordena');
 
-            const isAssessoriaNode = !isChefiaForcada && item.isAssessoria;
+            const isAssessoriaNode = !isChefiaForcada && (
+                item.isAssessoria ||
+                (typeof item.hierarquia === 'string' ? parseFloat(item.hierarquia) : item.hierarquia) === 0 ||
+                nomeLower.includes('assessoria') ||
+                (item.tipoSetor || '').toLowerCase().includes('assessoria') ||
+                nomeLower.includes('assessor')
+            );
 
             // Helper para detectar lado (Left/Right) - Baseado no _side que vem do layoutHelpers
             const isLeftAssessoria = item._side === 'left' ||
@@ -1166,33 +1164,17 @@ const OrganogramaCanvasInner = ({
                 type: 'setorNode',
                 position: item.position || { x: 0, y: 0 },
                 data: {
+                    ...item, // [ROBUST FIX] Preservar todos os campos originais (nomeSetor, nomeCargo, ocupante, cargos, etc.)
                     id: item.id,
-                    nomeSetor: item.nomeSetor,
-                    tipoSetor: item.tipoSetor,
-                    nomeCargo: item.nomeCargo,
-                    ocupante: item.ocupante,
-                    simbolos: item.simbolos,
-                    simbolo: item.simbolo, // Para funcional agrupado
-                    quantidade: item.quantidade,
-                    setorRef: item.setorRef,             // [FIX] Mapear referência de setor
-                    nomeSetorRef: item.nomeSetorRef,     // [FIX] Mapear nome do setor
-                    isOperacional: item.isOperacional || item.data?.isOperacional || 0, // [FIX] Mapear flag operacional
                     hierarquia: isAssessoriaNode ? 0 : (item.hierarquia || 0),
                     isAssessoria: isAssessoriaNode,
-                    cargos: item.cargos,
                     style: {},
                     customStyle: {},
                     onStyleChange: onStyleChange,
-                    handleY: (() => {
-                        // CRÍTICO: handleY DEVE ser EXATAMENTE height / 2
-                        const h = isAssessoriaNode ? 0 : parseInt(item.hierarquia || 0);
-
-                        if (h === 1 || item.tipoSetor === 'Prefeito') return 55;
-                        if (h === 2) return 50;
-                        if (h === 3) return 45;
-                        return 40;
-                    })(),
-                    parentId: item.parentId
+                    onEditClick: onEditClick,
+                    handleY: 45,
+                    editable: item.editable ?? editable,
+                    _isNested: item._isNested
                 },
                 sourcePosition: sourcePos,
                 targetPosition: targetPos,
@@ -1208,7 +1190,7 @@ const OrganogramaCanvasInner = ({
         // Antes estávamos mantendo initialEdges. Isso estava errado para mudanças de tipo.
         // Vamos recriar edges baseado nos itemsLayouted
         const newEdges = [];
-        itemsLayouted.forEach(item => {
+        itemsLayouted.forEach((item: any) => {
             if (item.parentId) {
                 // Copiar lógica de Edge - Detecção robusta de assessoria
                 const hirarqNum = typeof item.hierarquia === 'string' ? parseFloat(item.hierarquia) : (item.hierarquia || 0);
@@ -1291,35 +1273,13 @@ const OrganogramaCanvasInner = ({
         // 6. Salvar layout limpo
         setTimeout(() => {
             if (onSavePositions) {
-                const resetDataItems = newNodes.map(node => {
-                    const base = {
-                        id: node.id,
-                        position: node.position,
-                        customStyle: {},
-                        hierarquia: node.data.hierarquia,
-                        isAssessoria: node.data.isAssessoria,
-                        parentId: node.data.parentId // CRÍTICO: Preservar hierarquia no reset
-                    };
-                    if (node.data.nomeSetor) {
-                        return {
-                            ...base,
-                            nomeSetor: node.data.nomeSetor,
-                            tipoSetor: node.data.tipoSetor,
-                            cargos: node.data.cargos || []
-                        };
-                    }
-                    return {
-                        ...base,
-                        nomeCargo: node.data.nomeCargo,
-                        ocupante: node.data.ocupante,
-                        simbolos: node.data.simbolos || [],
-                        simbolo: node.data.simbolo,
-                        quantidade: node.data.quantidade,
-                        setorRef: node.data.setorRef,         // [FIX] Preservar referência de setor
-                        nomeSetorRef: node.data.nomeSetorRef, // [FIX] Preservar nome do setor
-                        isOperacional: node.data.isOperacional // [FIX] Preservar flag operacional
-                    };
-                });
+                const resetDataItems = newNodes.map(node => ({
+                    ...node.data, // [ROBUST FIX] Preservar TUDO para o banco de dados
+                    id: node.id,
+                    position: node.position,
+                    customStyle: {}, // Resetar estilo para padrão
+                    style: {}        // Resetar estilo para padrão
+                }));
                 console.log('[Reset] Salvando layout padrão recalculado');
                 onSavePositions(resetDataItems);
             }
@@ -1373,11 +1333,11 @@ const OrganogramaCanvasInner = ({
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                         }}
                     >
-                        🔄 Resetar Layout
+                        <Icons name="refresh" className="mr-2" /> Resetar Layout
                     </button>
                     {/* Caixa de Instrução Discreta */}
                     <div className="reset-instruction-box">
-                        <span className="info-icon">💡</span>
+                        <Icons name="info" className="info-icon" />
                         <p>Segure "Shift + Clique e Arraste" para mover vários nós.</p>
                     </div>
                 </div>

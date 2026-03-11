@@ -18,9 +18,15 @@ import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 6001; // Porta configurável
+const HOST = process.env.HOST || 'localhost'; // Permitir configurar host
 
 // Middlewares
-app.use(cors());
+// CORS configurado para aceitar requisições do Nginx
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*', // Em produção, definir domínio específico
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -65,9 +71,12 @@ if (frontendPath) {
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler);
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+// Iniciar servidor blindado para o Nginx (127.0.0.1)
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`🚀 Servidor rodando selado na porta ${PORT} (127.0.0.1)`);
   console.log(`📊 Ambiente: ${process.env.NODE_ENV || "development"}`);
   console.log(`💾 Armazenamento: SQLite (Migrado + TypeScript 2.0)`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`🌐 Acessível via Nginx proxy em: http://ogm.duquedecaxias.rj.gov.br/peo/api`);
+  }
 });
