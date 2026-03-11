@@ -145,10 +145,11 @@ export const validateNome = (nome) => {
 export const validateSetor = (setor) => {
     const errors = {};
 
-    // Validar nome
-    const nomeValidation = validateNome(setor.nomeSetor);
-    if (!nomeValidation.valid) {
-        errors.nomeSetor = nomeValidation.message;
+    // Validar nome (agora opcional)
+    if (setor.nomeSetor && setor.nomeSetor.trim().length > 0) {
+        if (setor.nomeSetor.trim().length < 3) {
+            errors.nomeSetor = 'Se preenchido, o nome deve ter no mínimo 3 caracteres';
+        }
     }
 
     // Validar hierarquia

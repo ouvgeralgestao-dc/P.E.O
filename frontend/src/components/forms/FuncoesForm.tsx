@@ -311,7 +311,7 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         }
 
         const nomeCompleto = currentCargo.prefixo && currentCargo.complementoNome
-            ? `${currentCargo.prefixo} de ${currentCargo.complementoNome}`
+            ? `${currentCargo.prefixo} ${currentCargo.complementoNome}`
             : currentCargo.prefixo || currentCargo.complementoNome || '';
 
         // Validação final de hierarquia
@@ -376,7 +376,11 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
         for (const p of prefixosList) {
             if (cargo.nomeCargo.startsWith(p + ' de ')) {
                 prefixoEncontrado = p;
-                complementoEncontrado = cargo.nomeCargo.replace(p + ' de ', '');
+                complementoEncontrado = cargo.nomeCargo.substring((p + ' de ').length);
+                break;
+            } else if (cargo.nomeCargo.startsWith(p + ' ')) {
+                prefixoEncontrado = p;
+                complementoEncontrado = cargo.nomeCargo.substring((p + ' ').length);
                 break;
             } else if (cargo.nomeCargo === p) {
                 prefixoEncontrado = p;
@@ -428,20 +432,22 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
 
     return (
         <div className="funcoes-form">
-            <Card title="Configurações Gerais" className="mb-24">
-                <div className="form-row">
-                    <Select
-                        label="Nome do Órgão"
-                        value={nomeOrgao}
-                        onChange={handleNomeOrgaoChange}
-                        options={orgaosOptions}
-                        placeholder="Selecione o órgão"
-                        required
-                        disabled={orgaoTravado || disableOrgaoSelection}
-                        error={errors.nomeOrgao}
-                    />
-                </div>
-            </Card>
+            {!disableOrgaoSelection && (
+                <Card title="Configurações Gerais" className="mb-24">
+                    <div className="form-row">
+                        <Select
+                            label="Nome do Órgão"
+                            value={nomeOrgao}
+                            onChange={handleNomeOrgaoChange}
+                            options={orgaosOptions}
+                            placeholder="Selecione o órgão"
+                            required
+                            disabled={orgaoTravado}
+                            error={errors.nomeOrgao}
+                        />
+                    </div>
+                </Card>
+            )}
 
             <Card title="Adicionar Cargo/Função" className="mb-24">
                 {currentCargo.isEditing && (
@@ -463,11 +469,10 @@ const FuncoesForm = ({ data, updateData, errors, disableOrgaoSelection = false, 
                     </div>
                     <div className="grid-item-complemento">
                         <Input
-                            label="Complemento do Nome"
+                            label="Complemento do Nome (Opcional)"
                             value={currentCargo.complementoNome}
                             onChange={(e: any) => handleCargoFieldChange('complementoNome', e.target.value)}
-                            placeholder="Ex: de Governo"
-                            required
+                            placeholder="Ex: Prefeito, Governo..."
                         />
                     </div>
                     <div className="grid-item-ocupante">

@@ -225,10 +225,10 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
             }
         }
 
-        // Para Subprefeituras, usar nome direto. Para outros, concatenar
+        // Concatenar tipo de setor com nome opcional
         const nomeCompleto = hierarquia === 0.5
-            ? `${currentSetor.tipoSetor} - ${currentSetor.nomeSetor}` // Subprefeitura - 1º Distrito
-            : `${currentSetor.tipoSetor} de ${currentSetor.nomeSetor}`; // Secretaria de Governo
+            ? `${currentSetor.tipoSetor}${currentSetor.nomeSetor ? ` - ${currentSetor.nomeSetor}` : ''}`
+            : `${currentSetor.tipoSetor}${currentSetor.nomeSetor ? ` ${currentSetor.nomeSetor}` : ''}`;
 
         if (currentSetor.isEditing) {
             // Atualizar setor existente
@@ -292,10 +292,20 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
         const tiposPossiveis = SETOR_TYPES[hierarquia] || [];
 
         for (const tipo of tiposPossiveis) {
-            const separator = hierarquia === 0.5 ? ' - ' : ' de ';
-            if (setor.nomeSetor.startsWith(tipo + separator)) {
+            const separatorLegacy = hierarquia === 0.5 ? ' - ' : ' de ';
+            const separatorNew = hierarquia === 0.5 ? ' - ' : ' ';
+
+            if (setor.nomeSetor.startsWith(tipo + separatorLegacy)) {
                 tipoEncontrado = tipo;
-                nomeLimpo = setor.nomeSetor.replace(tipo + separator, '');
+                nomeLimpo = setor.nomeSetor.substring((tipo + separatorLegacy).length);
+                break;
+            } else if (setor.nomeSetor.startsWith(tipo + separatorNew)) {
+                tipoEncontrado = tipo;
+                nomeLimpo = setor.nomeSetor.substring((tipo + separatorNew).length);
+                break;
+            } else if (setor.nomeSetor === tipo) {
+                tipoEncontrado = tipo;
+                nomeLimpo = '';
                 break;
             }
         }
@@ -435,22 +445,24 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
 
     return (
         <div className="estrutura-form">
-            {/* Configurações Gerais */}
-            <Card title="Configurações Gerais" className="mb-24">
-                <div className="form-row">
-                    <Select
-                        label="Nome do Órgão"
-                        value={getOrgaoById(nomeOrgao)?.nome || nomeOrgao} // Resolve nome se for ID antigo
-                        onChange={handleNomeOrgaoChange}
-                        options={orgaosOptions}
-                        placeholder="Selecione o órgão"
-                        required
-                        disabled={orgaoTravado || disableOrgaoSelection}
-                        error={errors.nomeOrgao}
-                        helperText={disableOrgaoSelection ? "Órgão fixado pelo modo Sandbox" : (orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : "")}
-                    />
-                </div>
-            </Card>
+            {/* Configurações Gerais - Oculto no Sandbox */}
+            {!disableOrgaoSelection && (
+                <Card title="Configurações Gerais" className="mb-24">
+                    <div className="form-row">
+                        <Select
+                            label="Nome do Órgão"
+                            value={getOrgaoById(nomeOrgao)?.nome || nomeOrgao} // Resolve nome se for ID antigo
+                            onChange={handleNomeOrgaoChange}
+                            options={orgaosOptions}
+                            placeholder="Selecione o órgão"
+                            required
+                            disabled={orgaoTravado}
+                            error={errors.nomeOrgao}
+                            helperText={orgaoTravado ? "Órgão travado após adicionar primeiro setor raiz" : ""}
+                        />
+                    </div>
+                </Card>
+            )}
 
             {/* Adicionar Setor */}
             <Card title="Adicionar Setor" className="mb-24">
@@ -468,6 +480,7 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                         ⚠️ EDIÇÃO EM ANDAMENTO: Clique em "CONFIRMAR ALTERAÇÃO" abaixo para efetivar a mudança!
                     </div>
                 )}
+
                 {/* Opções de Perfil do Setor (Assessoria / Operacional) */}
                 {temRaiz && (
                     <div className="checkbox-row-container">
@@ -501,22 +514,7 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                     </div>
                 )}
 
-                <div className="form-row">
-                    <Select
-                        label="Tipo de Setor"
-                        value={currentSetor.tipoSetor}
-                        onChange={(e) => handleSetorFieldChange('tipoSetor', e.target.value)}
-                        options={getTiposSetorOptions()}
-                        required
-                        placeholder="Selecione o tipo"
-                        disabled={!currentSetor.hierarquia} // Hierarquia é calculada automaticamente
-                    />
-                </div>
 
-                {/* Visualização do Nível Automático (Read-Only) */}
-                <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
-                    Nível Hierárquico Automático: <strong>{currentSetor.hierarquia ? (HIERARCHY_LABELS[currentSetor.hierarquia] || currentSetor.hierarquia) : 'Aguardando seleção...'}</strong>
-                </div>
 
                 {/* Seleção de Setor Pai - Obrigatório se já existe raiz */}
                 {temRaiz && setores.length > 0 && (
@@ -567,26 +565,39 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
                         required
                     />
                 )}
+                {/* Visualização do Nível Automático (Read-Only) */}
+                <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
+                    Nível Hierárquico Automático: <strong>{currentSetor.hierarquia ? (HIERARCHY_LABELS[currentSetor.hierarquia] || currentSetor.hierarquia) : 'Aguardando seleção...'}</strong>
+                </div>
+                <div className="form-row">
+                    <Select
+                        label="Tipo de Setor"
+                        value={currentSetor.tipoSetor}
+                        onChange={(e) => handleSetorFieldChange('tipoSetor', e.target.value)}
+                        options={getTiposSetorOptions()}
+                        required
+                        placeholder="Selecione o tipo"
+                        disabled={!currentSetor.hierarquia} // Hierarquia é calculada automaticamente
+                    />
+                </div>
 
                 {/* Nome do Setor - Input ou Select dependendo se é Subprefeito */}
                 {isSubprefeito ? (
                     <Select
-                        label="Nome do Setor"
+                        label="Nome do Setor (Opcional)"
                         value={currentSetor.nomeSetor}
                         onChange={(e) => handleSetorFieldChange('nomeSetor', e.target.value)}
                         options={subprefeituraOptions}
-                        placeholder="Selecione o distrito"
-                        required
+                        placeholder="Selecione o distrito (opcional)"
                         helperText="Subprefeituras: selecione o distrito"
                     />
                 ) : (
                     <Input
-                        label="Nome do Setor"
+                        label="Nome do Setor (Opcional)"
                         value={currentSetor.nomeSetor}
                         onChange={(e) => handleSetorFieldChange('nomeSetor', e.target.value)}
-                        placeholder="Ex: Governo, Educação, Saúde..."
-                        required
-                        helperText="Digite apenas o nome complementar. Ex: 'Governo' resultará em 'Secretaria de Governo'"
+                        placeholder="Ex: Prefeito, Educação, Saúde..."
+                        helperText="Opcional. Digite apenas o nome complementar. Ex: 'Prefeito' resultará em 'Gabinete Prefeito'"
                     />
                 )}
 
