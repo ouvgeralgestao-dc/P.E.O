@@ -9,7 +9,6 @@ import ConsolidatedTableCard from '../components/common/ConsolidatedTableCard';
 import Button from '../components/common/Button';
 import BackButton from '../components/common/BackButton';
 import Icons from '../components/common/Icons';
-import ViewSelectionModal from '../components/common/ViewSelectionModal';
 import { DESCRICOES_DAS } from '../constants/cargosDAS';
 import './Dashboard.css';
 
@@ -40,9 +39,6 @@ const Dashboard = () => {
     const [selectedSetores, setSelectedSetores] = useState<string[]>([]);
     const [selectedSimbolos, setSelectedSimbolos] = useState<string[]>([]);
     const [selectedPrefixos, setSelectedPrefixos] = useState<string[]>([]);
-
-    // Modal de Visualização
-    const [viewSelectionOrg, setViewSelectionOrg] = useState<Organograma | null>(null);
 
     // Funções de utilidade movidas para fora ou estabilizadas
     const formatOrgaoName = useCallback((name: string) => {
@@ -738,27 +734,22 @@ const Dashboard = () => {
         const hasEstrutural = !!org.organogramaEstrutural;
         const hasFuncional = !!(org.organogramasFuncoes && org.organogramasFuncoes.length > 0);
 
+        // Se tiver os dois, abre a "Pasta do Órgão" para escolha (Tela Nova)
+        if (hasEstrutural && hasFuncional) {
+            navigate(`/orgao/${encodeURIComponent(org.orgao)}`);
+            return;
+        }
+
         // Se tiver apenas UM tipo, navega direto
-        if (hasEstrutural && !hasFuncional) {
+        if (hasEstrutural) {
             navigate(`/visualizar/${encodeURIComponent(org.orgao)}?tipo=estrutura`);
-        } else if (!hasEstrutural && hasFuncional) {
+        } else if (hasFuncional) {
             navigate(`/visualizar/${encodeURIComponent(org.orgao)}?tipo=funcoes`);
-        } else if (hasEstrutural && hasFuncional) {
-            // Se tiver os dois, abre o modal de escolha
-            setViewSelectionOrg(org);
         } else {
             logger.warn('Dashboard', 'Órgão sem visualizações disponíveis', { orgao: org.orgao });
             alert('Nenhuma visualização disponível para este órgão.');
         }
     }, [navigate]);
-
-    const handleViewSelection = useCallback((tipo: string) => {
-        if (!viewSelectionOrg) return;
-        const path = tipo === 'estrutura'
-            ? `/visualizar/${encodeURIComponent(viewSelectionOrg.orgao)}?tipo=estrutura`
-            : `/visualizar/${encodeURIComponent(viewSelectionOrg.orgao)}?tipo=funcoes`;
-        navigate(path);
-    }, [viewSelectionOrg, navigate]);
 
     if (loading) return <div className="loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '1.2rem', color: '#64748b' }}>Carregando Dashboard...</div>;
     if (error) return <div className="error-container" style={{ padding: '40px', textAlign: 'center', color: '#ef4444' }}>{error}</div>;
@@ -871,18 +862,6 @@ const Dashboard = () => {
                     />
                 </div>
             </div>
-
-            <ViewSelectionModal
-                isOpen={!!viewSelectionOrg}
-                onClose={() => setViewSelectionOrg(null)}
-                // @ts-ignore
-                onSelect={handleViewSelection}
-                orgaoName={formatOrgaoName(viewSelectionOrg?.orgao || '')}
-                // @ts-ignore
-                hasEstrutural={!!viewSelectionOrg?.organogramaEstrutural}
-                // @ts-ignore
-                hasFuncional={!!(viewSelectionOrg?.organogramasFuncoes && viewSelectionOrg.organogramasFuncoes.length > 0)}
-            />
         </div>
     );
 };
