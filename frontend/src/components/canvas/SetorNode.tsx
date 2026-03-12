@@ -18,6 +18,8 @@ const SetorNode = ({ data, selected }) => {
         tipoSetor,
         hierarquia,
         isAssessoria,
+        isOperacional,
+        is_operacional,
         cargos,
         simbolos,
         ocupante,
@@ -44,6 +46,7 @@ const SetorNode = ({ data, selected }) => {
     const hirarqNum = typeof hierarquia === 'string' ? parseFloat(hierarquia) : (hierarquia || 0);
     const isRoot = hirarqNum === 1 || hirarqNum === 0.5;
     const isAssessoriaNode = isAssessoria || (hirarqNum === 0);
+    const isOperacionalNode = isOperacional || is_operacional;
     const isNested = _isNested;
 
     // Style Editor state controlled by parent (OrganogramaCanvas)
@@ -51,8 +54,10 @@ const SetorNode = ({ data, selected }) => {
     // console.log(`[SetorNode] ${data.id?.substring(0, 8)} | isEditing=${data.isEditing} | showEditor=${showEditor}`);
     const nodeRef = React.useRef(null);
 
-    // Cor especial para o Prefeito (Ouro) ou baseada na hierarquia
-    const defaultBg = isPrefeito ? '#FFD700' : (HIERARCHY_COLORS[hirarqNum] || '#e2e8f0');
+    // Cor especial para o Prefeito (Ouro), Operacional (Azul Claro) ou baseada na hierarquia
+    const defaultBg = isPrefeito ? '#FFD700' :
+        isOperacionalNode ? '#E3F2FD' :
+            (HIERARCHY_COLORS[hirarqNum] || '#e2e8f0');
 
     // Se tiver cor customizada (style.backgroundColor), usa ela para borda/detalhe
     // Se não, usa a cor da hierarquia

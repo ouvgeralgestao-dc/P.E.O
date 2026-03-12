@@ -446,8 +446,9 @@ const OrganogramaCanvasInner = ({
                         tipoSetor: setor.tipoSetor,
                         hierarquia: isAssessoriaNode ? 0 : (setor.hierarquia || 0), // Forçar hierarquia 0 para assessorias visuais
                         isAssessoria: isAssessoriaNode,
+                        isOperacional: setor.isOperacional || !!setor.is_operacional,
                         cargos: setor.cargos,
-                        style: savedStyle, // Usar 'style' para compatibilidade backend
+                        style: savedStyle, // Usar 'style' for compatibilidade backend
                         customStyle: savedStyle, // Manter fallback
                         onStyleChange: onStyleChange, // Passar callback estável
                         onEditClick: onEditClick, // Passar callback estável
@@ -698,7 +699,7 @@ const OrganogramaCanvasInner = ({
                             nivel: isAssessoriaNode ? 0 : (cargo.nivel || cargo.hierarquia || 0),
                             tipoSetor: cargo.tipoSetor, // Preservar se vier do backend
                             isAssessoria: isAssessoriaNode,
-                            isOperacional: cargo.isOperacional, // [SYNC] Persistir propriedade Operacional
+                            isOperacional: cargo.isOperacional || !!cargo.is_operacional, // [SYNC] Persistir propriedade Operacional
                             nomeSetorRef: (() => {
                                 // 1. Tentar obter direto do objeto cargo (Prevalência Backend JOIN)
                                 const direct = cargo.nome_setor_ref || cargo.nomeSetorRef;
