@@ -54,10 +54,8 @@ const SetorNode = ({ data, selected }) => {
     // console.log(`[SetorNode] ${data.id?.substring(0, 8)} | isEditing=${data.isEditing} | showEditor=${showEditor}`);
     const nodeRef = React.useRef(null);
 
-    // Cor especial para o Prefeito (Ouro), Operacional (Azul Claro) ou baseada na hierarquia
-    const defaultBg = isPrefeito ? '#FFD700' :
-        isOperacionalNode ? '#E3F2FD' :
-            (HIERARCHY_COLORS[hirarqNum] || '#e2e8f0');
+    // Cor especial para o Prefeito (Ouro) ou baseada na hierarquia (que agora desce para operacional)
+    const defaultBg = isPrefeito ? '#FFD700' : (HIERARCHY_COLORS[hirarqNum] || '#e2e8f0');
 
     // Se tiver cor customizada (style.backgroundColor), usa ela para borda/detalhe
     // Se não, usa a cor da hierarquia
@@ -141,7 +139,7 @@ const SetorNode = ({ data, selected }) => {
     return (
         <div
             ref={nodeRef}
-            className={`setor-node ${isRoot ? 'root-node' : ''} ${selected ? 'selected' : ''} ${isAssessoriaNode ? 'assessoria-node' : ''} ${isNested ? 'nested-assessoria' : ''} ${isPrefeito ? 'prefeito' : ''} ${showEditor ? 'is-editing' : ''}`}
+            className={`setor-node ${isRoot ? 'root-node' : ''} ${selected ? 'selected' : ''} ${isAssessoriaNode ? 'assessoria-node' : ''} ${isOperacionalNode ? 'operacional-node' : ''} ${isNested ? 'nested-assessoria' : ''} ${isPrefeito ? 'prefeito' : ''} ${showEditor ? 'is-editing' : ''}`}
             onDoubleClick={handleDoubleClick}
             style={{
                 background: backgroundStyle,

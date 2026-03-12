@@ -350,8 +350,20 @@ const OrganogramaCanvasInner = ({
                 const savedStyle = setor.style || setor.customStyle || {};
 
                 // Detecção robusta para Assessoria/Gabinete (Mapeamento Visual)
-                // Normalizar hierarquia para número
-                const hirarqNum = typeof setor.hierarquia === 'string' ? parseFloat(setor.hierarquia) : (setor.hierarquia || 0);
+                // Normalizar hierarquia para número e tratar operacional
+                const isOperacionalNode = !!(setor.isOperacional || setor.is_operacional);
+                let hirarqNum = typeof setor.hierarquia === 'string' ? parseFloat(setor.hierarquia) : (setor.hierarquia || 0);
+
+                // [AUTO-LEVEL OPERACIONAL] Forçar descer nível se for operacional
+                if (isOperacionalNode && setor.parentId) {
+                    const parentNode = setorMap.get(setor.parentId);
+                    if (parentNode) {
+                        const parentH = parseFloat(parentNode.hierarquia || 0);
+                        if (hirarqNum <= parentH + 1 && hirarqNum !== 0) {
+                            hirarqNum = Math.floor(parentH) + 2;
+                        }
+                    }
+                }
 
                 // [FORCE FIX VISUAL] Superintendência/Diretoria/Subsecretaria NUNCA é assessoria lateral
                 // Isso previne linhas laterais quando o layout é vertical
@@ -444,7 +456,7 @@ const OrganogramaCanvasInner = ({
                         id: setor.id, // ID para identificar o nó ao aplicar estilos
                         nomeSetor: setor.nomeSetor,
                         tipoSetor: setor.tipoSetor,
-                        hierarquia: isAssessoriaNode ? 0 : (setor.hierarquia || 0), // Forçar hierarquia 0 para assessorias visuais
+                        hierarquia: isAssessoriaNode ? 0 : hirarqNum, // Usar hirarqNum (que pode estar auto-corrigido para operacional)
                         isAssessoria: isAssessoriaNode,
                         isOperacional: setor.isOperacional || !!setor.is_operacional,
                         cargos: setor.cargos,
@@ -1087,19 +1099,19 @@ const OrganogramaCanvasInner = ({
         });
 
         // Segunda passada: Ajustar Hierarquia Operacional
-        // Regra: Se é operacional, deve ter nível > pai (para ficar abaixo visualmente)
+        // Regra: Se é operacional, deve ter nível > pai + 1 (para ficar abaixo das chefias visualmente)
         uniqueItems.forEach(item => {
-            if (item.isOperacional && item.parentId) {
+            const isOp = !!(item.isOperacional || item.is_operacional);
+            if (isOp && item.parentId) {
                 const parent = itemMapForHierarchy.get(item.parentId);
                 if (parent) {
                     const parentH = parseFloat(parent.hierarquia || 0);
                     const myH = parseFloat(item.hierarquia || 0);
 
-                    // Se hierarquia for igual ou menor que o pai, força descer um nível
-                    // Isso simula a lógica do backend 'recalculateHierarchy'
-                    if (myH <= parentH) {
-                        item.hierarquia = String(Math.floor(parentH) + 1);
-                        console.log(`[Reset] Ajustando hierarquia Operacional: ${item.nomeCargo} (${myH} -> ${item.hierarquia})`);
+                    // Se hierarquia for igual ou menor que o pai + 1, força descer mais um nível
+                    if (myH <= parentH + 1) {
+                        item.hierarquia = String(Math.floor(parentH) + 2);
+                        console.log(`[Reset] Ajustando hierarquia Operacional: ${item.nomeCargo || item.nomeSetor} (${myH} -> ${item.hierarquia})`);
                     }
                 }
             }
