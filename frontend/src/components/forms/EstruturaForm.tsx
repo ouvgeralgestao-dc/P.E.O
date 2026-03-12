@@ -285,28 +285,45 @@ const EstruturaForm = ({ data, updateData, errors, disableOrgaoSelection = false
 
     const handleEditSetor = (setor) => {
         const hierarquia = parseFloat(setor.hierarquia);
-        let tipoEncontrado = '';
+        let tipoEncontrado = setor.tipoSetor || '';
         let nomeLimpo = setor.nomeSetor;
 
-        // Tentar extrair tipo e nome baseado na hierarquia
-        const tiposPossiveis = SETOR_TYPES[hierarquia] || [];
+        // Tentar extrair tipo e nome baseado na hierarquia DE FORMA SEGURA
+        // Mas apenas tentar desmembrar se não tivermos um tipoEncontrado forte OU
+        // tentar limpar o prefixo do nomeLimpo já sabendo o tipo.
+        if (tipoEncontrado && nomeLimpo.startsWith(tipoEncontrado)) {
+            let resto = nomeLimpo.substring(tipoEncontrado.length).trim();
+            if (resto.startsWith('- ')) resto = resto.substring(2);
+            if (resto.startsWith('de ')) resto = resto.substring(3);
+            nomeLimpo = resto;
+        } else {
+            const tiposPossiveis = SETOR_TYPES[hierarquia] || [];
+            let matchFound = false;
 
-        for (const tipo of tiposPossiveis) {
-            const separatorLegacy = hierarquia === 0.5 ? ' - ' : ' de ';
-            const separatorNew = hierarquia === 0.5 ? ' - ' : ' ';
+            for (const tipo of tiposPossiveis) {
+                const separatorLegacy = hierarquia === 0.5 ? ' - ' : ' de ';
+                const separatorNew = hierarquia === 0.5 ? ' - ' : ' ';
 
-            if (setor.nomeSetor.startsWith(tipo + separatorLegacy)) {
-                tipoEncontrado = tipo;
-                nomeLimpo = setor.nomeSetor.substring((tipo + separatorLegacy).length);
-                break;
-            } else if (setor.nomeSetor.startsWith(tipo + separatorNew)) {
-                tipoEncontrado = tipo;
-                nomeLimpo = setor.nomeSetor.substring((tipo + separatorNew).length);
-                break;
-            } else if (setor.nomeSetor === tipo) {
-                tipoEncontrado = tipo;
-                nomeLimpo = '';
-                break;
+                if (setor.nomeSetor.startsWith(tipo + separatorLegacy)) {
+                    tipoEncontrado = tipo;
+                    nomeLimpo = setor.nomeSetor.substring((tipo + separatorLegacy).length);
+                    matchFound = true;
+                    break;
+                } else if (setor.nomeSetor.startsWith(tipo + separatorNew)) {
+                    tipoEncontrado = tipo;
+                    nomeLimpo = setor.nomeSetor.substring((tipo + separatorNew).length);
+                    matchFound = true;
+                    break;
+                } else if (setor.nomeSetor === tipo) {
+                    tipoEncontrado = tipo;
+                    nomeLimpo = '';
+                    matchFound = true;
+                    break;
+                }
+            }
+            // Se não encontrou match, preserva o tipo original (if any)
+            if (!matchFound && setor.tipoSetor) {
+                tipoEncontrado = setor.tipoSetor;
             }
         }
 

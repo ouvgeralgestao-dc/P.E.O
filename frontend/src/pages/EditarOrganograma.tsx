@@ -92,6 +92,7 @@ function EditarOrganograma() {
                     tamanhoFolha: formData.tamanhoFolha,
                     setores: formData.setores
                 };
+                console.error('🚀 PAYLOAD ESTRUTURA:', JSON.stringify(payload, null, 2));
             } else {
                 endpoint = `/organogramas/${encodeURIComponent(nomeOrgao)}/funcoes`;
 

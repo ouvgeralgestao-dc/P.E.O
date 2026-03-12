@@ -16,7 +16,8 @@ const recalculateHierarchy = (setores: any[]) => {
     setores.forEach(s => {
         setoresMap.set(s.id, s);
         // Normalizar is_assessoria: Garante booleano ou inferência pelo nível 0 antigo
-        s.is_assessoria = !!s.is_assessoria || (s.hierarquia === '0' || s.hierarquia === 0);
+        s.is_assessoria = !!s.is_assessoria || !!s.isAssessoria || (s.hierarquia === '0' || s.hierarquia === 0);
+        s.is_operacional = !!(s.is_operacional || s.isOperacional);
 
         // Normalização de chaves de pai (parentId vs parent_id)
         const pid = s.parentId || s.parent_id;

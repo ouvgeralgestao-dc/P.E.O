@@ -208,6 +208,7 @@ export const validateUpdateOrganogramaEstrutural = [
     (req, res, next) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.error('[Validator] Erros de validação (Update Estrutura):', JSON.stringify(errors.array(), null, 2));
             return res.status(400).json({
                 success: false,
                 message: 'Erro de validação',

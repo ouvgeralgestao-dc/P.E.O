@@ -152,6 +152,11 @@ export const validateSetor = (setor) => {
         }
     }
 
+    // Validar tipoSetor (OBRIGATÓRIO)
+    if (!setor.tipoSetor || setor.tipoSetor.trim().length === 0) {
+        errors.tipoSetor = 'Tipo de setor é obrigatório';
+    }
+
     // Validar hierarquia
     const hierarquiaValidation = validateHierarquia(setor.hierarquia);
     if (!hierarquiaValidation.valid) {
