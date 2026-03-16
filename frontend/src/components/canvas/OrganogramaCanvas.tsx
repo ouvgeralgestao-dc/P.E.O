@@ -1025,7 +1025,26 @@ const OrganogramaCanvasInner = ({
     const handleResetLayout = useCallback(() => {
         let itemsToLayout = [];
 
-        // 1. Identificar dados e resetar posições/estilos
+        // Mapear hierarquia ORIGINAL do backend (antes de qualquer ajuste visual).
+        // Isso é necessário porque node.data.hierarquia pode ter sido ajustado pelo
+        // [AUTO-LEVEL OPERACIONAL] durante o render, e usar esses valores no applyAutoLayout
+        // causaria posições incorretas (irmãos em níveis diferentes → Mountain Sort os espalha).
+        const originalHierarchyMap = new Map<string, any>();
+        const buildOriginalMap = (items: any[]) => {
+            items.forEach(item => {
+                const { children, ...rest } = item;
+                originalHierarchyMap.set(rest.id, rest);
+                if (children?.length) buildOriginalMap(children);
+            });
+        };
+        if (organogramaData?.organogramaEstrutural?.setores) {
+            buildOriginalMap(organogramaData.organogramaEstrutural.setores);
+        } else if (organogramaData?.organogramasFuncoes) {
+            (organogramaData.organogramasFuncoes as any[]).forEach((orgFunc: any) => {
+                buildOriginalMap(orgFunc.cargos || []);
+            });
+        }
+
         // 1. Identificar dados e resetar posições/estilos
         // [FIX CRÍTICO 03/02/2026] Usar o estado ATUAL dos nós ('nodes') como fonte da verdade.
         // Isso preserva edições recentes (nomes, referências de setor, etc.) que ainda não foram salvas/recarregadas no 'organogramaData'.
@@ -1033,14 +1052,21 @@ const OrganogramaCanvasInner = ({
         if (nodes && nodes.length > 0) {
             console.log('[Reset] Usando estado atual dos nós para preservar edições:', nodes.length);
 
-            itemsToLayout = nodes.map(node => ({
-                ...node.data, // [ROBUST FIX] Preservar TODO o objeto data (nomes, cargos, refs, etc.)
-                id: node.id,
-                // Resetar apenas o que deve ser recalculado
-                position: { x: 0, y: 0 },
-                style: {},
-                customStyle: {}
-            }));
+            itemsToLayout = nodes.map(node => {
+                const original = originalHierarchyMap.get(node.id);
+                return {
+                    ...node.data, // [ROBUST FIX] Preservar TODO o objeto data (nomes, cargos, refs, etc.)
+                    id: node.id,
+                    // [FIX RESET] Restaurar hierarquia ORIGINAL do backend.
+                    // node.data.hierarquia pode estar ajustado visualmente (ex: operacional bumped),
+                    // o que causaria double-bump na Segunda passada e posições erradas no applyAutoLayout.
+                    hierarquia: original?.hierarquia ?? node.data.hierarquia,
+                    // Resetar apenas o que deve ser recalculado
+                    position: { x: 0, y: 0 },
+                    style: {},
+                    customStyle: {}
+                };
+            });
 
         } else if (organogramaData?.organogramaEstrutural) {
             // Fallback para dados iniciais se não houver nós
@@ -1098,8 +1124,9 @@ const OrganogramaCanvasInner = ({
             }
         });
 
-        // Segunda passada: Ajustar Hierarquia Operacional
-        // Regra: Se é operacional, deve ter nível > pai + 1 (para ficar abaixo das chefias visualmente)
+        // Segunda passada: Corrigir inconsistência de dados em nós operacionais
+        // Regra: filho operacional NÃO deve ter nível igual ou inferior ao pai (inconsistência de dados).
+        // ATENÇÃO: usar hierarquia ORIGINAL (não ajustada visualmente) para evitar double-bump.
         uniqueItems.forEach(item => {
             const isOp = !!(item.isOperacional || item.is_operacional);
             if (isOp && item.parentId) {
@@ -1108,10 +1135,11 @@ const OrganogramaCanvasInner = ({
                     const parentH = parseFloat(parent.hierarquia || 0);
                     const myH = parseFloat(item.hierarquia || 0);
 
-                    // Se hierarquia for igual ou menor que o pai + 1, força descer mais um nível
-                    if (myH <= parentH + 1) {
-                        item.hierarquia = String(Math.floor(parentH) + 2);
-                        console.log(`[Reset] Ajustando hierarquia Operacional: ${item.nomeCargo || item.nomeSetor} (${myH} -> ${item.hierarquia})`);
+                    // Corrigir apenas se filho está no mesmo nível ou ABAIXO do pai (inconsistência real)
+                    // Não alterar relações normais (filho em parentH+1) para evitar quebrar o layout
+                    if (myH <= parentH && myH !== 0) {
+                        item.hierarquia = String(Math.floor(parentH) + 1);
+                        console.log(`[Reset] Corrigindo hierarquia Operacional: ${item.nomeCargo || item.nomeSetor} (${myH} -> ${item.hierarquia})`);
                     }
                 }
             }
